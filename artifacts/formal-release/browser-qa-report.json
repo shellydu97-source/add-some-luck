@@ -1,0 +1,30 @@
+{
+  "testedAt": "2026-07-15T06:49:21.925Z",
+  "baseUrl": "http://127.0.0.1:4174",
+  "zhejiangCityCount": 11,
+  "ritualAnimationMoved": true,
+  "ritualTransforms": {
+    "before": "translate3d(-83.5824px, 0px, 0px)",
+    "after": "translate3d(-75.5912px, 0px, 0px)"
+  },
+  "desktopOverflow": 0,
+  "mobileOverflow": 0,
+  "visibleForbiddenTerms": [],
+  "browserErrors": [],
+  "screenshots": [
+    "00-astrology-overview.png",
+    "00-bazi-overview.png",
+    "01-province-city-selector.png",
+    "02-tarot-ritual-rolling.png",
+    "03-tarot-formal-result.png",
+    "04-tarot-record-detail.png",
+    "05-tarot-system-draw.png",
+    "06-liuyao-digital-cast.png",
+    "07-liuyao-manual-entry.png",
+    "08-liuyao-basic-result.png",
+    "09-liuyao-professional-chart.png",
+    "10-liuyao-record-detail.png",
+    "11-mobile-390-record-detail.png",
+    "12-settings-clean.png"
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "id": "guangzhou-late-night",
+  "purpose": [
+    "广州",
+    "深夜时间"
+  ],
+  "city": "广州市",
+  "localDateTime": "1985-11-20T23:45:00+08:00",
+  "utcDateTime": "1985-11-20T15:45:00.000Z",
+  "latitude": 23.11667,
+  "longitude": 113.25,
+  "fixedTimezone": "Asia/Shanghai"
+}

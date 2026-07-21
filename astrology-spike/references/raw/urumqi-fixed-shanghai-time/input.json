@@ -1,0 +1,13 @@
+{
+  "id": "urumqi-fixed-shanghai-time",
+  "purpose": [
+    "乌鲁木齐",
+    "固定Asia/Shanghai规则"
+  ],
+  "city": "乌鲁木齐市",
+  "localDateTime": "1977-08-08T06:15:00+08:00",
+  "utcDateTime": "1977-08-07T22:15:00.000Z",
+  "latitude": 43.80096,
+  "longitude": 87.60046,
+  "fixedTimezone": "Asia/Shanghai"
+}

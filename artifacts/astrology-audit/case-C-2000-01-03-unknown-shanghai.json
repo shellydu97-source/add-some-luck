@@ -1,0 +1,210 @@
+{
+  "caseId": "C",
+  "label": "2000/01/03，出生时间未知，上海市",
+  "requestedInput": {
+    "calendarType": "solar",
+    "rawBirthDate": "2000/01/03",
+    "lunarLeapMonth": false,
+    "timeAccuracy": "unknown",
+    "birthLocation": {
+      "canonicalName": "上海市",
+      "province": "上海市",
+      "city": "上海市",
+      "latitude": 31.22222,
+      "longitude": 121.45806,
+      "ianaTimeZone": "Asia/Shanghai",
+      "coordinateSource": "GeoNames CN country dump",
+      "coordinateDataVersion": "geonames-cn-2026-07-14-7b90b81d1b61",
+      "userConfirmed": true
+    }
+  },
+  "result": {
+    "ok": true,
+    "precision": "day-range",
+    "engine": "astronomy-engine",
+    "engineVersion": "2.1.19",
+    "adapterVersion": "astrology-product-adapter-1.0.0",
+    "ruleVersion": "cn-v1-tropical-geocentric-true-ecliptic-placidus-1.0.0",
+    "coordinateDataVersion": "geonames-cn-2026-07-14-7b90b81d1b61",
+    "calculatedAt": "2026-07-14T09:30:19.883Z",
+    "settings": {
+      "timezone": "Asia/Shanghai",
+      "zodiac": "tropical",
+      "center": "geocentric",
+      "ecliptic": "true-of-date",
+      "houseSystem": "placidus"
+    },
+    "normalizedInput": {
+      "sourceCalendar": "solar",
+      "sourceDate": {
+        "year": 2000,
+        "month": 1,
+        "day": 3
+      },
+      "solarDate": {
+        "year": 2000,
+        "month": 1,
+        "day": 3
+      },
+      "timeKnown": false,
+      "timezone": "Asia/Shanghai",
+      "location": {
+        "canonicalName": "上海市",
+        "province": "上海市",
+        "city": "上海市",
+        "latitude": 31.22222,
+        "longitude": 121.45806,
+        "ianaTimeZone": "Asia/Shanghai",
+        "coordinateSource": "GeoNames CN country dump",
+        "coordinateDataVersion": "geonames-cn-2026-07-14-7b90b81d1b61",
+        "userConfirmed": true
+      },
+      "utcDayInterval": {
+        "start": "2000-01-02T16:00:00.000Z",
+        "endExclusive": "2000-01-03T16:00:00.000Z"
+      }
+    },
+    "warnings": [
+      "出生时间未知：仅按完整自然日计算行星星座与度数范围，不生成单一精确度数、ASC、MC、宫头、落宫或精确相位。"
+    ],
+    "planetRanges": [
+      {
+        "body": "sun",
+        "signCandidates": [
+          "capricorn"
+        ],
+        "signAmbiguous": false,
+        "degreeInSignRange": {
+          "min": 11.55814663503537,
+          "max": 12.577734185035354
+        },
+        "longitudeStartDeg": 281.55814663503537,
+        "longitudeEndDeg": 282.57773418503535,
+        "motionStatus": "direct"
+      },
+      {
+        "body": "moon",
+        "signCandidates": [
+          "scorpio",
+          "sagittarius"
+        ],
+        "signAmbiguous": true,
+        "longitudeStartDeg": 237.26366821256585,
+        "longitudeEndDeg": 249.1189002698191,
+        "motionStatus": "direct"
+      },
+      {
+        "body": "mercury",
+        "signCandidates": [
+          "capricorn"
+        ],
+        "signAmbiguous": false,
+        "degreeInSignRange": {
+          "min": 3.7082699632933895,
+          "max": 5.273706935456744
+        },
+        "longitudeStartDeg": 273.7082699632934,
+        "longitudeEndDeg": 275.27370693545674,
+        "motionStatus": "direct"
+      },
+      {
+        "body": "venus",
+        "signCandidates": [
+          "sagittarius"
+        ],
+        "signAmbiguous": false,
+        "degreeInSignRange": {
+          "min": 2.9765535935750336,
+          "max": 4.187444988910613
+        },
+        "longitudeStartDeg": 242.97655359357503,
+        "longitudeEndDeg": 244.1874449889106,
+        "motionStatus": "direct"
+      },
+      {
+        "body": "mars",
+        "signCandidates": [
+          "aquarius"
+        ],
+        "signAmbiguous": false,
+        "degreeInSignRange": {
+          "min": 28.8688786614656,
+          "max": 29.644594796626848
+        },
+        "longitudeStartDeg": 328.8688786614656,
+        "longitudeEndDeg": 329.64459479662685,
+        "motionStatus": "direct"
+      },
+      {
+        "body": "jupiter",
+        "signCandidates": [
+          "aries"
+        ],
+        "signAmbiguous": false,
+        "degreeInSignRange": {
+          "min": 25.304046241679316,
+          "max": 25.35041718762426
+        },
+        "longitudeStartDeg": 25.304046241679316,
+        "longitudeEndDeg": 25.35041718762426,
+        "motionStatus": "direct"
+      },
+      {
+        "body": "saturn",
+        "signCandidates": [
+          "taurus"
+        ],
+        "signAmbiguous": false,
+        "degreeInSignRange": {
+          "min": 10.35724322168626,
+          "max": 10.374112170181519
+        },
+        "longitudeStartDeg": 40.37411217018152,
+        "longitudeEndDeg": 40.35724322168626,
+        "motionStatus": "retrograde"
+      },
+      {
+        "body": "uranus",
+        "signCandidates": [
+          "aquarius"
+        ],
+        "signAmbiguous": false,
+        "degreeInSignRange": {
+          "min": 14.865144158195278,
+          "max": 14.916221778977501
+        },
+        "longitudeStartDeg": 314.8651441581953,
+        "longitudeEndDeg": 314.9162217789775,
+        "motionStatus": "direct"
+      },
+      {
+        "body": "neptune",
+        "signCandidates": [
+          "aquarius"
+        ],
+        "signAmbiguous": false,
+        "degreeInSignRange": {
+          "min": 3.2370903733155387,
+          "max": 3.2730177911469696
+        },
+        "longitudeStartDeg": 303.23709037331554,
+        "longitudeEndDeg": 303.27301779114697,
+        "motionStatus": "direct"
+      },
+      {
+        "body": "pluto",
+        "signCandidates": [
+          "sagittarius"
+        ],
+        "signAmbiguous": false,
+        "degreeInSignRange": {
+          "min": 11.495580277635213,
+          "max": 11.530315569693357
+        },
+        "longitudeStartDeg": 251.4955802776352,
+        "longitudeEndDeg": 251.53031556969336,
+        "motionStatus": "direct"
+      }
+    ]
+  }
+}

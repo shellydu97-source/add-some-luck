@@ -1,0 +1,14 @@
+{
+  "id": "shanghai-normal",
+  "purpose": [
+    "上海",
+    "普通时间",
+    "宫位跨0度"
+  ],
+  "city": "上海市",
+  "localDateTime": "2000-01-01T20:00:00+08:00",
+  "utcDateTime": "2000-01-01T12:00:00.000Z",
+  "latitude": 31.22222,
+  "longitude": 121.45806,
+  "fixedTimezone": "Asia/Shanghai"
+}

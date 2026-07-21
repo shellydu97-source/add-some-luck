@@ -1,0 +1,23 @@
+{
+  "generatedAt": "2026-07-14T07:22:59.528Z",
+  "tools": {
+    "swetest": {
+      "version": "2.10.03",
+      "mode": "Moshier via -emos; no Swiss ephemeris files bundled or loaded",
+      "executableSha256": "C44D29554927AD1BA44196B5B274904F012DACAA3B4797F7F4AE6A48618FC1C5",
+      "arguments": "-p0123456789 -fPls -head -emos -speed -house<lon>,<lat>,P"
+    },
+    "astrolog": {
+      "version": "8.00",
+      "mode": "Independent Matrix formulas via -bm; isolated executable directory contains no Swiss files",
+      "executableSha256": "80B30F757434D2884A354E2EE12C1B56802816EF1E1613291E84027581D4C811",
+      "arguments": "-YQ 0 -qb <local> 0 -8 <-east-longitude> <latitude> -bm -b0 -c 0 -C"
+    },
+    "jplHorizons": {
+      "service": "NASA/JPL Horizons API",
+      "ephemerisShownInRawOutput": "DE441",
+      "center": "500@399 geocentric",
+      "quantity": "31 observer-centered IAU76/80 ecliptic-of-date apparent longitude/latitude"
+    }
+  }
+}

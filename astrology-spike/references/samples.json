@@ -1,0 +1,74 @@
+[
+  {
+    "id": "shanghai-normal",
+    "purpose": ["上海", "普通时间", "宫位跨0度"],
+    "city": "上海市",
+    "localDateTime": "2000-01-01T20:00:00+08:00",
+    "utcDateTime": "2000-01-01T12:00:00.000Z",
+    "latitude": 31.22222,
+    "longitude": 121.45806
+  },
+  {
+    "id": "beijing-normal",
+    "purpose": ["北京", "普通时间"],
+    "city": "北京市",
+    "localDateTime": "1990-06-15T08:30:00+08:00",
+    "utcDateTime": "1990-06-15T00:30:00.000Z",
+    "latitude": 39.9075,
+    "longitude": 116.39723
+  },
+  {
+    "id": "guangzhou-late-night",
+    "purpose": ["广州", "深夜时间"],
+    "city": "广州市",
+    "localDateTime": "1985-11-20T23:45:00+08:00",
+    "utcDateTime": "1985-11-20T15:45:00.000Z",
+    "latitude": 23.11667,
+    "longitude": 113.25
+  },
+  {
+    "id": "chengdu-leap-day",
+    "purpose": ["成都", "公历闰日"],
+    "city": "成都市",
+    "localDateTime": "2012-02-29T12:00:00+08:00",
+    "utcDateTime": "2012-02-29T04:00:00.000Z",
+    "latitude": 30.66667,
+    "longitude": 104.06667
+  },
+  {
+    "id": "urumqi-fixed-shanghai-time",
+    "purpose": ["乌鲁木齐", "固定Asia/Shanghai规则"],
+    "city": "乌鲁木齐市",
+    "localDateTime": "1977-08-08T06:15:00+08:00",
+    "utcDateTime": "1977-08-07T22:15:00.000Z",
+    "latitude": 43.80096,
+    "longitude": 87.60046
+  },
+  {
+    "id": "shanghai-zodiac-boundary",
+    "purpose": ["星座边界", "太阳约30度"],
+    "city": "上海市",
+    "localDateTime": "2024-04-19T21:59:55+08:00",
+    "utcDateTime": "2024-04-19T13:59:55.000Z",
+    "latitude": 31.22222,
+    "longitude": 121.45806
+  },
+  {
+    "id": "beijing-house-cusp-boundary",
+    "purpose": ["宫头边界", "太阳约合上升"],
+    "city": "北京市",
+    "localDateTime": "2024-09-02T05:47:39+08:00",
+    "utcDateTime": "2024-09-01T21:47:39.000Z",
+    "latitude": 39.9075,
+    "longitude": 116.39723
+  },
+  {
+    "id": "guangzhou-1901-lower-range",
+    "purpose": ["1901下界样本", "历史日期"],
+    "city": "广州市",
+    "localDateTime": "1901-01-01T00:05:00+08:00",
+    "utcDateTime": "1900-12-31T16:05:00.000Z",
+    "latitude": 23.11667,
+    "longitude": 113.25
+  }
+]

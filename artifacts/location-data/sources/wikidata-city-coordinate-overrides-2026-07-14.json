@@ -1,0 +1,11 @@
+{
+  "retrievedAt": "2026-07-14",
+  "license": "Wikidata structured data is available under CC0 1.0",
+  "sourcePattern": "https://www.wikidata.org/wiki/Special:EntityData/{entityId}.json",
+  "records": [
+    { "adminCode": "659007", "city": "双河市", "entityId": "Q10930847", "latitude": 44.84, "longitude": 82.3517, "sourceModifiedAt": "2026-05-17T05:56:23Z" },
+    { "adminCode": "659009", "city": "昆玉市", "entityId": "Q22704998", "latitude": 37.209444, "longitude": 79.290833, "sourceModifiedAt": "2026-07-10T19:09:09Z" },
+    { "adminCode": "659011", "city": "新星市", "entityId": "Q105300298", "latitude": 42.795278, "longitude": 93.746389, "sourceModifiedAt": "2026-05-17T06:03:33Z" },
+    { "adminCode": "659012", "city": "白杨市", "entityId": "Q116265658", "latitude": 46.724444444444444, "longitude": 82.89583333333333, "sourceModifiedAt": "2025-12-07T08:24:04Z" }
+  ]
+}

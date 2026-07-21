@@ -1,0 +1,13 @@
+{
+  "id": "chengdu-leap-day",
+  "purpose": [
+    "成都",
+    "公历闰日"
+  ],
+  "city": "成都市",
+  "localDateTime": "2012-02-29T12:00:00+08:00",
+  "utcDateTime": "2012-02-29T04:00:00.000Z",
+  "latitude": 30.66667,
+  "longitude": 104.06667,
+  "fixedTimezone": "Asia/Shanghai"
+}

@@ -1,0 +1,13 @@
+{
+  "id": "beijing-house-cusp-boundary",
+  "purpose": [
+    "宫头边界",
+    "太阳约合上升"
+  ],
+  "city": "北京市",
+  "localDateTime": "2024-09-02T05:47:39+08:00",
+  "utcDateTime": "2024-09-01T21:47:39.000Z",
+  "latitude": 39.9075,
+  "longitude": 116.39723,
+  "fixedTimezone": "Asia/Shanghai"
+}

@@ -1,0 +1,21 @@
+{
+  "metadata": {
+    "purpose": "Offline representative coordinates for the isolated astrology validation spike; this is not yet the complete production city index.",
+    "sourceName": "GeoNames geographical database - China country dump",
+    "sourceUrl": "https://download.geonames.org/export/dump/CN.zip",
+    "sourceSnapshotDownloadedAt": "2026-07-14",
+    "sourceRecordVersionField": "GeoNames modification date per record",
+    "coordinateReferenceSystem": "WGS 84 decimal degrees",
+    "license": "Creative Commons Attribution 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+    "sourceSha256": "7B90B81D1B61AF90A38D93A97958E1A4DEBEFF9BD1B21A558785D16353D8B96A",
+    "timezoneRule": "V1 ignores GeoNames timezone fields and always uses Asia/Shanghai"
+  },
+  "cities": [
+    { "province": "上海市", "city": "上海市", "latitude": 31.22222, "longitude": 121.45806, "geoNamesId": 1796236, "sourceModifiedAt": "2026-04-13" },
+    { "province": "北京市", "city": "北京市", "latitude": 39.9075, "longitude": 116.39723, "geoNamesId": 1816670, "sourceModifiedAt": "2025-12-15" },
+    { "province": "广东省", "city": "广州市", "latitude": 23.11667, "longitude": 113.25, "geoNamesId": 1809858, "sourceModifiedAt": "2026-04-13" },
+    { "province": "四川省", "city": "成都市", "latitude": 30.66667, "longitude": 104.06667, "geoNamesId": 1815286, "sourceModifiedAt": "2026-04-13" },
+    { "province": "新疆维吾尔自治区", "city": "乌鲁木齐市", "latitude": 43.80096, "longitude": 87.60046, "geoNamesId": 1529102, "sourceModifiedAt": "2026-04-13" }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "name": "luck-app-astrology-spike",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "check": "pnpm run build && pnpm run test",
+    "generate:references": "pnpm run build && node scripts/generate-golden-references.mjs"
+  },
+  "dependencies": {
+    "astronomy-engine": "2.1.19"
+  },
+  "devDependencies": {
+    "@types/node": "24.10.1",
+    "typescript": "5.9.3",
+    "vitest": "4.0.13"
+  }
+}

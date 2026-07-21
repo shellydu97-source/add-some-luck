@@ -1,0 +1,928 @@
+[
+  {
+    "caseId": "A",
+    "label": "2000/01/01 20:00，上海市",
+    "requestedInput": {
+      "calendarType": "solar",
+      "rawBirthDate": "2000/01/01",
+      "lunarLeapMonth": false,
+      "rawBirthTime": "20:00",
+      "timeAccuracy": "exact_minute",
+      "birthLocation": {
+        "canonicalName": "上海市",
+        "province": "上海市",
+        "city": "上海市",
+        "latitude": 31.22222,
+        "longitude": 121.45806,
+        "ianaTimeZone": "Asia/Shanghai",
+        "coordinateSource": "GeoNames CN country dump",
+        "coordinateDataVersion": "geonames-cn-2026-07-14-7b90b81d1b61",
+        "userConfirmed": true
+      }
+    },
+    "result": {
+      "ok": true,
+      "precision": "exact",
+      "engine": "astronomy-engine",
+      "engineVersion": "2.1.19",
+      "adapterVersion": "astrology-product-adapter-1.0.0",
+      "ruleVersion": "cn-v1-tropical-geocentric-true-ecliptic-placidus-1.0.0",
+      "coordinateDataVersion": "geonames-cn-2026-07-14-7b90b81d1b61",
+      "calculatedAt": "2026-07-14T09:30:19.881Z",
+      "settings": {
+        "timezone": "Asia/Shanghai",
+        "zodiac": "tropical",
+        "center": "geocentric",
+        "ecliptic": "true-of-date",
+        "houseSystem": "placidus"
+      },
+      "normalizedInput": {
+        "sourceCalendar": "solar",
+        "sourceDate": {
+          "year": 2000,
+          "month": 1,
+          "day": 1
+        },
+        "solarDate": {
+          "year": 2000,
+          "month": 1,
+          "day": 1
+        },
+        "timeKnown": true,
+        "localTime": {
+          "hour": 20,
+          "minute": 0,
+          "precision": "minute"
+        },
+        "timezone": "Asia/Shanghai",
+        "location": {
+          "canonicalName": "上海市",
+          "province": "上海市",
+          "city": "上海市",
+          "latitude": 31.22222,
+          "longitude": 121.45806,
+          "ianaTimeZone": "Asia/Shanghai",
+          "coordinateSource": "GeoNames CN country dump",
+          "coordinateDataVersion": "geonames-cn-2026-07-14-7b90b81d1b61",
+          "userConfirmed": true
+        },
+        "utcDateTime": "2000-01-01T12:00:00.000Z"
+      },
+      "warnings": [],
+      "planets": [
+        {
+          "body": "sun",
+          "longitudeDeg": 280.3687386398185,
+          "longitudeSpeedDegPerDay": 1.0194320979326221,
+          "retrograde": false,
+          "sign": "capricorn",
+          "degreeInSign": 10.368738639818503,
+          "house": 5
+        },
+        {
+          "body": "moon",
+          "longitudeDeg": 223.32389112747416,
+          "longitudeSpeedDegPerDay": 12.02144044623708,
+          "retrograde": false,
+          "sign": "scorpio",
+          "degreeInSign": 13.323891127474155,
+          "house": 3
+        },
+        {
+          "body": "mercury",
+          "longitudeDeg": 271.88891206646304,
+          "longitudeSpeedDegPerDay": 1.5562876757564936,
+          "retrograde": false,
+          "sign": "capricorn",
+          "degreeInSign": 1.8889120664630354,
+          "house": 5
+        },
+        {
+          "body": "venus",
+          "longitudeDeg": 241.56523294036205,
+          "longitudeSpeedDegPerDay": 1.2090433622543628,
+          "retrograde": false,
+          "sign": "sagittarius",
+          "degreeInSign": 1.5652329403620513,
+          "house": 4
+        },
+        {
+          "body": "mars",
+          "longitudeDeg": 327.96389907790285,
+          "longitudeSpeedDegPerDay": 0.7756789611369186,
+          "retrograde": false,
+          "sign": "aquarius",
+          "degreeInSign": 27.963899077902852,
+          "house": 7
+        },
+        {
+          "body": "jupiter",
+          "longitudeDeg": 25.254199844874247,
+          "longitudeSpeedDegPerDay": 0.04075534796488256,
+          "retrograde": false,
+          "sign": "aries",
+          "degreeInSign": 25.254199844874247,
+          "house": 9
+        },
+        {
+          "body": "saturn",
+          "longitudeDeg": 40.3961241371784,
+          "longitudeSpeedDegPerDay": -0.01993908108886444,
+          "retrograde": true,
+          "sign": "taurus",
+          "degreeInSign": 10.396124137178397,
+          "house": 9
+        },
+        {
+          "body": "uranus",
+          "longitudeDeg": 314.8061046271607,
+          "longitudeSpeedDegPerDay": 0.050345772481250606,
+          "retrograde": false,
+          "sign": "aquarius",
+          "degreeInSign": 14.806104627160721,
+          "house": 6
+        },
+        {
+          "body": "neptune",
+          "longitudeDeg": 303.1954420594734,
+          "longitudeSpeedDegPerDay": 0.03557127206079258,
+          "retrograde": false,
+          "sign": "aquarius",
+          "degreeInSign": 3.1954420594734074,
+          "house": 6
+        },
+        {
+          "body": "pluto",
+          "longitudeDeg": 251.4547351599136,
+          "longitudeSpeedDegPerDay": 0.03515379854093226,
+          "retrograde": false,
+          "sign": "sagittarius",
+          "degreeInSign": 11.45473515991361,
+          "house": 4
+        }
+      ],
+      "ascendant": {
+        "longitudeDeg": 138.93295329253047,
+        "sign": "leo",
+        "degreeInSign": 18.93295329253047
+      },
+      "midheaven": {
+        "longitudeDeg": 44.37604610722176,
+        "sign": "taurus",
+        "degreeInSign": 14.376046107221761
+      },
+      "houses": [
+        {
+          "house": 1,
+          "longitudeDeg": 138.93295329253047,
+          "sign": "leo",
+          "degreeInSign": 18.93295329253047
+        },
+        {
+          "house": 2,
+          "longitudeDeg": 163.27356476002728,
+          "sign": "virgo",
+          "degreeInSign": 13.273564760027284
+        },
+        {
+          "house": 3,
+          "longitudeDeg": 191.91905058682846,
+          "sign": "libra",
+          "degreeInSign": 11.919050586828462
+        },
+        {
+          "house": 4,
+          "longitudeDeg": 224.37604610722175,
+          "sign": "scorpio",
+          "degreeInSign": 14.376046107221754
+        },
+        {
+          "house": 5,
+          "longitudeDeg": 257.9084131728172,
+          "sign": "sagittarius",
+          "degreeInSign": 17.908413172817177
+        },
+        {
+          "house": 6,
+          "longitudeDeg": 289.7382413999155,
+          "sign": "capricorn",
+          "degreeInSign": 19.738241399915523
+        },
+        {
+          "house": 7,
+          "longitudeDeg": 318.93295329253044,
+          "sign": "aquarius",
+          "degreeInSign": 18.932953292530442
+        },
+        {
+          "house": 8,
+          "longitudeDeg": 343.27356476002734,
+          "sign": "pisces",
+          "degreeInSign": 13.273564760027341
+        },
+        {
+          "house": 9,
+          "longitudeDeg": 11.919050586828448,
+          "sign": "aries",
+          "degreeInSign": 11.919050586828448
+        },
+        {
+          "house": 10,
+          "longitudeDeg": 44.37604610722176,
+          "sign": "taurus",
+          "degreeInSign": 14.376046107221761
+        },
+        {
+          "house": 11,
+          "longitudeDeg": 77.90841317281715,
+          "sign": "gemini",
+          "degreeInSign": 17.90841317281715
+        },
+        {
+          "house": 12,
+          "longitudeDeg": 109.73824139991554,
+          "sign": "cancer",
+          "degreeInSign": 19.738241399915537
+        }
+      ],
+      "aspects": [
+        {
+          "first": "sun",
+          "second": "moon",
+          "type": "sextile",
+          "exactAngleDeg": 60,
+          "separationDeg": 57.04484751234435,
+          "orbDeg": 2.9551524876556527,
+          "maxOrbDeg": 4
+        },
+        {
+          "first": "sun",
+          "second": "saturn",
+          "type": "trine",
+          "exactAngleDeg": 120,
+          "separationDeg": 120.02738549735989,
+          "orbDeg": 0.027385497359887268,
+          "maxOrbDeg": 6
+        },
+        {
+          "first": "moon",
+          "second": "saturn",
+          "type": "opposition",
+          "exactAngleDeg": 180,
+          "separationDeg": 177.07223300970423,
+          "orbDeg": 2.9277669902957655,
+          "maxOrbDeg": 8
+        },
+        {
+          "first": "moon",
+          "second": "uranus",
+          "type": "square",
+          "exactAngleDeg": 90,
+          "separationDeg": 91.48221349968657,
+          "orbDeg": 1.4822134996865657,
+          "maxOrbDeg": 6
+        },
+        {
+          "first": "mercury",
+          "second": "mars",
+          "type": "sextile",
+          "exactAngleDeg": 60,
+          "separationDeg": 56.074987011439816,
+          "orbDeg": 3.9250129885601837,
+          "maxOrbDeg": 4
+        },
+        {
+          "first": "venus",
+          "second": "mars",
+          "type": "square",
+          "exactAngleDeg": 90,
+          "separationDeg": 86.3986661375408,
+          "orbDeg": 3.6013338624591995,
+          "maxOrbDeg": 6
+        },
+        {
+          "first": "venus",
+          "second": "neptune",
+          "type": "sextile",
+          "exactAngleDeg": 60,
+          "separationDeg": 61.630209119111356,
+          "orbDeg": 1.6302091191113561,
+          "maxOrbDeg": 4
+        },
+        {
+          "first": "mars",
+          "second": "jupiter",
+          "type": "sextile",
+          "exactAngleDeg": 60,
+          "separationDeg": 57.29030076697137,
+          "orbDeg": 2.70969923302863,
+          "maxOrbDeg": 4
+        },
+        {
+          "first": "saturn",
+          "second": "uranus",
+          "type": "square",
+          "exactAngleDeg": 90,
+          "separationDeg": 85.59001951001767,
+          "orbDeg": 4.409980489982331,
+          "maxOrbDeg": 6
+        },
+        {
+          "first": "uranus",
+          "second": "pluto",
+          "type": "sextile",
+          "exactAngleDeg": 60,
+          "separationDeg": 63.35136946724708,
+          "orbDeg": 3.351369467247082,
+          "maxOrbDeg": 4
+        }
+      ]
+    }
+  },
+  {
+    "caseId": "B",
+    "label": "1997/08/30 09:30，上海市",
+    "requestedInput": {
+      "calendarType": "solar",
+      "rawBirthDate": "1997/08/30",
+      "lunarLeapMonth": false,
+      "rawBirthTime": "09:30",
+      "timeAccuracy": "exact_minute",
+      "birthLocation": {
+        "canonicalName": "上海市",
+        "province": "上海市",
+        "city": "上海市",
+        "latitude": 31.22222,
+        "longitude": 121.45806,
+        "ianaTimeZone": "Asia/Shanghai",
+        "coordinateSource": "GeoNames CN country dump",
+        "coordinateDataVersion": "geonames-cn-2026-07-14-7b90b81d1b61",
+        "userConfirmed": true
+      }
+    },
+    "result": {
+      "ok": true,
+      "precision": "exact",
+      "engine": "astronomy-engine",
+      "engineVersion": "2.1.19",
+      "adapterVersion": "astrology-product-adapter-1.0.0",
+      "ruleVersion": "cn-v1-tropical-geocentric-true-ecliptic-placidus-1.0.0",
+      "coordinateDataVersion": "geonames-cn-2026-07-14-7b90b81d1b61",
+      "calculatedAt": "2026-07-14T09:30:19.883Z",
+      "settings": {
+        "timezone": "Asia/Shanghai",
+        "zodiac": "tropical",
+        "center": "geocentric",
+        "ecliptic": "true-of-date",
+        "houseSystem": "placidus"
+      },
+      "normalizedInput": {
+        "sourceCalendar": "solar",
+        "sourceDate": {
+          "year": 1997,
+          "month": 8,
+          "day": 30
+        },
+        "solarDate": {
+          "year": 1997,
+          "month": 8,
+          "day": 30
+        },
+        "timeKnown": true,
+        "localTime": {
+          "hour": 9,
+          "minute": 30,
+          "precision": "minute"
+        },
+        "timezone": "Asia/Shanghai",
+        "location": {
+          "canonicalName": "上海市",
+          "province": "上海市",
+          "city": "上海市",
+          "latitude": 31.22222,
+          "longitude": 121.45806,
+          "ianaTimeZone": "Asia/Shanghai",
+          "coordinateSource": "GeoNames CN country dump",
+          "coordinateDataVersion": "geonames-cn-2026-07-14-7b90b81d1b61",
+          "userConfirmed": true
+        },
+        "utcDateTime": "1997-08-30T01:30:00.000Z"
+      },
+      "warnings": [],
+      "planets": [
+        {
+          "body": "sun",
+          "longitudeDeg": 156.72412546118719,
+          "longitudeSpeedDegPerDay": 0.9670308199474675,
+          "retrograde": false,
+          "sign": "virgo",
+          "degreeInSign": 6.724125461187185,
+          "house": 11
+        },
+        {
+          "body": "moon",
+          "longitudeDeg": 124.63673603296867,
+          "longitudeSpeedDegPerDay": 12.079249885699141,
+          "retrograde": false,
+          "sign": "leo",
+          "degreeInSign": 4.63673603296867,
+          "house": 10
+        },
+        {
+          "body": "mercury",
+          "longitudeDeg": 159.59869473623058,
+          "longitudeSpeedDegPerDay": -0.9346085126338721,
+          "retrograde": true,
+          "sign": "virgo",
+          "degreeInSign": 9.598694736230584,
+          "house": 11
+        },
+        {
+          "body": "venus",
+          "longitudeDeg": 194.7403383909614,
+          "longitudeSpeedDegPerDay": 1.1777723611217539,
+          "retrograde": false,
+          "sign": "libra",
+          "degreeInSign": 14.740338390961398,
+          "house": 12
+        },
+        {
+          "body": "mars",
+          "longitudeDeg": 219.89641178410608,
+          "longitudeSpeedDegPerDay": 0.6463005014364853,
+          "retrograde": false,
+          "sign": "scorpio",
+          "degreeInSign": 9.896411784106078,
+          "house": 1
+        },
+        {
+          "body": "jupiter",
+          "longitudeDeg": 314.45808948029054,
+          "longitudeSpeedDegPerDay": -0.1112522278515371,
+          "retrograde": true,
+          "sign": "aquarius",
+          "degreeInSign": 14.458089480290539,
+          "house": 4
+        },
+        {
+          "body": "saturn",
+          "longitudeDeg": 19.68678969733914,
+          "longitudeSpeedDegPerDay": -0.0461665678068357,
+          "retrograde": true,
+          "sign": "aries",
+          "degreeInSign": 19.68678969733914,
+          "house": 6
+        },
+        {
+          "body": "uranus",
+          "longitudeDeg": 305.5268606617397,
+          "longitudeSpeedDegPerDay": -0.03219270192857948,
+          "retrograde": true,
+          "sign": "aquarius",
+          "degreeInSign": 5.526860661739704,
+          "house": 4
+        },
+        {
+          "body": "neptune",
+          "longitudeDeg": 297.59653371977805,
+          "longitudeSpeedDegPerDay": -0.019416216387071472,
+          "retrograde": true,
+          "sign": "capricorn",
+          "degreeInSign": 27.59653371977805,
+          "house": 3
+        },
+        {
+          "body": "pluto",
+          "longitudeDeg": 242.90547859007228,
+          "longitudeSpeedDegPerDay": 0.009296080278318186,
+          "retrograde": false,
+          "sign": "sagittarius",
+          "degreeInSign": 2.9054785900722777,
+          "house": 2
+        }
+      ],
+      "ascendant": {
+        "longitudeDeg": 207.67969981300575,
+        "sign": "libra",
+        "degreeInSign": 27.679699813005755
+      },
+      "midheaven": {
+        "longitudeDeg": 120.06077786828507,
+        "sign": "leo",
+        "degreeInSign": 0.060777868285072145
+      },
+      "houses": [
+        {
+          "house": 1,
+          "longitudeDeg": 207.67969981300575,
+          "sign": "libra",
+          "degreeInSign": 27.679699813005755
+        },
+        {
+          "house": 2,
+          "longitudeDeg": 236.36649855852798,
+          "sign": "scorpio",
+          "degreeInSign": 26.36649855852798
+        },
+        {
+          "house": 3,
+          "longitudeDeg": 267.40520291599506,
+          "sign": "sagittarius",
+          "degreeInSign": 27.405202915995062
+        },
+        {
+          "house": 4,
+          "longitudeDeg": 300.0607778682851,
+          "sign": "aquarius",
+          "degreeInSign": 0.060777868285072145
+        },
+        {
+          "house": 5,
+          "longitudeDeg": 332.44312057409724,
+          "sign": "pisces",
+          "degreeInSign": 2.443120574097236
+        },
+        {
+          "house": 6,
+          "longitudeDeg": 2.081203147744759,
+          "sign": "aries",
+          "degreeInSign": 2.081203147744759
+        },
+        {
+          "house": 7,
+          "longitudeDeg": 27.679699813005755,
+          "sign": "aries",
+          "degreeInSign": 27.679699813005755
+        },
+        {
+          "house": 8,
+          "longitudeDeg": 56.36649855852798,
+          "sign": "taurus",
+          "degreeInSign": 26.36649855852798
+        },
+        {
+          "house": 9,
+          "longitudeDeg": 87.40520291599508,
+          "sign": "gemini",
+          "degreeInSign": 27.405202915995076
+        },
+        {
+          "house": 10,
+          "longitudeDeg": 120.06077786828507,
+          "sign": "leo",
+          "degreeInSign": 0.060777868285072145
+        },
+        {
+          "house": 11,
+          "longitudeDeg": 152.44312057409724,
+          "sign": "virgo",
+          "degreeInSign": 2.443120574097236
+        },
+        {
+          "house": 12,
+          "longitudeDeg": 182.08120314774473,
+          "sign": "libra",
+          "degreeInSign": 2.0812031477447306
+        }
+      ],
+      "aspects": [
+        {
+          "first": "sun",
+          "second": "mercury",
+          "type": "conjunction",
+          "exactAngleDeg": 0,
+          "separationDeg": 2.874569275043399,
+          "orbDeg": 2.874569275043399,
+          "maxOrbDeg": 8
+        },
+        {
+          "first": "sun",
+          "second": "mars",
+          "type": "sextile",
+          "exactAngleDeg": 60,
+          "separationDeg": 63.17228632291889,
+          "orbDeg": 3.172286322918893,
+          "maxOrbDeg": 4
+        },
+        {
+          "first": "sun",
+          "second": "pluto",
+          "type": "square",
+          "exactAngleDeg": 90,
+          "separationDeg": 86.18135312888509,
+          "orbDeg": 3.8186468711149075,
+          "maxOrbDeg": 6
+        },
+        {
+          "first": "moon",
+          "second": "mars",
+          "type": "square",
+          "exactAngleDeg": 90,
+          "separationDeg": 95.25967575113741,
+          "orbDeg": 5.259675751137408,
+          "maxOrbDeg": 6
+        },
+        {
+          "first": "moon",
+          "second": "uranus",
+          "type": "opposition",
+          "exactAngleDeg": 180,
+          "separationDeg": 179.10987537122895,
+          "orbDeg": 0.8901246287710478,
+          "maxOrbDeg": 8
+        },
+        {
+          "first": "moon",
+          "second": "neptune",
+          "type": "opposition",
+          "exactAngleDeg": 180,
+          "separationDeg": 172.9597976868094,
+          "orbDeg": 7.040202313190605,
+          "maxOrbDeg": 8
+        },
+        {
+          "first": "moon",
+          "second": "pluto",
+          "type": "trine",
+          "exactAngleDeg": 120,
+          "separationDeg": 118.26874255710361,
+          "orbDeg": 1.7312574428963927,
+          "maxOrbDeg": 6
+        },
+        {
+          "first": "mercury",
+          "second": "mars",
+          "type": "sextile",
+          "exactAngleDeg": 60,
+          "separationDeg": 60.297717047875494,
+          "orbDeg": 0.29771704787549425,
+          "maxOrbDeg": 4
+        },
+        {
+          "first": "venus",
+          "second": "jupiter",
+          "type": "trine",
+          "exactAngleDeg": 120,
+          "separationDeg": 119.71775108932914,
+          "orbDeg": 0.2822489106708588,
+          "maxOrbDeg": 6
+        },
+        {
+          "first": "venus",
+          "second": "saturn",
+          "type": "opposition",
+          "exactAngleDeg": 180,
+          "separationDeg": 175.05354869362225,
+          "orbDeg": 4.946451306377753,
+          "maxOrbDeg": 8
+        },
+        {
+          "first": "mars",
+          "second": "jupiter",
+          "type": "square",
+          "exactAngleDeg": 90,
+          "separationDeg": 94.56167769618446,
+          "orbDeg": 4.561677696184461,
+          "maxOrbDeg": 6
+        },
+        {
+          "first": "mars",
+          "second": "uranus",
+          "type": "square",
+          "exactAngleDeg": 90,
+          "separationDeg": 85.63044887763363,
+          "orbDeg": 4.369551122366374,
+          "maxOrbDeg": 6
+        },
+        {
+          "first": "uranus",
+          "second": "neptune",
+          "type": "conjunction",
+          "exactAngleDeg": 0,
+          "separationDeg": 7.930326941961653,
+          "orbDeg": 7.930326941961653,
+          "maxOrbDeg": 8
+        },
+        {
+          "first": "uranus",
+          "second": "pluto",
+          "type": "sextile",
+          "exactAngleDeg": 60,
+          "separationDeg": 62.621382071667426,
+          "orbDeg": 2.6213820716674263,
+          "maxOrbDeg": 4
+        }
+      ]
+    }
+  },
+  {
+    "caseId": "C",
+    "label": "2000/01/03，出生时间未知，上海市",
+    "requestedInput": {
+      "calendarType": "solar",
+      "rawBirthDate": "2000/01/03",
+      "lunarLeapMonth": false,
+      "timeAccuracy": "unknown",
+      "birthLocation": {
+        "canonicalName": "上海市",
+        "province": "上海市",
+        "city": "上海市",
+        "latitude": 31.22222,
+        "longitude": 121.45806,
+        "ianaTimeZone": "Asia/Shanghai",
+        "coordinateSource": "GeoNames CN country dump",
+        "coordinateDataVersion": "geonames-cn-2026-07-14-7b90b81d1b61",
+        "userConfirmed": true
+      }
+    },
+    "result": {
+      "ok": true,
+      "precision": "day-range",
+      "engine": "astronomy-engine",
+      "engineVersion": "2.1.19",
+      "adapterVersion": "astrology-product-adapter-1.0.0",
+      "ruleVersion": "cn-v1-tropical-geocentric-true-ecliptic-placidus-1.0.0",
+      "coordinateDataVersion": "geonames-cn-2026-07-14-7b90b81d1b61",
+      "calculatedAt": "2026-07-14T09:30:19.883Z",
+      "settings": {
+        "timezone": "Asia/Shanghai",
+        "zodiac": "tropical",
+        "center": "geocentric",
+        "ecliptic": "true-of-date",
+        "houseSystem": "placidus"
+      },
+      "normalizedInput": {
+        "sourceCalendar": "solar",
+        "sourceDate": {
+          "year": 2000,
+          "month": 1,
+          "day": 3
+        },
+        "solarDate": {
+          "year": 2000,
+          "month": 1,
+          "day": 3
+        },
+        "timeKnown": false,
+        "timezone": "Asia/Shanghai",
+        "location": {
+          "canonicalName": "上海市",
+          "province": "上海市",
+          "city": "上海市",
+          "latitude": 31.22222,
+          "longitude": 121.45806,
+          "ianaTimeZone": "Asia/Shanghai",
+          "coordinateSource": "GeoNames CN country dump",
+          "coordinateDataVersion": "geonames-cn-2026-07-14-7b90b81d1b61",
+          "userConfirmed": true
+        },
+        "utcDayInterval": {
+          "start": "2000-01-02T16:00:00.000Z",
+          "endExclusive": "2000-01-03T16:00:00.000Z"
+        }
+      },
+      "warnings": [
+        "出生时间未知：仅按完整自然日计算行星星座与度数范围，不生成单一精确度数、ASC、MC、宫头、落宫或精确相位。"
+      ],
+      "planetRanges": [
+        {
+          "body": "sun",
+          "signCandidates": [
+            "capricorn"
+          ],
+          "signAmbiguous": false,
+          "degreeInSignRange": {
+            "min": 11.55814663503537,
+            "max": 12.577734185035354
+          },
+          "longitudeStartDeg": 281.55814663503537,
+          "longitudeEndDeg": 282.57773418503535,
+          "motionStatus": "direct"
+        },
+        {
+          "body": "moon",
+          "signCandidates": [
+            "scorpio",
+            "sagittarius"
+          ],
+          "signAmbiguous": true,
+          "longitudeStartDeg": 237.26366821256585,
+          "longitudeEndDeg": 249.1189002698191,
+          "motionStatus": "direct"
+        },
+        {
+          "body": "mercury",
+          "signCandidates": [
+            "capricorn"
+          ],
+          "signAmbiguous": false,
+          "degreeInSignRange": {
+            "min": 3.7082699632933895,
+            "max": 5.273706935456744
+          },
+          "longitudeStartDeg": 273.7082699632934,
+          "longitudeEndDeg": 275.27370693545674,
+          "motionStatus": "direct"
+        },
+        {
+          "body": "venus",
+          "signCandidates": [
+            "sagittarius"
+          ],
+          "signAmbiguous": false,
+          "degreeInSignRange": {
+            "min": 2.9765535935750336,
+            "max": 4.187444988910613
+          },
+          "longitudeStartDeg": 242.97655359357503,
+          "longitudeEndDeg": 244.1874449889106,
+          "motionStatus": "direct"
+        },
+        {
+          "body": "mars",
+          "signCandidates": [
+            "aquarius"
+          ],
+          "signAmbiguous": false,
+          "degreeInSignRange": {
+            "min": 28.8688786614656,
+            "max": 29.644594796626848
+          },
+          "longitudeStartDeg": 328.8688786614656,
+          "longitudeEndDeg": 329.64459479662685,
+          "motionStatus": "direct"
+        },
+        {
+          "body": "jupiter",
+          "signCandidates": [
+            "aries"
+          ],
+          "signAmbiguous": false,
+          "degreeInSignRange": {
+            "min": 25.304046241679316,
+            "max": 25.35041718762426
+          },
+          "longitudeStartDeg": 25.304046241679316,
+          "longitudeEndDeg": 25.35041718762426,
+          "motionStatus": "direct"
+        },
+        {
+          "body": "saturn",
+          "signCandidates": [
+            "taurus"
+          ],
+          "signAmbiguous": false,
+          "degreeInSignRange": {
+            "min": 10.35724322168626,
+            "max": 10.374112170181519
+          },
+          "longitudeStartDeg": 40.37411217018152,
+          "longitudeEndDeg": 40.35724322168626,
+          "motionStatus": "retrograde"
+        },
+        {
+          "body": "uranus",
+          "signCandidates": [
+            "aquarius"
+          ],
+          "signAmbiguous": false,
+          "degreeInSignRange": {
+            "min": 14.865144158195278,
+            "max": 14.916221778977501
+          },
+          "longitudeStartDeg": 314.8651441581953,
+          "longitudeEndDeg": 314.9162217789775,
+          "motionStatus": "direct"
+        },
+        {
+          "body": "neptune",
+          "signCandidates": [
+            "aquarius"
+          ],
+          "signAmbiguous": false,
+          "degreeInSignRange": {
+            "min": 3.2370903733155387,
+            "max": 3.2730177911469696
+          },
+          "longitudeStartDeg": 303.23709037331554,
+          "longitudeEndDeg": 303.27301779114697,
+          "motionStatus": "direct"
+        },
+        {
+          "body": "pluto",
+          "signCandidates": [
+            "sagittarius"
+          ],
+          "signAmbiguous": false,
+          "degreeInSignRange": {
+            "min": 11.495580277635213,
+            "max": 11.530315569693357
+          },
+          "longitudeStartDeg": 251.4955802776352,
+          "longitudeEndDeg": 251.53031556969336,
+          "motionStatus": "direct"
+        }
+      ]
+    }
+  }
+]

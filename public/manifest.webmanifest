@@ -1,0 +1,13 @@
+{
+  "name": "加点好运",
+  "short_name": "加点好运",
+  "description": "命盘、起卦与结果复盘",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f7f8fb",
+  "theme_color": "#f7f8fb",
+  "lang": "zh-CN",
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

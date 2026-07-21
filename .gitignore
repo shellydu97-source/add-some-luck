@@ -1,0 +1,15 @@
+node_modules/
+dist/
+coverage/
+.wrangler/
+.env
+.env.*
+!.env.example
+*.log
+*.tmp
+*.zip
+*.tar.gz
+.DS_Store
+.vercel/
+
+.vercel

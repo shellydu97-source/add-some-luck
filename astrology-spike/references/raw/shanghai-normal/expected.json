@@ -1,0 +1,117 @@
+{
+  "sample": {
+    "id": "shanghai-normal",
+    "purpose": [
+      "上海",
+      "普通时间",
+      "宫位跨0度"
+    ],
+    "city": "上海市",
+    "localDateTime": "2000-01-01T20:00:00+08:00",
+    "utcDateTime": "2000-01-01T12:00:00.000Z",
+    "latitude": 31.22222,
+    "longitude": 121.45806
+  },
+  "swetest": {
+    "planets": {
+      "sun": {
+        "longitudeDeg": 280.3689197,
+        "speedDegPerDay": 1.0194321
+      },
+      "moon": {
+        "longitudeDeg": 223.3237754,
+        "speedDegPerDay": 12.0211827
+      },
+      "mercury": {
+        "longitudeDeg": 271.889275,
+        "speedDegPerDay": 1.5562541
+      },
+      "venus": {
+        "longitudeDeg": 241.5657983,
+        "speedDegPerDay": 1.2090397
+      },
+      "mars": {
+        "longitudeDeg": 327.9633133,
+        "speedDegPerDay": 0.7756728
+      },
+      "jupiter": {
+        "longitudeDeg": 25.2530303,
+        "speedDegPerDay": 0.0407613
+      },
+      "saturn": {
+        "longitudeDeg": 40.395639,
+        "speedDegPerDay": -0.0199448
+      },
+      "uranus": {
+        "longitudeDeg": 314.8092232,
+        "speedDegPerDay": 0.0503436
+      },
+      "neptune": {
+        "longitudeDeg": 303.1929812,
+        "speedDegPerDay": 0.0355701
+      },
+      "pluto": {
+        "longitudeDeg": 251.4547088,
+        "speedDegPerDay": 0.0351529
+      }
+    },
+    "houses": [
+      138.9329762,
+      163.2735904,
+      191.9190782,
+      224.3760735,
+      257.9084385,
+      289.7382651,
+      318.9329762,
+      343.2735904,
+      11.9190782,
+      44.3760735,
+      77.9084385,
+      109.7382651
+    ],
+    "ascendant": 138.9329762,
+    "midheaven": 44.3760735
+  },
+  "astrologMatrix": {
+    "houses": [
+      138.9363888888889,
+      163.27694444444447,
+      191.92277777777778,
+      224.38,
+      257.91249999999997,
+      289.74194444444447,
+      318.93638888888887,
+      343.27694444444444,
+      11.922777777777776,
+      44.38,
+      77.91250000000001,
+      109.74194444444444
+    ],
+    "ascendant": 138.9363888888889,
+    "midheaven": 44.38,
+    "bodyHouses": {
+      "Sun": 5,
+      "Moon": 3,
+      "Merc": 5,
+      "Venu": 4,
+      "Mars": 7,
+      "Jupi": 9,
+      "Satu": 9,
+      "Uran": 6,
+      "Nept": 6,
+      "Plut": 4
+    }
+  },
+  "jplHorizons": {
+    "sun": 280.3689092,
+    "moon": 223.323786,
+    "mercury": 271.8892699,
+    "venus": 241.5657794,
+    "mars": 327.9632921,
+    "jupiter": 25.2530685,
+    "saturn": 40.3956366,
+    "uranus": 314.809168,
+    "neptune": 303.1930007,
+    "pluto": 251.4547644
+  }
+}

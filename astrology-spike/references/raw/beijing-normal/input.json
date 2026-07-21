@@ -1,0 +1,13 @@
+{
+  "id": "beijing-normal",
+  "purpose": [
+    "北京",
+    "普通时间"
+  ],
+  "city": "北京市",
+  "localDateTime": "1990-06-15T08:30:00+08:00",
+  "utcDateTime": "1990-06-15T00:30:00.000Z",
+  "latitude": 39.9075,
+  "longitude": 116.39723,
+  "fixedTimezone": "Asia/Shanghai"
+}

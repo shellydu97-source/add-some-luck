@@ -1,0 +1,39 @@
+{
+  "testedAt": "2026-07-15T06:41:29.025Z",
+  "baseUrl": "http://127.0.0.1:4174",
+  "ritualSpeedConstant": 264,
+  "ritualMotionDistanceIn500ms": 131.99998,
+  "ritualMotionBefore": {
+    "cursor": 0,
+    "offset": 57.1914,
+    "distance": 57.1914,
+    "transform": "translate3d(-57.1914px, 0px, 0px)"
+  },
+  "ritualMotionAfter": {
+    "cursor": 2,
+    "offset": 5.19138,
+    "distance": 189.19138,
+    "transform": "translate3d(-5.19138px, 0px, 0px)"
+  },
+  "ritualPauseLocked": true,
+  "threeCardSectionsPresent": true,
+  "fiveCardSectionsPresent": true,
+  "noMovingState": {
+    "originalHeadings": [
+      "第 63 卦 · 水火既济"
+    ],
+    "hasArrow": false,
+    "hasNoMovingMessage": true
+  },
+  "liuyaoMultipleMovingLines": [
+    1,
+    4,
+    6
+  ],
+  "tarotThreeCopyCharacters": 1314,
+  "tarotFiveCopyCharacters": 2011,
+  "liuyaoCopyCharacters": 3079,
+  "desktopOverflow": 0,
+  "mobileOverflow": 0,
+  "browserErrors": []
+}

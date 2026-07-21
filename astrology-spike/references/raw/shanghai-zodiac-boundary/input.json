@@ -1,0 +1,13 @@
+{
+  "id": "shanghai-zodiac-boundary",
+  "purpose": [
+    "星座边界",
+    "太阳约30度"
+  ],
+  "city": "上海市",
+  "localDateTime": "2024-04-19T21:59:55+08:00",
+  "utcDateTime": "2024-04-19T13:59:55.000Z",
+  "latitude": 31.22222,
+  "longitude": 121.45806,
+  "fixedTimezone": "Asia/Shanghai"
+}

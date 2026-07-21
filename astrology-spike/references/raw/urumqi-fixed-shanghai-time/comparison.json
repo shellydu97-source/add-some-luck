@@ -1,0 +1,129 @@
+{
+  "sampleId": "urumqi-fixed-shanghai-time",
+  "planetErrors": {
+    "sun": {
+      "swetestArcMinutes": 0.013003844360355288,
+      "horizonsArcMinutes": 0.011959844364355376,
+      "retrogradeMatchesSwetest": true
+    },
+    "moon": {
+      "swetestArcMinutes": 0.002336389015908935,
+      "horizonsArcMinutes": 0.005019610980525613,
+      "retrogradeMatchesSwetest": true
+    },
+    "mercury": {
+      "swetestArcMinutes": 0.007026571774986223,
+      "horizonsArcMinutes": 0.006060571779471502,
+      "retrogradeMatchesSwetest": true
+    },
+    "venus": {
+      "swetestArcMinutes": 0.029069965114558727,
+      "horizonsArcMinutes": 0.03011396511737985,
+      "retrogradeMatchesSwetest": true
+    },
+    "mars": {
+      "swetestArcMinutes": 0.019025867031814414,
+      "horizonsArcMinutes": 0.018983867032602575,
+      "retrogradeMatchesSwetest": true
+    },
+    "jupiter": {
+      "swetestArcMinutes": 0.003079672492276586,
+      "horizonsArcMinutes": 0.005713672494493949,
+      "retrogradeMatchesSwetest": true
+    },
+    "saturn": {
+      "swetestArcMinutes": 0.03153966462377866,
+      "horizonsArcMinutes": 0.030351664622685348,
+      "retrogradeMatchesSwetest": true
+    },
+    "uranus": {
+      "swetestArcMinutes": 0.030480356085718086,
+      "horizonsArcMinutes": 0.027408356083924446,
+      "retrogradeMatchesSwetest": true
+    },
+    "neptune": {
+      "swetestArcMinutes": 0.22170269250182173,
+      "horizonsArcMinutes": 0.21948869249854397,
+      "retrogradeMatchesSwetest": true
+    },
+    "pluto": {
+      "swetestArcMinutes": 0.033547782200002985,
+      "horizonsArcMinutes": 0.046141782204358606,
+      "retrogradeMatchesSwetest": true
+    }
+  },
+  "angleErrors": {
+    "ascendantSwetestArcMinutes": 0.0006021589729243715,
+    "midheavenSwetestArcMinutes": 0.0010602367410683655,
+    "ascendantAstrologMatrixArcMinutes": 0.010300158969585027,
+    "midheavenAstrologMatrixArcMinutes": 0.07721976325228752
+  },
+  "cuspErrors": [
+    {
+      "house": 1,
+      "swetestArcMinutes": 0.0006021589729243715,
+      "astrologMatrixArcMinutes": 0.010300158969585027
+    },
+    {
+      "house": 2,
+      "swetestArcMinutes": 0.0008073062167568423,
+      "astrologMatrixArcMinutes": 0.054627360452741414
+    },
+    {
+      "house": 3,
+      "swetestArcMinutes": 0.0009912658401844965,
+      "astrologMatrixArcMinutes": 0.10063740082387085
+    },
+    {
+      "house": 4,
+      "swetestArcMinutes": 0.0010602367410683655,
+      "astrologMatrixArcMinutes": 0.07721976325228752
+    },
+    {
+      "house": 5,
+      "swetestArcMinutes": 0.0009038805842465081,
+      "astrologMatrixArcMinutes": 0.026097452750946104
+    },
+    {
+      "house": 6,
+      "swetestArcMinutes": 0.000670036433803034,
+      "astrologMatrixArcMinutes": 0.01830670309573179
+    },
+    {
+      "house": 7,
+      "swetestArcMinutes": 0.0006021589661031612,
+      "astrologMatrixArcMinutes": 0.010300158969585027
+    },
+    {
+      "house": 8,
+      "swetestArcMinutes": 0.0008073062167568423,
+      "astrologMatrixArcMinutes": 0.054627360452741414
+    },
+    {
+      "house": 9,
+      "swetestArcMinutes": 0.0009912658333632862,
+      "astrologMatrixArcMinutes": 0.10063740082387085
+    },
+    {
+      "house": 10,
+      "swetestArcMinutes": 0.0010602367410683655,
+      "astrologMatrixArcMinutes": 0.07721976325228752
+    },
+    {
+      "house": 11,
+      "swetestArcMinutes": 0.0009038805842465081,
+      "astrologMatrixArcMinutes": 0.026097452750946104
+    },
+    {
+      "house": 12,
+      "swetestArcMinutes": 0.0006700364269818238,
+      "astrologMatrixArcMinutes": 0.01830670309573179
+    }
+  ],
+  "maxima": {
+    "planetVsSwetestArcMinutes": 0.22170269250182173,
+    "planetVsHorizonsArcMinutes": 0.21948869249854397,
+    "anglesAndCuspsVsSwetestArcMinutes": 0.0010602367410683655,
+    "anglesAndCuspsVsAstrologMatrixArcMinutes": 0.10063740082387085
+  }
+}
