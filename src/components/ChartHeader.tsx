@@ -1,5 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom'
 import type { Profile } from '../models/types'
+import { featureFlags } from '../config/features'
 import { useAppStore } from '../storage/store'
 import TopBar from './TopBar'
 import { ConfidenceNote, Segmented } from './UI'
@@ -16,13 +17,13 @@ export default function ChartHeader({ profile, type }: { profile: Profile; type:
       <Link to="/profiles">管理档案</Link>
       <Link to={`/profiles/${profile.id}/edit`}>编辑出生信息</Link>
     </div>
-    <Segmented value={type} options={[{ value: 'bazi', label: '八字' }, { value: 'astrology', label: '星盘' }]} onChange={(next) => navigate(`/charts/${profile.id}/${next}`)} label="命盘类型" />
+    {featureFlags.astrology && <Segmented value={type} options={[{ value: 'bazi', label: '八字' }, { value: 'astrology', label: '星盘' }]} onChange={(next) => navigate(`/charts/${profile.id}/${next}`)} label="命盘类型" />}
     {type === 'bazi' && profile.timeAccuracy !== 'exact_minute' && <ConfidenceNote>
       {profile.timeAccuracy === 'unknown'
         ? '出生时间未知，无法显示时柱和精确起运时间。'
         : '出生时间不够精确，时柱与起运时间仅供参考。'}
     </ConfidenceNote>}
-    {type === 'astrology' && (!profile.birthLocation || profile.timeAccuracy !== 'exact_minute') && <ConfidenceNote>
+    {featureFlags.astrology && type === 'astrology' && (!profile.birthLocation || profile.timeAccuracy !== 'exact_minute') && <ConfidenceNote>
       {!profile.birthLocation
         ? '出生地点尚未选择，请先编辑出生信息。'
         : '出生时间未知或不够精确，无法显示上升、天顶和宫位。'}

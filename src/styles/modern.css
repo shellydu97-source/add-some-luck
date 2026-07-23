@@ -21,7 +21,25 @@
 
 html { background: var(--bg); }
 body { background: radial-gradient(circle at 92% 3%, rgba(21,157,141,.055), transparent 25rem), var(--bg); -webkit-font-smoothing: antialiased; }
+body.splash-active { overflow: hidden; }
 button, input, select, textarea { accent-color: var(--blue); }
+
+.startup-splash { position: fixed; z-index: 1000; inset: 0; display: grid; place-items: center; min-height: 100dvh; overflow: hidden; padding: max(24px, env(safe-area-inset-top)) 24px max(24px, env(safe-area-inset-bottom)); background: #fbfcfe; opacity: 1; transition: opacity .22s ease, visibility .22s ease; }
+.startup-splash.leaving { opacity: 0; visibility: hidden; }
+.startup-splash-orbit { position: absolute; width: min(76vw, 420px); aspect-ratio: 1; right: min(-28vw, -110px); top: min(-18vw, -70px); border-radius: 50%; background: radial-gradient(circle at 36% 40%, rgba(37,105,242,.11), rgba(20,160,143,.07) 46%, transparent 72%); }
+.startup-splash-content { position: relative; z-index: 1; width: min(100%, 420px); display: flex; flex-direction: column; align-items: center; text-align: center; }
+.startup-splash-content img { width: 68px; height: 68px; object-fit: contain; margin-bottom: 20px; animation: splash-mark-in .52s cubic-bezier(.22,.8,.28,1) both; }
+.startup-splash-content h1 { margin: 0 0 12px; color: var(--ink); font-size: clamp(31px, 9vw, 42px); line-height: 1.1; letter-spacing: -.055em; animation: splash-copy-in .48s .08s ease-out both; }
+.startup-splash-content p { margin: 0; color: #6c7280; font-size: clamp(14px, 4vw, 17px); letter-spacing: .04em; animation: splash-copy-in .48s .14s ease-out both; }
+.startup-splash-progress { width: 76px; height: 3px; margin-top: 34px; overflow: hidden; border-radius: 999px; background: #e7ebf2; }
+.startup-splash-progress i { display: block; width: 100%; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--blue), var(--teal)); transform-origin: left; animation: splash-progress .9s linear both; }
+@keyframes splash-mark-in { from { opacity: 0; transform: translateY(8px) scale(.88); } to { opacity: 1; transform: none; } }
+@keyframes splash-copy-in { from { opacity: 0; transform: translateY(7px); } to { opacity: 1; transform: none; } }
+@keyframes splash-progress { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .startup-splash, .startup-splash-content img, .startup-splash-content h1, .startup-splash-content p, .startup-splash-progress i { animation: none; transition: none; }
+}
 
 .app-shell { background: transparent; }
 .page-container { width: min(100%, 760px); padding: 0 18px 38px; }

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { Navigate, useNavigate, useParams } from 'react-router-dom'
 import DatePicker from '../components/DatePicker'
 import AiReadingPanel from '../components/AiReadingPanel'
 import LiuyaoCoin from '../components/LiuyaoCoin'
@@ -9,6 +9,7 @@ import { accuracyLabels, recordTypeLabels, verificationLabels } from '../models/
 import type { DivinationRecord, VerificationStatus } from '../models/types'
 import { useAppStore } from '../storage/store'
 import { formatDate } from '../utils/text'
+import { isRecordTypeVisible } from '../config/features'
 
 const verificationOptions = Object.entries(verificationLabels) as [VerificationStatus, string][]
 
@@ -80,6 +81,7 @@ export default function RecordDetailPage() {
   const { recordId } = useParams()
   const record = useAppStore((state) => state.records.find((item) => item.id === recordId))
   if (!record) return <><TopBar title="记录详情" back /><EmptyState title="找不到这条记录" action={<LinkButton to="/records">返回记录</LinkButton>}>它可能已被移除，或链接已经失效。</EmptyState></>
+  if (!isRecordTypeVisible(record.type)) return <Navigate to="/records" replace />
   return <RecordDetailContent key={record.id} record={record} />
 }
 

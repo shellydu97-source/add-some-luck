@@ -1,7 +1,9 @@
 import { lazy, Suspense } from 'react'
-import { Navigate, Route, Routes } from 'react-router-dom'
+import { Navigate, Route, Routes, useParams } from 'react-router-dom'
 import AppShell from '../components/AppShell'
+import StartupSplash from '../components/StartupSplash'
 import AccountGate from '../cloud/AccountGate'
+import { featureFlags } from '../config/features'
 import { useAppStore } from '../storage/store'
 import { resolveStartupPath } from './startup'
 
@@ -38,8 +40,14 @@ function StartupRoute() {
   return <Navigate to={resolveStartupPath(profiles.length, lastPrimaryRoute)} replace />
 }
 
+function AstrologyRoute() {
+  const { profileId } = useParams()
+  if (!featureFlags.astrology) return <Navigate to={profileId ? `/charts/${profileId}/bazi` : '/charts'} replace />
+  return <AstrologyPage />
+}
+
 export default function App() {
-  return <Suspense fallback={<div className="route-loading">正在打开页面…</div>}><Routes>
+  return <><StartupSplash /><Suspense fallback={<div className="route-loading">正在打开页面…</div>}><Routes>
     <Route path="account" element={<AccountPage />} />
     <Route element={<AccountGate />}>
       <Route index element={<StartupRoute />} />
@@ -53,7 +61,7 @@ export default function App() {
         <Route path="profiles/new" element={<ProfileFormPage />} />
         <Route path="profiles/:profileId/edit" element={<ProfileFormPage />} />
         <Route path="charts/:profileId/bazi" element={<BaziPage />} />
-        <Route path="charts/:profileId/astrology" element={<AstrologyPage />} />
+        <Route path="charts/:profileId/astrology" element={<AstrologyRoute />} />
         <Route path="divination" element={<DivinationHomePage />} />
         <Route path="divination/liuyao/question" element={<LiuyaoQuestionPage />} />
         <Route path="divination/liuyao/cast" element={<LiuyaoCastPage />} />
@@ -72,5 +80,5 @@ export default function App() {
         <Route path="*" element={<NotFoundPage />} />
       </Route>
     </Route>
-  </Routes></Suspense>
+  </Routes></Suspense></>
 }
