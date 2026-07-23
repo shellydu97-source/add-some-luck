@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 
-const SPLASH_VISIBLE_MS = 900
-const SPLASH_EXIT_MS = 220
+const SPLASH_VISIBLE_MS = 1500
+const SPLASH_EXIT_MS = 260
 
 type SplashPhase = 'visible' | 'leaving' | 'hidden'
 
@@ -30,7 +30,6 @@ export default function StartupSplash() {
       <img src="/brand-mark.png" alt="" aria-hidden="true" />
       <h1>加点好运</h1>
       <p>命运提供线索，人生由你作答</p>
-      <span className="startup-splash-progress" aria-hidden="true"><i /></span>
     </div>
   </div>
 }
