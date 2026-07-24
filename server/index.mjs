@@ -3,8 +3,9 @@ import http from 'node:http'
 import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
-import { buildDeepSeekMessages, PROMPT_VERSION, sanitizeReading, validateAiRequest } from './ai-core.mjs'
+import { PROMPT_VERSION, validateAiRequest } from './ai-core.mjs'
 import { readConfig } from './config.mjs'
+import { requestDeepSeek } from './deepseek-client.mjs'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const dist = path.join(root, 'dist')
@@ -91,55 +92,6 @@ function readJsonBody(request) {
   })
 }
 
-async function requestDeepSeek(input) {
-  const controller = new AbortController()
-  const timeout = setTimeout(() => controller.abort(), 45_000)
-  try {
-    const providerResponse = await fetch(config.apiUrl, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${config.apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: config.model,
-        messages: buildDeepSeekMessages(input),
-        thinking: { type: 'disabled' },
-        response_format: { type: 'json_object' },
-        temperature: input.action === 'followup' ? 0.55 : 0.4,
-        max_tokens: input.action === 'followup' ? 2200 : 3000,
-      }),
-      signal: controller.signal,
-    })
-    const payload = await providerResponse.json().catch(() => ({}))
-    if (!providerResponse.ok) {
-      const detail = payload?.error?.message || `上游服务返回 ${providerResponse.status}`
-      console.error('[deepseek]', detail)
-      throw new Error('智能解读服务暂时无法连接，请稍后重试')
-    }
-    const content = payload?.choices?.[0]?.message?.content
-    if (!content) throw new Error('智能解读没有返回内容')
-    let parsed
-    try { parsed = JSON.parse(content) }
-    catch {
-      console.error('[deepseek] 返回内容不是有效 JSON')
-      throw new Error('智能解读返回异常，请重新生成')
-    }
-    const reading = sanitizeReading(parsed)
-    return {
-      reading,
-      usage: payload.usage ? {
-        promptTokens: payload.usage.prompt_tokens,
-        completionTokens: payload.usage.completion_tokens,
-        totalTokens: payload.usage.total_tokens,
-        cachedTokens: payload.usage.prompt_cache_hit_tokens,
-      } : undefined,
-    }
-  } finally {
-    clearTimeout(timeout)
-  }
-}
-
 async function handleApi(request, response, url) {
   if (request.method === 'GET' && url.pathname === '/api/ai/health') {
     return json(response, 200, { available: Boolean(config.apiKey), provider: 'deepseek' })
@@ -150,7 +102,7 @@ async function handleApi(request, response, url) {
   if (!consumeRateLimit(request)) return json(response, 429, { error: '今天的智能解读使用较多，请稍后再试' })
   try {
     const input = validateAiRequest(await readJsonBody(request))
-    const result = await requestDeepSeek(input)
+    const result = await requestDeepSeek(input, config)
     return json(response, 200, {
       ...result,
       meta: { provider: 'deepseek', model: config.model, promptVersion: PROMPT_VERSION },

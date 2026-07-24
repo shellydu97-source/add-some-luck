@@ -23,11 +23,11 @@ const resultLabels: Record<AiModule, string> = {
   astrology: '本命星盘',
 }
 
-function ReadingContent({ reading }: { reading: AiReading }) {
+function ReadingContent({ reading, expanded = false }: { reading: AiReading; expanded?: boolean }) {
   return <div className="ai-reading-content">
     {reading.directAnswer && <p className="ai-direct-answer">{reading.directAnswer}</p>}
     {reading.summary && <p className="ai-summary">{reading.summary}</p>}
-    {!!reading.sections.length && <details className="ai-reading-details">
+    {!!reading.sections.length && <details className="ai-reading-details" open={expanded}>
       <summary>查看完整分析与依据</summary>
       <div className="ai-section-list">{reading.sections.map((section, index) => <section key={`${section.title}-${index}`}>
         <h3>{section.title}</h3>
@@ -149,7 +149,7 @@ export default function AiReadingPanel({ module, question = '', context, recordI
     {reading && <>
       <ReadingContent reading={reading} />
       {!!reading.suggestedQuestions.length && <div className="ai-suggestions"><span>可以继续问</span>{reading.suggestedQuestions.map((item, index) => <button type="button" key={`${item}-${index}`} onClick={() => askFollowUp(item)} disabled={loading}>{item}</button>)}</div>}
-      {!!messages.length && <div className="chat-list ai-chat-list">{messages.map((message) => <div className={`chat-bubble ${message.role}`} key={message.id}><b>{message.role === 'user' ? '你' : '智能解读'}</b>{message.reading ? <ReadingContent reading={message.reading} /> : <p>{message.content}</p>}</div>)}</div>}
+      {!!messages.length && <div className="chat-list ai-chat-list">{messages.map((message) => <div className={`chat-bubble ${message.role}`} key={message.id}><b>{message.role === 'user' ? '你' : '智能解读'}</b>{message.reading ? <ReadingContent reading={message.reading} expanded /> : <p>{message.content}</p>}</div>)}</div>}
       <div className="follow-up-input"><textarea rows={2} value={followUp} onChange={(event) => setFollowUp(event.target.value)} placeholder="继续问，我会结合刚才的结果回答" /><Button onClick={() => askFollowUp()} disabled={loading || !followUp.trim()}>{loading ? '回答中' : '发送'}</Button></div>
     </>}
     {error && <p className="field-error ai-error">{error}</p>}

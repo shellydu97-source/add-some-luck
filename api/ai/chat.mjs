@@ -1,5 +1,6 @@
-import { buildDeepSeekMessages, PROMPT_VERSION, sanitizeReading, validateAiRequest } from '../../server/ai-core.mjs'
+import { PROMPT_VERSION, validateAiRequest } from '../../server/ai-core.mjs'
 import { readConfig } from '../../server/config.mjs'
+import { requestDeepSeek } from '../../server/deepseek-client.mjs'
 
 const config = readConfig()
 const counters = new Map()
@@ -65,54 +66,6 @@ async function parseRequest(request) {
   }
 }
 
-async function requestDeepSeek(input) {
-  const controller = new AbortController()
-  const timeout = setTimeout(() => controller.abort(), 45_000)
-  try {
-    const providerResponse = await fetch(config.apiUrl, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${config.apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: config.model,
-        messages: buildDeepSeekMessages(input),
-        thinking: { type: 'disabled' },
-        response_format: { type: 'json_object' },
-        temperature: input.action === 'followup' ? 0.55 : 0.4,
-        max_tokens: input.action === 'followup' ? 2200 : 3000,
-      }),
-      signal: controller.signal,
-    })
-    const payload = await providerResponse.json().catch(() => ({}))
-    if (!providerResponse.ok) {
-      console.error('[deepseek]', payload?.error?.message || providerResponse.status)
-      throw new Error('智能解读服务暂时无法连接，请稍后重试')
-    }
-    const content = payload?.choices?.[0]?.message?.content
-    if (!content) throw new Error('智能解读没有返回内容')
-    let parsed
-    try {
-      parsed = JSON.parse(content)
-    } catch {
-      console.error('[deepseek] 返回内容不是有效 JSON')
-      throw new Error('智能解读返回异常，请重新生成')
-    }
-    return {
-      reading: sanitizeReading(parsed),
-      usage: payload.usage ? {
-        promptTokens: payload.usage.prompt_tokens,
-        completionTokens: payload.usage.completion_tokens,
-        totalTokens: payload.usage.total_tokens,
-        cachedTokens: payload.usage.prompt_cache_hit_tokens,
-      } : undefined,
-    }
-  } finally {
-    clearTimeout(timeout)
-  }
-}
-
 export default {
   async fetch(request) {
     if (request.method !== 'POST') return json({ error: '不支持的请求方式' }, 405)
@@ -122,7 +75,7 @@ export default {
 
     try {
       const input = validateAiRequest(await parseRequest(request))
-      const result = await requestDeepSeek(input)
+      const result = await requestDeepSeek(input, config)
       return json({
         ...result,
         meta: { provider: 'deepseek', model: config.model, promptVersion: PROMPT_VERSION },

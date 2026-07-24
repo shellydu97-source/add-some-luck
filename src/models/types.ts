@@ -99,6 +99,7 @@ export interface AiUsageSnapshot {
   completionTokens?: number
   totalTokens?: number
   cachedTokens?: number
+  reasoningTokens?: number
 }
 
 export interface AiInterpretationSnapshot extends AiReading {
