@@ -1,10 +1,6 @@
 import {
-  auditReading,
   buildDeepSeekGenerationOptions,
   buildDeepSeekMessages,
-  buildDeepSeekRevisionMessages,
-  buildDeepSeekRevisionOptions,
-  combineDeepSeekUsage,
   DEEPSEEK_REQUEST_TIMEOUT_MS,
   extractDeepSeekUsage,
   sanitizeReading,
@@ -52,42 +48,12 @@ export async function requestDeepSeek(input, config) {
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), DEEPSEEK_REQUEST_TIMEOUT_MS)
   try {
-    const first = await complete(
+    return await complete(
       buildDeepSeekMessages(input),
-      buildDeepSeekGenerationOptions(input),
+      buildDeepSeekGenerationOptions(),
       config,
       controller.signal,
     )
-    const initialViolations = auditReading(input, first.reading)
-    let revisionReasons = initialViolations.length
-      ? initialViolations
-      : ['执行发布前的事实核对、客观性检查、去重复和口吻优化']
-    if (initialViolations.length) console.warn('[deepseek] 首稿触发质量复核', initialViolations)
-
-    let current = first
-    let combinedUsage = first.usage
-    for (let revisionIndex = 0; revisionIndex < 2; revisionIndex += 1) {
-      const revised = await complete(
-        buildDeepSeekRevisionMessages(input, current.reading, revisionReasons),
-        buildDeepSeekRevisionOptions(),
-        config,
-        controller.signal,
-      )
-      combinedUsage = combineDeepSeekUsage(combinedUsage, revised.usage)
-      const remainingViolations = auditReading(input, revised.reading)
-      if (!remainingViolations.length) {
-        return {
-          reading: revised.reading,
-          usage: combinedUsage,
-        }
-      }
-
-      console.warn(`[deepseek] 第 ${revisionIndex + 1} 次修订仍未通过`, remainingViolations)
-      current = revised
-      revisionReasons = remainingViolations
-    }
-
-    throw new Error('智能解读未通过事实核对，请重新生成')
   } finally {
     clearTimeout(timeout)
   }
