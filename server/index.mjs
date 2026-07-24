@@ -106,8 +106,8 @@ async function requestDeepSeek(input) {
         messages: buildDeepSeekMessages(input),
         thinking: { type: 'disabled' },
         response_format: { type: 'json_object' },
-        temperature: 0.35,
-        max_tokens: input.action === 'followup' ? 1200 : 2000,
+        temperature: input.action === 'followup' ? 0.55 : 0.4,
+        max_tokens: input.action === 'followup' ? 2200 : 3000,
       }),
       signal: controller.signal,
     })

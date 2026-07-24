@@ -10,7 +10,7 @@ import { getSupabaseClient, isCloudAccountConfigured } from './supabaseClient'
 import { CloudAccountContext, type CloudAccountValue, type CloudSyncStatus } from './accountContext'
 
 const CLOUD_META_KEY = 'add-luck-cloud-sync-meta-v1'
-const SYNC_DELAY_MS = 1500
+const SYNC_DELAY_MS = 900
 
 interface RemoteSnapshot {
   payload: AppDataState
@@ -104,10 +104,42 @@ export function CloudAccountProvider({ children }: { children: ReactNode }) {
 
   const pushLocal = useCallback(async (activeClient: SupabaseClient, userId: string) => {
     setSyncStatus('syncing')
-    setSyncMessage('正在保存…')
+    setSyncMessage('正在保存到云端…')
     const result = await writeRemote(activeClient, userId, getLocalData())
     commitSynced(userId, result.dataHash, result.updatedAt)
   }, [commitSynced])
+
+  const reconcileAccountData = useCallback(async (activeClient: SupabaseClient, userId: string) => {
+    setSyncStatus('checking')
+    setSyncMessage('正在读取云端数据…')
+    const local = getLocalData()
+    const localHash = hashAppData(local)
+    const remote = await readRemote(activeClient, userId)
+    const decision = decideInitialSync({
+      userId,
+      local,
+      localHash,
+      remoteHash: remote?.dataHash,
+      meta: readSyncMeta(),
+    })
+
+    if (decision === 'upload') {
+      await pushLocal(activeClient, userId)
+    } else if (decision === 'download' && remote) {
+      applyRemote(remote, userId)
+    } else if (decision === 'merge' && remote) {
+      const merged = mergeAppData(local, remote.payload)
+      applyingRemote.current = true
+      useAppStore.getState().restoreCloudData(merged)
+      applyingRemote.current = false
+      await pushLocal(activeClient, userId)
+    } else if (remote) {
+      commitSynced(userId, remote.dataHash, remote.updatedAt)
+    }
+
+    setConflictRemote(undefined)
+    setSyncReadyUserId(userId)
+  }, [applyRemote, commitSynced, pushLocal])
 
   useEffect(() => {
     if (!isCloudAccountConfigured) return
@@ -147,40 +179,43 @@ export function CloudAccountProvider({ children }: { children: ReactNode }) {
     if (!client || !userId || !hasHydrated || initializedUserId.current === userId) return
     initializedUserId.current = userId
     setSyncStatus('checking')
-    setSyncMessage('正在检查云端数据…')
+    setSyncMessage('正在读取云端数据…')
     void (async () => {
       try {
-        const local = getLocalData()
-        const localHash = hashAppData(local)
-        const remote = await readRemote(client, userId)
-        const decision = decideInitialSync({
-          userId,
-          local,
-          localHash,
-          remoteHash: remote?.dataHash,
-          meta: readSyncMeta(),
-        })
-        if (decision === 'upload') {
-          await pushLocal(client, userId)
-          setSyncReadyUserId(userId)
-        } else if (decision === 'download' && remote) {
-          applyRemote(remote, userId)
-          setSyncReadyUserId(userId)
-        } else if (decision === 'noop' && remote) {
-          commitSynced(userId, remote.dataHash, remote.updatedAt)
-          setSyncReadyUserId(userId)
-        }
-        else if (remote) {
-          setConflictRemote(remote)
-          setSyncStatus('conflict')
-          setSyncMessage('本机和云端都有不同的数据，请选择保留方式。')
-        }
+        await reconcileAccountData(client, userId)
       } catch (cause) {
         setSyncStatus('error')
         setSyncMessage(friendlyCloudError(cause))
       }
     })()
-  }, [applyRemote, client, commitSynced, hasHydrated, pushLocal, session?.user.id])
+  }, [client, hasHydrated, reconcileAccountData, session?.user.id])
+
+  useEffect(() => {
+    const userId = session?.user.id
+    if (!client || !userId || !hasHydrated) return
+    let running = false
+    const refreshFromCloud = () => {
+      if (running || document.visibilityState === 'hidden') return
+      running = true
+      void reconcileAccountData(client, userId)
+        .catch((cause) => {
+          setSyncStatus('error')
+          setSyncMessage(friendlyCloudError(cause))
+        })
+        .finally(() => { running = false })
+    }
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') refreshFromCloud()
+    }
+    window.addEventListener('focus', refreshFromCloud)
+    window.addEventListener('online', refreshFromCloud)
+    document.addEventListener('visibilitychange', onVisibilityChange)
+    return () => {
+      window.removeEventListener('focus', refreshFromCloud)
+      window.removeEventListener('online', refreshFromCloud)
+      document.removeEventListener('visibilitychange', onVisibilityChange)
+    }
+  }, [client, hasHydrated, reconcileAccountData, session?.user.id])
 
   useEffect(() => {
     const userId = session?.user.id
@@ -200,7 +235,7 @@ export function CloudAccountProvider({ children }: { children: ReactNode }) {
         dirty: true,
       })
       setSyncStatus('waiting')
-      setSyncMessage('等待保存…')
+      setSyncMessage('即将自动保存…')
       if (timer) window.clearTimeout(timer)
       timer = window.setTimeout(() => {
         void pushLocal(client, userId).catch((cause) => {
@@ -278,15 +313,14 @@ export function CloudAccountProvider({ children }: { children: ReactNode }) {
   const syncNow = useCallback(async () => {
     if (!client || !accountUserId) return
     try {
-      await pushLocal(client, accountUserId)
-      setSyncReadyUserId(accountUserId)
+      await reconcileAccountData(client, accountUserId)
     }
     catch (cause) {
       setSyncStatus('error')
       setSyncMessage(friendlyCloudError(cause))
       throw cause
     }
-  }, [accountUserId, client, pushLocal])
+  }, [accountUserId, client, reconcileAccountData])
 
   const keepCloudData = useCallback(async () => {
     if (!conflictRemote || !accountUserId) return

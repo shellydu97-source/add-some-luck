@@ -140,7 +140,7 @@ export const useAppStore = create<AppState>()(persist((set, get) => ({
   },
   restoreCloudData: (data) => {
     resetProtectedStorage(STORAGE_KEY)
-    set({ ...clone(data), storageRecovery: undefined, notice: '云端数据已恢复到本机。' })
+    set({ ...clone(data), storageRecovery: undefined, notice: '云端数据已更新。' })
   },
   clearAllData: () => {
     resetProtectedStorage(STORAGE_KEY)

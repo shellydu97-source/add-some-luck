@@ -23,12 +23,12 @@ function friendlyAuthError(cause: unknown) {
 }
 
 function syncStatusLabel(status: ReturnType<typeof useCloudAccount>['syncStatus']) {
-  if (status === 'synced') return '已同步'
-  if (status === 'syncing' || status === 'checking') return '同步中'
-  if (status === 'waiting') return '等待同步'
-  if (status === 'conflict') return '需要确认'
-  if (status === 'error') return '暂未同步'
-  return '仅保存在本机'
+  if (status === 'synced') return '已保存云端'
+  if (status === 'syncing' || status === 'checking') return '自动同步中'
+  if (status === 'waiting') return '即将保存'
+  if (status === 'conflict') return '自动整理中'
+  if (status === 'error') return '等待网络'
+  return '未登录'
 }
 
 function safeNextPath(value: string | null) {
@@ -196,21 +196,12 @@ export default function AccountPage() {
     <Card>
       <SectionHeading title="已登录" side={<span className="chip">{syncStatusLabel(account.syncStatus)}</span>} />
       <p className="account-email">{account.session.user.email}</p>
-      <p className="helper">{account.syncMessage || '人物档案、记录和未完成的起卦流程会自动保存到云端。'}</p>
+      <p className="helper">{account.syncMessage || '人物档案、记录和未完成的起卦流程会自动保存到云端，换设备登录后会自动恢复。'}</p>
       {account.lastSyncedAt && <p className="account-meta">最近同步：{new Date(account.lastSyncedAt).toLocaleString('zh-CN')}</p>}
       {account.syncStatus === 'error' && <Button className="secondary" disabled={busy} onClick={() => void runAccountAction(account.syncNow)}>重新同步</Button>}
       {error && <p className="field-error account-feedback">{error}</p>}
     </Card>
-    {account.hasConflict && <Card className="sync-conflict-card">
-      <SectionHeading title="选择要保留的数据" />
-      <p>这台设备和云端都有不同内容。我们不会自动覆盖，请选择一种处理方式。</p>
-      <div className="settings-actions">
-        <Button disabled={busy} onClick={() => void runAccountAction(account.mergeBoth)}>合并两边的数据</Button>
-        <Button className="secondary" disabled={busy} onClick={() => void runAccountAction(account.keepCloudData)}>使用云端数据</Button>
-        <Button className="secondary" disabled={busy} onClick={() => void runAccountAction(account.keepLocalData)}>使用这台设备的数据</Button>
-      </div>
-    </Card>}
-    <Card><SectionHeading title="数据说明" /><p className="helper">退出登录不会删除这台设备上的数据。下次登录同一账号后可以继续同步。</p></Card>
+    <Card><SectionHeading title="数据说明" /><p className="helper">登录后以云端数据为准。当前设备会保留一份安全缓存，断网时仍可使用；恢复网络或重新打开页面后会自动同步，不需要手动操作。</p></Card>
     <Button className="secondary" disabled={busy} onClick={() => void runAccountAction(async () => { await account.signOut(); clearGuestAccess(); navigate('/account?onboarding=1', { replace: true }) })}>退出登录</Button>
   </AccountFrame>
 
@@ -259,7 +250,7 @@ export default function AccountPage() {
         {mode === 'sign-up' && <p className="helper">我们会向这个邮箱发送一个 6 位验证码，只需验证一次。</p>}
         {error && <p className="field-error account-feedback">{error}</p>}
         {message && <p className="account-success">{message}</p>}
-        <Button type="submit" disabled={busy}>{busy ? '请稍候…' : mode === 'sign-up' ? '获取验证码' : mode === 'reset' ? '获取验证码' : '登录并同步'}</Button>
+        <Button type="submit" disabled={busy}>{busy ? '请稍候…' : mode === 'sign-up' ? '获取验证码' : mode === 'reset' ? '获取验证码' : '登录'}</Button>
       </form>
       <div className="account-secondary-actions">
         {mode === 'sign-in' && <button type="button" onClick={() => switchMode('reset')}>忘记密码</button>}

@@ -1,5 +1,4 @@
 import type { AppDataState, DivinationDraft, Profile, RecordSnapshot } from '../models/types'
-import { hasUserData } from '../storage/appData'
 
 export interface CloudSyncMeta {
   userId: string
@@ -8,7 +7,7 @@ export interface CloudSyncMeta {
   dirty: boolean
 }
 
-export type InitialSyncDecision = 'upload' | 'download' | 'noop' | 'conflict'
+export type InitialSyncDecision = 'upload' | 'download' | 'noop' | 'merge'
 
 function stableSerialize(value: unknown): string {
   if (Array.isArray(value)) return `[${value.map(stableSerialize).join(',')}]`
@@ -38,17 +37,17 @@ export function decideInitialSync(input: {
   remoteHash?: string
   meta?: CloudSyncMeta
 }): InitialSyncDecision {
-  const { userId, local, localHash, remoteHash, meta } = input
+  const { userId, localHash, remoteHash, meta } = input
   if (!remoteHash) return 'upload'
   if (remoteHash === localHash) return 'noop'
 
   if (meta?.userId === userId && meta.lastSyncedHash) {
     if (remoteHash === meta.lastSyncedHash && localHash !== meta.lastSyncedHash) return 'upload'
     if (localHash === meta.lastSyncedHash && remoteHash !== meta.lastSyncedHash) return 'download'
-    return 'conflict'
+    return 'merge'
   }
 
-  return hasUserData(local) ? 'conflict' : 'download'
+  return 'download'
 }
 
 function latestByUpdatedAt<T extends { id: string; updatedAt: string }>(left: T | undefined, right: T) {
@@ -63,9 +62,32 @@ function mergeProfiles(local: Profile[], remote: Profile[]) {
   return [...merged.values()].sort((left, right) => left.createdAt.localeCompare(right.createdAt))
 }
 
+function mergeItemsById<T extends { id: string }>(local: T[] = [], remote: T[] = []) {
+  const merged = new Map(remote.map((item) => [item.id, item]))
+  for (const item of local) merged.set(item.id, item)
+  return [...merged.values()]
+}
+
+function mergeRecord(local: RecordSnapshot, remote: RecordSnapshot): RecordSnapshot {
+  return {
+    ...remote,
+    ...local,
+    verificationDate: local.verificationDate || remote.verificationDate,
+    verificationResult: local.verificationResult || remote.verificationResult,
+    verificationNote: local.verificationNote || remote.verificationNote,
+    notes: local.notes || remote.notes,
+    followUpMessages: mergeItemsById(local.followUpMessages, remote.followUpMessages),
+    aiInterpretations: mergeItemsById(local.aiInterpretations, remote.aiInterpretations),
+    aiMessages: mergeItemsById(local.aiMessages, remote.aiMessages),
+  }
+}
+
 function mergeRecords(local: RecordSnapshot[], remote: RecordSnapshot[]) {
   const merged = new Map(remote.map((record) => [record.id, record]))
-  for (const record of local) merged.set(record.id, record)
+  for (const record of local) {
+    const remoteRecord = merged.get(record.id)
+    merged.set(record.id, remoteRecord ? mergeRecord(record, remoteRecord) : record)
+  }
   return [...merged.values()].sort((left, right) => right.createdAt.localeCompare(left.createdAt))
 }
 

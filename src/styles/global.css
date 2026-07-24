@@ -96,8 +96,8 @@ h1, h2, h3, p { margin-top: 0; }
 .ai-chat-list { margin-top: 17px; padding-top: 13px; border-top: 1px solid var(--line); }
 .ai-chat-list .chat-bubble.assistant { width: 100%; max-width: 100%; }
 .ai-chat-list .chat-bubble.user { max-width: 88%; }
-.ai-chat-list .ai-direct-answer { font-size: 13px; line-height: 1.7; }
-.ai-chat-list .ai-summary, .ai-chat-list .ai-advice, .ai-chat-list .ai-reading-details { display: none; }
+.ai-chat-list .ai-direct-answer { font-size: 14px; line-height: 1.8; }
+.ai-chat-list .ai-summary, .ai-chat-list .ai-advice, .ai-chat-list .ai-reading-details { margin-top: 12px; }
 .ai-reading-panel .follow-up-input .button { width: 74px; padding: 8px; }
 .empty-state { padding: 60px 22px; text-align: center; color: var(--muted); }
 .empty-state .empty-mark { width: 54px; height: 54px; display: grid; place-items: center; margin: 0 auto 14px; border-radius: 50%; background: var(--soft); font-size: 28px; }

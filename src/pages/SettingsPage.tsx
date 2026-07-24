@@ -49,7 +49,7 @@ export default function SettingsPage() {
     {account.configured && <Card>
       <SectionHeading title="账号与同步" side={account.session ? <span className="chip">已登录</span> : undefined} />
       {account.session
-        ? <><p className="account-email">{account.session.user.email}</p><p className="helper">{account.syncMessage || '登录后，人物档案和记录会保存在云端。'}</p><LinkButton to="/account" secondary>管理账号与同步</LinkButton></>
+        ? <><p className="account-email">{account.session.user.email}</p><p className="helper">{account.syncMessage || '人物档案、记录和未完成流程会自动保存到云端。'}</p><LinkButton to="/account" secondary>管理账号</LinkButton></>
         : <><p className="helper">登录后可在其他手机继续使用原来的人物档案和记录；不登录也能正常使用。</p><LinkButton to="/account" secondary>登录或注册</LinkButton></>}
     </Card>}
     <Card>

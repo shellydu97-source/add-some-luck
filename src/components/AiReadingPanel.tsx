@@ -40,6 +40,19 @@ function ReadingContent({ reading }: { reading: AiReading }) {
   </div>
 }
 
+function readingToConversationContent(reading: AiReading) {
+  return [
+    reading.directAnswer,
+    reading.summary ? `简要结论：${reading.summary}` : '',
+    ...reading.sections.map((section) => [
+      `${section.title}：${section.content}`,
+      section.evidence.length ? `依据：${section.evidence.join('；')}` : '',
+    ].filter(Boolean).join('\n')),
+    reading.uncertainty.length ? `仍需保留的不确定性：${reading.uncertainty.join('；')}` : '',
+    reading.advice.length ? `现实建议：${reading.advice.join('；')}` : '',
+  ].filter(Boolean).join('\n\n')
+}
+
 export default function AiReadingPanel({ module, question = '', context, recordId, ensureRecord, allowQuestionInput = false, title = '结合问题解读' }: AiReadingPanelProps) {
   const [sessionRecordId, setSessionRecordId] = useState(recordId)
   const effectiveRecordId = recordId ?? sessionRecordId
@@ -64,8 +77,11 @@ export default function AiReadingPanel({ module, question = '', context, recordI
   const reading = latestStored ?? sessionReading
   const messages = storedRecord?.aiMessages ?? []
   const conversationForApi = [
-    ...(reading ? [{ role: 'assistant' as const, content: reading.directAnswer || reading.summary }] : []),
-    ...messages.map(({ role, content }) => ({ role, content })),
+    ...(reading ? [{ role: 'assistant' as const, content: readingToConversationContent(reading) }] : []),
+    ...messages.map(({ role, content, reading: messageReading }) => ({
+      role,
+      content: messageReading ? readingToConversationContent(messageReading) : content,
+    })),
   ]
 
   function resolveRecordId(currentQuestion?: string) {
@@ -110,7 +126,7 @@ export default function AiReadingPanel({ module, question = '', context, recordI
       const now = new Date().toISOString()
       const newMessages: AiConversationMessage[] = [
         { id: makeId('ai-message'), role: 'user', content: trimmed, createdAt: now },
-        { id: makeId('ai-message'), role: 'assistant', content: response.reading.directAnswer || response.reading.summary, reading: response.reading, createdAt: new Date().toISOString() },
+        { id: makeId('ai-message'), role: 'assistant', content: readingToConversationContent(response.reading), reading: response.reading, createdAt: new Date().toISOString() },
       ]
       appendMessages(id, newMessages)
       setFollowUp('')
