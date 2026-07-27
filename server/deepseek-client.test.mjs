@@ -79,4 +79,32 @@ describe('DeepSeek thinking response', () => {
     expect(result.reading.directAnswer).toBe('结构化回答也可以正常显示。')
     expect(result.reading.summary).toBe('简要结论。')
   })
+
+  it('ends an overlong initial answer at a natural sentence boundary', async () => {
+    const longAnswer = `核心结论：可以考虑调整，但不要冲动行动。${'这是用于验证首轮长度控制的完整说明。'.repeat(80)}`
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(providerResponse(longAnswer)))
+    const request = validateAiRequest({
+      module: 'liuyao',
+      action: 'interpret',
+      question: '是否适合换工作',
+      context: { originalHexagram: '山地剥' },
+    })
+    const result = await requestDeepSeek(request, config)
+    expect(result.reading.directAnswer.length).toBeLessThanOrEqual(600)
+    expect(result.reading.directAnswer.endsWith('。')).toBe(true)
+  })
+
+  it('does not truncate a detailed follow-up answer', async () => {
+    const longAnswer = `详细依据如下。${'这是用户明确追问后需要保留的分析内容。'.repeat(80)}`
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(providerResponse(longAnswer)))
+    const request = validateAiRequest({
+      module: 'liuyao',
+      action: 'followup',
+      question: '是否适合换工作',
+      followUpQuestion: '请把动爻依据详细说说',
+      context: { originalHexagram: '山地剥' },
+    })
+    const result = await requestDeepSeek(request, config)
+    expect(result.reading.directAnswer.length).toBeGreaterThan(600)
+  })
 })

@@ -6,6 +6,25 @@ import {
   sanitizeReading,
 } from './ai-core.mjs'
 
+const INITIAL_ANSWER_MAX_CHARS = 600
+
+function compactInitialAnswer(value) {
+  if (value.length <= INITIAL_ANSWER_MAX_CHARS) return value
+  const candidate = value.slice(0, INITIAL_ANSWER_MAX_CHARS)
+  const punctuationIndex = Math.max(
+    candidate.lastIndexOf('。'),
+    candidate.lastIndexOf('！'),
+    candidate.lastIndexOf('？'),
+  )
+  const paragraphIndex = candidate.lastIndexOf('\n\n')
+  const boundary = Math.max(punctuationIndex, paragraphIndex)
+  if (boundary >= 250) {
+    const end = boundary === paragraphIndex ? boundary : boundary + 1
+    return candidate.slice(0, end).trim()
+  }
+  return `${candidate.slice(0, INITIAL_ANSWER_MAX_CHARS - 1).trimEnd()}…`
+}
+
 async function complete(messages, options, config, signal) {
   const providerResponse = await fetch(config.apiUrl, {
     method: 'POST',
@@ -60,12 +79,16 @@ export async function requestDeepSeek(input, config) {
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), DEEPSEEK_REQUEST_TIMEOUT_MS)
   try {
-    return await complete(
+    const result = await complete(
       buildDeepSeekMessages(input),
       buildDeepSeekGenerationOptions(),
       config,
       controller.signal,
     )
+    if (input.action === 'interpret') {
+      result.reading.directAnswer = compactInitialAnswer(result.reading.directAnswer)
+    }
+    return result
   } finally {
     clearTimeout(timeout)
   }
