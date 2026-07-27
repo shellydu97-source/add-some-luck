@@ -39,6 +39,19 @@ describe('梅花易数独立计算 adapter', () => {
     expect(result.movingLine).toBe(6)
   })
 
+  it('《梅花易数》观梅占的 34 / 43 / 43 得泽火革、天风姤、泽山咸，初爻动', () => {
+    const result = calculateMeihuaFromTrigramNumbers({
+      method: 'time',
+      upperNumber: 34,
+      lowerNumber: 43,
+      movingNumber: 43,
+    })
+    expect(result.original).toMatchObject({ number: 49, name: '泽火革' })
+    expect(result.mutual).toMatchObject({ number: 44, name: '天风姤' })
+    expect(result.changed).toMatchObject({ number: 31, name: '泽山咸' })
+    expect(result.movingLine).toBe(1)
+  })
+
   it('指定时间与同一时刻的当前时间法得到完全相同的卦象', () => {
     const specified = calculateMeihuaBySpecifiedTime('2026-07-16T13:29')
     const instant = calculateMeihuaByTime('2026-07-16T05:29:00.000Z')

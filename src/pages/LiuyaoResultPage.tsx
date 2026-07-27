@@ -1,5 +1,10 @@
 import { useNavigate } from 'react-router-dom'
-import { calculateLiuyao, LIUYAO_COIN_CONVENTION_VERSION } from '../calculation/liuyao'
+import {
+  calculateLiuyao,
+  hexagramPalaceLabel,
+  liuyaoEnvironmentLabels,
+  LIUYAO_COIN_CONVENTION_VERSION,
+} from '../calculation/liuyao'
 import { buildLiuyaoCopyText, createLiuyaoDetailedInterpretation } from '../calculation/liuyao/interpretation'
 import AiReadingPanel from '../components/AiReadingPanel'
 import LiuyaoCoin from '../components/LiuyaoCoin'
@@ -39,6 +44,9 @@ export default function LiuyaoResultPage() {
     upperTrigram: result.upperTrigram,
     changedLowerTrigram: result.changedLowerTrigram,
     changedUpperTrigram: result.changedUpperTrigram,
+    guaShen: result.guaShen,
+    shiShen: result.shiShen,
+    shenSha: result.shenSha,
     engineVersion: result.engineVersion,
     adapterVersion: result.adapterVersion,
     ruleVersion: result.ruleVersion,
@@ -106,6 +114,8 @@ export default function LiuyaoResultPage() {
       castAt: lockedAt, method: activeDraft.state.method, coinTosses: activeDraft.state.casts,
       original: result.original, changed: result.changed, movingLines: result.movingLines,
       lines: result.lines, calendar: result.calendar, lowerTrigram: result.lowerTrigram, upperTrigram: result.upperTrigram,
+      changedLowerTrigram: result.changedLowerTrigram, changedUpperTrigram: result.changedUpperTrigram,
+      guaShen: result.guaShen, shiShen: result.shiShen, shenSha: result.shenSha,
     }} recordId={activeDraft.state.recordId} ensureRecord={ensureRecord} title="结合卦象回答你的问题" />
 
     <details className="result-disclosure"><summary>查看卦象、动爻与变化依据</summary><Card className="interpretation-card">
@@ -156,18 +166,34 @@ export default function LiuyaoResultPage() {
       <Card>
         <SectionHeading title="排盘信息" />
         <ul className="compact-list">
-          <li><span>八宫归属</span><b>{result.original.palaceName}宫 · {result.original.palaceElement}</b></li>
-          <li><span>上卦 / 下卦</span><b>{result.upperTrigram.name} / {result.lowerTrigram.name}</b></li>
+          <li><span>本卦宫位</span><b>{hexagramPalaceLabel(result.original)} · {result.original.palaceElement}</b></li>
+          <li><span>变卦宫位</span><b>{hexagramPalaceLabel(result.changed)} · {result.changed.palaceElement}</b></li>
+          <li><span>本卦上卦 / 下卦</span><b>{result.upperTrigram.name} / {result.lowerTrigram.name}</b></li>
+          <li><span>变卦上卦 / 下卦</span><b>{result.changedUpperTrigram.name} / {result.changedLowerTrigram.name}</b></li>
           <li><span>月建</span><b>{result.calendar.monthBranch}</b></li>
           <li><span>日辰</span><b>{result.calendar.dayGanZhi}</b></li>
           <li><span>旬空</span><b>{result.calendar.xunKong}</b></li>
+          <li><span>卦身</span><b>{result.guaShen.branch}{result.guaShen.presentAtLines.length ? ` · 现于第 ${result.guaShen.presentAtLines.join('、')} 爻` : ' · 不现于本卦六爻'}</b></li>
+          <li><span>世身</span><b>{result.shiShen.branch} · 第 {result.shiShen.lineIndex} 爻</b></li>
+          <li><span>常用神煞</span><b>{result.shenSha.map((item) => `${item.name}${item.branch}${item.presentAtLines.length ? `（第${item.presentAtLines.join('、')}爻）` : ''}`).join(' · ')}</b></li>
         </ul>
         <div className="table-scroll">
           <table className="professional-table">
-            <thead><tr><th>爻位</th><th>六神</th><th>世应</th><th>六亲</th><th>纳甲</th><th>本卦</th><th>变卦</th></tr></thead>
+            <thead><tr><th>爻位</th><th>六神</th><th>伏神</th><th>本卦六亲</th><th>本卦纳甲</th><th>本卦世应</th><th>本卦</th><th>日月标记</th><th>变卦六亲</th><th>变卦纳甲</th><th>变卦世应</th><th>变卦</th><th>变卦日月标记</th></tr></thead>
             <tbody>{[...result.lines].reverse().map((line) => <tr key={line.index}>
-              <td>{line.index}</td><td>{line.spirit}</td><td>{line.shiYing ?? ''}</td><td>{line.relation}</td><td>{line.naJia} · {line.element}</td>
-              <td>{lineSymbol(line.yinYang)}{line.moving ? ' ○' : ''}</td><td>{line.changedNaJia} · {line.changedRelation} · {lineSymbol(line.changedYinYang)}</td>
+              <td>{line.index}</td>
+              <td>{line.spirit}</td>
+              <td>{line.hiddenSpirit ? `${line.hiddenSpirit.relation} ${line.hiddenSpirit.naJia}${line.hiddenSpirit.element}` : '—'}</td>
+              <td>{line.relation}</td>
+              <td>{line.naJia} · {line.element}</td>
+              <td>{line.shiYing ?? '—'}</td>
+              <td>{lineSymbol(line.yinYang)}{line.moving ? ' ○' : ''}</td>
+              <td>{liuyaoEnvironmentLabels(line.environment).join(' · ') || '—'}</td>
+              <td>{line.changedRelation}</td>
+              <td>{line.changedNaJia} · {line.changedElement}</td>
+              <td>{line.changedShiYing ?? '—'}</td>
+              <td>{lineSymbol(line.changedYinYang)}</td>
+              <td>{liuyaoEnvironmentLabels(line.changedEnvironment).join(' · ') || '—'}</td>
             </tr>)}</tbody>
           </table>
         </div>

@@ -64,6 +64,75 @@ describe('六爻正式计算 adapter', () => {
     expect(result.lines.map((line) => line.value)).toEqual([6, 8, 8, 8, 8, 6])
   })
 
+  it('天机对照结构：火风鼎二三爻动，完整生成火地晋、伏神、两卦世应与常用神煞', () => {
+    const result = calculateLiuyao(createCastFromValues([8, 9, 9, 7, 8, 7]), '2026-07-27T09:05:32.000Z')
+    expect(result.original).toMatchObject({
+      number: 50, name: '火风鼎', palaceName: '离', palaceStage: '二世', shiLine: 2, yingLine: 5,
+    })
+    expect(result.changed).toMatchObject({
+      number: 35, name: '火地晋', palaceName: '乾', palaceStage: '游魂', shiLine: 4, yingLine: 1,
+    })
+    expect(result.movingLines).toEqual([2, 3])
+    expect(result.lines.map((line) => line.shiYing)).toEqual([undefined, '世', undefined, undefined, '应', undefined])
+    expect(result.lines.map((line) => line.changedShiYing)).toEqual(['应', undefined, undefined, '世', undefined, undefined])
+    expect(result.lines[0]?.hiddenSpirit).toEqual({
+      relation: '父母', naJia: '己卯', stem: '己', branch: '卯', element: '木',
+    })
+    expect(result.lines.slice(1).every((line) => !line.hiddenSpirit)).toBe(true)
+    expect(result.guaShen).toEqual({
+      branch: '丑', startBranch: '子', shiLine: 2, shiYinYang: 'yang', presentAtLines: [1],
+    })
+    expect(result.shiShen).toEqual({ holdingBranch: '亥', lineIndex: 6, branch: '巳' })
+    expect(result.shenSha).toEqual([
+      { name: '羊刃', branch: '子', presentAtLines: [] },
+      { name: '驿马', branch: '申', presentAtLines: [] },
+      { name: '咸池', branch: '卯', presentAtLines: [] },
+    ])
+  })
+
+  it('旬空、月建月破、日辰日冲及六合按每一爻原支和变支分别标记', () => {
+    const result = calculateLiuyao(createCastFromValues([8, 9, 9, 7, 8, 7]), '2026-07-27T09:05:32.000Z')
+    expect(result.calendar).toMatchObject({ monthBranch: '未', dayGanZhi: '壬寅', dayBranch: '寅', xunKong: '辰巳' })
+    expect(result.lines[5]?.environment.isVoid).toBe(true)
+    expect(result.lines[0]?.environment.isMonthBreak).toBe(true)
+    expect(result.lines[1]?.environment.isDayCombine).toBe(true)
+    expect(result.lines[1]?.changedEnvironment.isVoid).toBe(true)
+  })
+
+  it('八宫阶段、六冲与六合类型保持固定', () => {
+    expect(hexagramDefinitions.find((hexagram) => hexagram.name === '乾为天')).toMatchObject({ palaceStage: '本宫', specialTypes: ['六冲'] })
+    expect(hexagramDefinitions.find((hexagram) => hexagram.name === '火地晋')).toMatchObject({ palaceStage: '游魂' })
+    expect(hexagramDefinitions.find((hexagram) => hexagram.name === '火天大有')).toMatchObject({ palaceStage: '归魂' })
+    expect(hexagramDefinitions.find((hexagram) => hexagram.name === '地天泰')).toMatchObject({ specialTypes: ['六合'] })
+  })
+
+  it('伏神只补本卦缺失六亲，并固定伏在本宫首卦的相同爻位', () => {
+    for (let mask = 0; mask < 64; mask += 1) {
+      const values = Array.from({ length: 6 }, (_, line) => ((mask >> line) & 1 ? 7 : 8)) as YaoValue[]
+      const result = calculateLiuyao(createCastFromValues(values), CAST_TIME)
+      const present = new Set(result.lines.map((line) => line.relation))
+      const hidden = result.lines.flatMap((line) => line.hiddenSpirit ? [line.hiddenSpirit.relation] : [])
+      const missing = ['兄弟', '父母', '子孙', '官鬼', '妻财'].filter((relation) => !present.has(relation as typeof result.lines[number]['relation']))
+      expect(new Set([...present, ...hidden]), result.original.name).toEqual(new Set(['兄弟', '父母', '子孙', '官鬼', '妻财']))
+      expect(hidden.every((relation) => !present.has(relation)), result.original.name).toBe(true)
+      expect(hidden, `${result.original.name} 的伏神不得重复`).toHaveLength(missing.length)
+    }
+  })
+
+  it('阴干日不强行附会羊刃，仍保留按日支确定的驿马与咸池', () => {
+    const result = calculateLiuyao(
+      createCastFromValues([8, 7, 8, 7, 8, 7]),
+      '2026-07-16T05:29:00.000Z',
+    )
+
+    expect(result.calendar.dayGanZhi).toBe('辛卯')
+    expect(result.shenSha.some((item) => item.name === '羊刃')).toBe(false)
+    expect(result.shenSha).toEqual(expect.arrayContaining([
+      expect.objectContaining({ name: '驿马', branch: '巳' }),
+      expect.objectContaining({ name: '咸池', branch: '子' }),
+    ]))
+  })
+
   it('反向录入保护：3背、1背2字、1背2字、1背2字、1背2字、3背会得到乾为天变泽风大过', () => {
     const result = calculateLiuyao(createCastFromValues([9, 7, 7, 7, 7, 9]), '2026-07-16T05:29:04.000Z')
     expect(result.original).toMatchObject({ number: 1, name: '乾为天' })

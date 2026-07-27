@@ -22,6 +22,7 @@ export function getLiuyaoCalendarContext(isoDateTime: string): LiuyaoCalendarCon
     monthBranch: lunar.getMonthZhiExact(),
     dayGanZhi: lunar.getDayInGanZhiExact2(),
     dayStem: lunar.getDayGanExact2(),
+    dayBranch: lunar.getDayZhiExact2(),
     xunKong: lunar.getDayXunKongExact2(),
   }
 }

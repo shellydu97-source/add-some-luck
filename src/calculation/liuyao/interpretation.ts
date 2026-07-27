@@ -1,4 +1,5 @@
 import { branchElements } from './data'
+import { hexagramPalaceLabel, liuyaoEnvironmentLabels } from './presentation'
 import type { FiveElement, LiuyaoCalculationResult, LiuyaoLine } from './types'
 
 export interface LiuyaoEvidenceBlock {
@@ -79,7 +80,8 @@ function elementRelationship(from: FiveElement, to: FiveElement) {
 }
 
 function lineFact(line: LiuyaoLine) {
-  return `第${line.index}爻：${line.label}，${line.naJia}${line.element}，${line.relation}，${line.spirit}${line.shiYing ? `，临${line.shiYing}` : ''}`
+  const environment = liuyaoEnvironmentLabels(line.environment)
+  return `第${line.index}爻：${line.label}，${line.naJia}${line.element}，${line.relation}，${line.spirit}${line.shiYing ? `，临${line.shiYing}` : ''}${line.hiddenSpirit ? `，伏${line.hiddenSpirit.relation}${line.hiddenSpirit.naJia}${line.hiddenSpirit.element}` : ''}${environment.length ? `，${environment.join('、')}` : ''}`
 }
 
 function movingLineReading(result: LiuyaoCalculationResult, line: LiuyaoLine): LiuyaoMovingLineReading {
@@ -109,7 +111,7 @@ export function createLiuyaoDetailedInterpretation(result: LiuyaoCalculationResu
   const shiLine = result.lines.find((line) => line.shiYing === '世')!
   const yingLine = result.lines.find((line) => line.shiYing === '应')!
   const monthElement = branchElements[result.calendar.monthBranch]
-  const dayBranch = result.calendar.dayGanZhi.slice(-1)
+  const dayBranch = result.calendar.dayBranch
   const dayElement = branchElements[dayBranch]
   const voidLines = result.lines.filter((line) => result.calendar.xunKong.includes(line.branch))
   const movingFacts = result.lines.filter((line) => line.moving)
@@ -129,6 +131,18 @@ export function createLiuyaoDetailedInterpretation(result: LiuyaoCalculationResu
       title: '月建、日辰与旬空',
       content: `月建为${result.calendar.monthBranch}${monthElement ?? ''}，日辰为${result.calendar.dayGanZhi}${dayElement ?? ''}。${monthElement ? relationToEnvironment(shiLine.element, monthElement, '月建') : ''}；${dayElement ? relationToEnvironment(shiLine.element, dayElement, '日辰') : ''}。旬空为${result.calendar.xunKong}，${voidLines.length ? `${voidLines.map((line) => `第${line.index}爻${line.branch}`).join('、')}落入旬空，相关信号的即时性需要保守观察` : '本卦六爻没有落入旬空'}；旬空不等于事情必然不存在。`,
       evidence: [`月建：${result.calendar.monthBranch}`, `日辰：${result.calendar.dayGanZhi}`, `旬空：${result.calendar.xunKong}`, ...voidLines.map(lineFact)],
+    },
+    {
+      title: '伏神、卦身与神煞',
+      content: `${result.lines.some((line) => line.hiddenSpirit)
+        ? `本卦明现六亲不全，缺少的六亲按本宫首卦装入伏神：${result.lines.filter((line) => line.hiddenSpirit).map((line) => `第${line.index}爻伏${line.hiddenSpirit!.relation}${line.hiddenSpirit!.naJia}${line.hiddenSpirit!.element}`).join('、')}。伏神用于补足隐藏关系，是否有力仍需结合飞神与日月判断`
+        : '本卦五类六亲均已明现，不另装伏神'}。月卦身为${result.guaShen.branch}${result.guaShen.presentAtLines.length ? `，现于第${result.guaShen.presentAtLines.join('、')}爻` : '，本卦六爻中未现'}；世身为${result.shiShen.branch}，落在第${result.shiShen.lineIndex}爻。常用神煞为${result.shenSha.map((item) => `${item.name}${item.branch}${item.presentAtLines.length ? `（第${item.presentAtLines.join('、')}爻）` : ''}`).join('、')}；卦身、世身和神煞只作辅助标记，不越过卦象、用神和日月关系直接定论。`,
+      evidence: [
+        `月卦身：${result.guaShen.branch}`,
+        `世身：${result.shiShen.branch}，第${result.shiShen.lineIndex}爻`,
+        ...result.lines.filter((line) => line.hiddenSpirit).map(lineFact),
+        ...result.shenSha.map((item) => `${item.name}：${item.branch}${item.presentAtLines.length ? `，见第${item.presentAtLines.join('、')}爻` : '，本卦不现'}`),
+      ],
     },
     {
       title: '动爻、变爻与生克',
@@ -176,6 +190,7 @@ export function createLiuyaoDetailedInterpretation(result: LiuyaoCalculationResu
       '世爻用于观察提问者或事情主体，应爻用于观察对方、对象或外部环境；两者是关系位置，不自动代表吉凶。',
       '六亲依据各爻五行与卦宫五行的生克关系确定；六神只补充情境象征，不能单独下结论。',
       '月建与日辰用于观察当下环境对各爻的扶助或制约；旬空提示即时性和落实程度需要核对，不等于绝对无效。',
+      '本卦缺少某类六亲时，伏神按本宫首卦同位装入；卦身与神煞只提供辅助线索，不能绕过用神、日月和动变关系单独断事。',
       '动爻显示本次排盘中的变化位置，变爻说明阴阳翻转后的关系；生克描述力量方向，不自动等同于成败。',
       '本地规则不自动选择用神。若要围绕具体问题选择用神，需要另行说明选择依据和备选解释。',
     ],
@@ -187,7 +202,7 @@ export function createLiuyaoDetailedInterpretation(result: LiuyaoCalculationResu
       advice: '先把世爻、应爻和每个动爻对应到可核实的现实角色或事项，再观察日月环境所示的支持与制约。保留备选解释，用后续事实复盘，不据此作绝对成败或精确时间判断。',
       evidence: [lineFact(shiLine), lineFact(yingLine), ...movingFacts.map(lineFact), `月建：${result.calendar.monthBranch}`, `日辰：${result.calendar.dayGanZhi}`, `旬空：${result.calendar.xunKong}`],
     },
-    uncertainty: '本解读只依据当前卦象、纳甲、世应、六亲、六神、月建、日辰和旬空进行本地规则整理；未自动选择用神，也不提供绝对成败、精确应期或替代现实决策。',
+    uncertainty: '本解读只依据当前卦象、纳甲、世应、六亲、六神、伏神、卦身、常用神煞、月建、日辰和旬空进行本地规则整理；未自动选择用神，也不提供绝对成败、精确应期或替代现实决策。',
   }
 }
 
@@ -217,15 +232,26 @@ export function buildLiuyaoCopyText(input: {
     `本卦：第${result.original.number}卦 ${result.original.name}（${result.original.palaceName}宫 · ${result.original.palaceElement}）`,
     `变卦：第${result.changed.number}卦 ${result.changed.name}${result.movingLines.length ? '' : '（无动爻，与本卦相同）'}`,
     `动爻：${result.movingLines.length ? result.movingLines.map((line) => `第${line}爻`).join('、') : '无'}`,
-    `八宫归属：${result.original.palaceName}宫 · ${result.original.palaceElement}`,
+    `本卦宫位：${hexagramPalaceLabel(result.original)} · ${result.original.palaceElement}`,
+    `变卦宫位：${hexagramPalaceLabel(result.changed)} · ${result.changed.palaceElement}`,
+    `本卦上下卦：${result.upperTrigram.name}上${result.lowerTrigram.name}下`,
+    `变卦上下卦：${result.changedUpperTrigram.name}上${result.changedLowerTrigram.name}下`,
     `卦辞：${result.original.judgment || '无'}`,
     ...result.movingLines.map((line) => `第${line}爻爻辞：${result.original.lineTexts[line - 1]}`),
     `月建：${result.calendar.monthBranch}`,
     `日辰：${result.calendar.dayGanZhi}`,
     `旬空：${result.calendar.xunKong}`,
+    `卦身：${result.guaShen.branch}${result.guaShen.presentAtLines.length ? `（见第${result.guaShen.presentAtLines.join('、')}爻）` : '（本卦不现）'}`,
+    `世身：${result.shiShen.branch}（第${result.shiShen.lineIndex}爻）`,
+    `常用神煞：${result.shenSha.map((item) => `${item.name}${item.branch}${item.presentAtLines.length ? `（见第${item.presentAtLines.join('、')}爻）` : ''}`).join('、')}`,
     '',
     '【六爻排盘】',
-    ...[...result.lines].reverse().map((line) => `第${line.index}爻：${line.spirit}｜${line.shiYing ?? '—'}｜${line.relation}｜纳甲${line.naJia}${line.element}｜${line.label}${line.moving ? `｜变${line.changedNaJia}${line.changedElement} ${line.changedRelation}` : ''}`),
+    ...[...result.lines].reverse().map((line) => {
+      const originalEnvironment = liuyaoEnvironmentLabels(line.environment).join('、') || '无'
+      const changedEnvironment = liuyaoEnvironmentLabels(line.changedEnvironment).join('、') || '无'
+      const hidden = line.hiddenSpirit ? `${line.hiddenSpirit.relation}${line.hiddenSpirit.naJia}${line.hiddenSpirit.element}` : '无'
+      return `第${line.index}爻：${line.spirit}｜伏神${hidden}｜本卦${line.relation} ${line.naJia}${line.element} ${line.shiYing ?? '—'} ${line.label}｜日月标记${originalEnvironment}｜变卦${line.changedRelation} ${line.changedNaJia}${line.changedElement} ${line.changedShiYing ?? '—'}｜变卦日月标记${changedEnvironment}`
+    }),
     '',
     '【本地详细解读】',
     `本卦核心主题：${interpretation.overview.coreTheme}`,

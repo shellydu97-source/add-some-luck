@@ -1,4 +1,5 @@
 export * from './adapter'
 export * from './data'
 export * from './lunarTypescriptAdapter'
+export * from './presentation'
 export type * from './types'

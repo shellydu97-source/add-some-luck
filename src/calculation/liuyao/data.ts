@@ -1,4 +1,4 @@
-import type { FiveElement, HexagramDefinition, TrigramDefinition, TrigramKey } from './types'
+import type { FiveElement, HexagramDefinition, HexagramPalaceStage, HexagramSpecialType, TrigramDefinition, TrigramKey } from './types'
 import zhouyiTexts from '../../data/zhouyiTexts.json'
 
 export const trigramDefinitions: Record<TrigramKey, TrigramDefinition> = {
@@ -52,7 +52,7 @@ const basicMeanings = [
   '以真诚和一致性建立信任。', '处理局部与细节，不宜用过大的动作解决小问题。', '事情接近完成，仍需维持秩序与警觉。', '阶段尚未完成，辨认次序后继续推进。',
 ] as const
 
-const palaceSequences: Record<TrigramKey, string[]> = {
+export const palaceSequences: Record<TrigramKey, string[]> = {
   qian: ['乾为天', '天风姤', '天山遁', '天地否', '风地观', '山地剥', '火地晋', '火天大有'],
   kan: ['坎为水', '水泽节', '水雷屯', '水火既济', '泽火革', '雷火丰', '地火明夷', '地水师'],
   gen: ['艮为山', '山火贲', '山天大畜', '山泽损', '火泽睽', '天泽履', '风泽中孚', '风山渐'],
@@ -64,7 +64,10 @@ const palaceSequences: Record<TrigramKey, string[]> = {
 }
 
 const shiLines = [6, 1, 2, 3, 4, 5, 4, 3]
-const hexagramSeed = new Map<number, Omit<HexagramDefinition, 'palace' | 'palaceName' | 'palaceElement' | 'palaceSequence' | 'shiLine' | 'yingLine'>>()
+const palaceStages: HexagramPalaceStage[] = ['本宫', '一世', '二世', '三世', '四世', '五世', '游魂', '归魂']
+const sixClashNames = new Set(['乾为天', '兑为泽', '离为火', '震为雷', '巽为风', '坎为水', '艮为山', '坤为地', '雷天大壮', '天雷无妄'])
+const sixHarmonyNames = new Set(['天地否', '泽水困', '火山旅', '雷地豫', '水泽节', '山火贲', '地雷复', '地天泰'])
+const hexagramSeed = new Map<number, Omit<HexagramDefinition, 'palace' | 'palaceName' | 'palaceElement' | 'palaceSequence' | 'palaceStage' | 'specialTypes' | 'shiLine' | 'yingLine'>>()
 
 for (const upper of trigramOrder) {
   kingWenNumbers[upper].forEach((number, lowerIndex) => {
@@ -81,12 +84,18 @@ export const hexagramDefinitions: HexagramDefinition[] = Array.from({ length: 64
   const palaceSequence = palaceEntry[1].indexOf(seed.name)
   const shiLine = shiLines[palaceSequence]!
   const yingLine = ((shiLine + 2) % 6) + 1
+  const specialTypes: HexagramSpecialType[] = [
+    ...(sixClashNames.has(seed.name) ? ['六冲' as const] : []),
+    ...(sixHarmonyNames.has(seed.name) ? ['六合' as const] : []),
+  ]
   return {
     ...seed,
     palace,
     palaceName: trigramDefinitions[palace].name,
     palaceElement: trigramDefinitions[palace].element,
     palaceSequence,
+    palaceStage: palaceStages[palaceSequence]!,
+    specialTypes,
     shiLine,
     yingLine,
   }
