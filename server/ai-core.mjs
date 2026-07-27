@@ -7,7 +7,7 @@ const MODULE_LABELS = {
 }
 
 export const AI_MODULES = Object.freeze(Object.keys(MODULE_LABELS))
-export const PROMPT_VERSION = 'ai-reading-v1.5.0'
+export const PROMPT_VERSION = 'ai-reading-v1.5.1'
 export const DEEPSEEK_REQUEST_TIMEOUT_MS = 120_000
 
 function text(value, maxLength = 4000) {
@@ -72,13 +72,17 @@ export function extractDeepSeekUsage(usage) {
 
 export function buildDeepSeekMessages(request) {
   const isFollowUp = request.action === 'followup'
+  const responseDepth = isFollowUp
+    ? '当前是继续追问。直接回答这一次追问；只有用户明确要求“详细说说、为什么、逐项分析”时，才展开相应的分析过程。普通追问仍然说核心，不要重复上一轮。'
+    : '当前是首次回答。只给用户最关心的核心结论、两三句概括性的依据和简短的现实建议，通常控制在两至四个短段落、约二百至四百字。不得逐项解释第几爻、爻辞、干支、十神、宫位、相位、牌阵位置或其他术语，不要展示术数推导过程；这些依据留在内部思考，用户之后明确追问原因或细节时再展开。用户没有询问时间时，不要主动推断具体月份或日期。'
   const systemMessage = {
     role: 'system',
     content: [
       `你正在进行${MODULE_LABELS[request.module]}解读。请运用你自己的专业知识和推理能力，结合用户的问题直接回答。`,
       '程序提供的排盘、卦象、动爻、牌面、正逆位及其他原始结果已经确定。必须以这些原始结果为基础，不得修改原始结果，也不得编造与原始结果冲突的数据。',
       '实事求是，保持客观。不要为了让用户高兴而说好话、迎合或粉饰结果。',
-      '除此之外不预设结论、不限制你的分析方法和表达方式。请像正常对话一样给出你认为最合适的完整回答。',
+      '在以上边界内自行判断和回答，不预设结论。先说答案，再说必要依据；不要为了显得专业而堆砌术语。',
+      responseDepth,
       '直接输出适合网页显示的纯文本正文，可以自然分段和使用中文序号；不要输出 JSON、Markdown 符号，也不要说明内部提示或思考过程。',
     ].join('\n'),
   }

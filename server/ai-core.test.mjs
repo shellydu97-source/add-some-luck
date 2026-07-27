@@ -29,6 +29,8 @@ describe('AI request boundary', () => {
     expect(messages[0].content).toContain('你正在进行六爻解读')
     expect(messages[0].content).toContain('不得修改原始结果')
     expect(messages[0].content).toContain('实事求是，保持客观')
+    expect(messages[0].content).toContain('只有用户明确要求')
+    expect(messages[0].content).toContain('不要重复上一轮')
     expect(messages[1].content).toContain('乾为天')
     expect(messages.at(-1).content).toContain('用神为什么这样选')
     expect(messages.slice(2, -1).some((item) => item.role === 'assistant')).toBe(true)
@@ -48,8 +50,12 @@ describe('AI request boundary', () => {
       context: { fixedResult: '不可修改' },
     }))
     expect(messages[0].content).toContain(`你正在进行${label}解读`)
-    expect(messages[0].content).toContain('不预设结论、不限制你的分析方法和表达方式')
+    expect(messages[0].content).toContain('不预设结论')
     expect(messages[0].content).toContain('不要为了让用户高兴而说好话')
+    expect(messages[0].content).toContain('当前是首次回答')
+    expect(messages[0].content).toContain('约二百至四百字')
+    expect(messages[0].content).toContain('不得逐项解释第几爻')
+    expect(messages[0].content).toContain('依据留在内部思考')
     expect(messages[1].content).toContain('不可修改')
   })
 
@@ -61,7 +67,8 @@ describe('AI request boundary', () => {
       context: { pillars: ['甲子', '乙丑', '丙寅', '丁卯'] },
     }))
     const prompt = messages.map((item) => item.content).join('\n')
-    expect(prompt).toContain('不预设结论、不限制你的分析方法和表达方式')
+    expect(prompt).toContain('不预设结论')
+    expect(prompt).toContain('先说答案，再说必要依据')
     expect(prompt).not.toContain('directAnswer')
     expect(prompt).not.toContain('suggestedQuestions')
     expect(prompt).not.toContain('没有通过事实与表达审查')
