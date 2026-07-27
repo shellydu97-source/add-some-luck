@@ -8,24 +8,11 @@ const config = {
   model: 'deepseek-v4-flash',
 }
 
-function providerResponse() {
+function providerResponse(content = '**结合这次卦象，我会这样分析。**\n\n### 卦象依据\n本卦为水天需，重点在等待时机。') {
   return Response.json({
     choices: [{
       finish_reason: 'stop',
-      message: {
-        content: JSON.stringify({
-          directAnswer: '结合这次卦象，我会这样分析。',
-          summary: '',
-          sections: [{
-            title: '卦象依据',
-            content: '完整说明本卦、变卦和动爻之间的关系。',
-            evidence: ['本卦：水天需'],
-          }],
-          uncertainty: [],
-          advice: [],
-          suggestedQuestions: [],
-        }),
-      },
+      message: { content },
     }],
     usage: {
       prompt_tokens: 100,
@@ -58,12 +45,38 @@ describe('DeepSeek thinking response', () => {
     expect(body.thinking).toEqual({ type: 'enabled' })
     expect(body.reasoning_effort).toBe('high')
     expect(body).not.toHaveProperty('temperature')
+    expect(body).not.toHaveProperty('response_format')
     expect(result.reading.directAnswer).toContain('我会这样分析')
+    expect(result.reading.directAnswer).toContain('本卦为水天需')
+    expect(result.reading.directAnswer).not.toContain('**')
+    expect(result.reading.directAnswer).not.toContain('###')
+    expect(result.reading.sections).toEqual([])
     expect(result.usage).toMatchObject({
       promptTokens: 100,
       completionTokens: 200,
       totalTokens: 300,
       reasoningTokens: 50,
     })
+  })
+
+  it('still accepts a structured provider response for backward compatibility', async () => {
+    const structured = JSON.stringify({
+      directAnswer: '结构化回答也可以正常显示。',
+      summary: '简要结论。',
+      sections: [],
+      uncertainty: [],
+      advice: [],
+      suggestedQuestions: [],
+    })
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(providerResponse(structured)))
+    const request = validateAiRequest({
+      module: 'bazi',
+      action: 'interpret',
+      question: '事业如何',
+      context: { pillars: ['甲子'] },
+    })
+    const result = await requestDeepSeek(request, config)
+    expect(result.reading.directAnswer).toBe('结构化回答也可以正常显示。')
+    expect(result.reading.summary).toBe('简要结论。')
   })
 })

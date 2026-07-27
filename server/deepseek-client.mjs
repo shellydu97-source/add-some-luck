@@ -33,14 +33,26 @@ async function complete(messages, options, config, signal) {
     })
     throw new Error('智能解读没有返回内容')
   }
+  let reading
   try {
-    return {
-      reading: sanitizeReading(JSON.parse(content)),
-      usage: extractDeepSeekUsage(payload.usage),
-    }
+    reading = sanitizeReading(JSON.parse(content))
   } catch {
-    console.error('[deepseek] 返回内容不是有效 JSON')
-    throw new Error('智能解读返回异常，请重新生成')
+    reading = sanitizeReading({
+      directAnswer: content
+        .replace(/\*\*(.*?)\*\*/gs, '$1')
+        .replace(/__(.*?)__/gs, '$1')
+        .replace(/^\s{0,3}#{1,6}\s+/gm, '')
+        .trim(),
+      summary: '',
+      sections: [],
+      uncertainty: [],
+      advice: [],
+      suggestedQuestions: [],
+    })
+  }
+  return {
+    reading,
+    usage: extractDeepSeekUsage(payload.usage),
   }
 }
 
