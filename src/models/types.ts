@@ -181,6 +181,7 @@ export interface CoinToss {
 export type LiuyaoMethod = 'digital' | 'manual'
 export interface LiuyaoDraftState {
   method?: LiuyaoMethod
+  querentGender?: Gender
   coinConventionVersion?: 'character-2-back-3-v1' | 'fixed-coin-art-yin-2-yang-3-v2'
   timeRange: string
   casts: CoinToss[]

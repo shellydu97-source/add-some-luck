@@ -59,7 +59,7 @@ export default function LiuyaoCastPage() {
     <ConfidenceNote>每次投掷三枚铜钱组成一爻，共进行六次；第一次为初爻，结果由下往上排列。</ConfidenceNote>
     {!activeDraft.state.coinConventionVersion && activeDraft.state.casts.length > 0 && <Card className="duplicate-card"><h3>请重新核对旧草稿</h3><p className="helper">这份草稿来自旧版铜钱展示，系统不会自动改变原始结果。请按每枚铜钱的图案逐爻核对后再确认。</p></Card>}
     <Segmented value={activeDraft.state.method ?? 'digital'} options={methodOptions} onChange={update} label="起爻方式" />
-    <Card><div className="card-kicker"><span>当前问题</span><span className="chip">{activeDraft.category}</span></div><h3>{activeDraft.question || '未填写问题'}</h3>{activeDraft.state.timeRange && <p className="helper">观察范围：{activeDraft.state.timeRange}</p>}</Card>
+    <Card><div className="card-kicker"><span>当前问题</span><span className="chip">{activeDraft.category}</span></div><h3>{activeDraft.question || '未填写问题'}</h3><p className="helper">占问者性别：{activeDraft.state.querentGender === 'male' ? '男' : activeDraft.state.querentGender === 'female' ? '女' : '未填写'}</p>{activeDraft.state.timeRange && <p className="helper">观察范围：{activeDraft.state.timeRange}</p>}</Card>
     <Card className="casting-stage">
       {complete
         ? <Button onClick={() => navigate('/divination/liuyao/confirm')}>检查并确认六爻</Button>

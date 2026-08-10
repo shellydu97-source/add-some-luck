@@ -27,10 +27,12 @@ export default function LiuyaoResultPage() {
   const activeDraft = draft
   const lockedAt = draft.state.lockedAt
   const profile = activeDraft.profileId === GUEST_PROFILE_ID ? undefined : store.profiles.find((item) => item.id === activeDraft.profileId)
+  const querentGender = activeDraft.state.querentGender ?? profile?.gender
   const result = calculateLiuyao(activeDraft.state.casts, lockedAt)
   const localInterpretation = createLiuyaoDetailedInterpretation(result)
   const rawResult = {
     method: activeDraft.state.method,
+    querentGender,
     timeRange: activeDraft.state.timeRange,
     lockedAt: activeDraft.state.lockedAt,
     coinTosses: activeDraft.state.casts,
@@ -84,7 +86,7 @@ export default function LiuyaoResultPage() {
 
   async function handleCopy() {
     try {
-      await copyText(buildLiuyaoCopyText({ question: activeDraft.question, castAt: lockedAt, result, interpretation: localInterpretation }))
+      await copyText(buildLiuyaoCopyText({ question: activeDraft.question, querentGender, castAt: lockedAt, result, interpretation: localInterpretation }))
       store.setNotice('已复制，可以粘贴到你常用的大模型中。')
     } catch {
       store.setNotice('复制失败，请稍后重试。')
@@ -95,7 +97,7 @@ export default function LiuyaoResultPage() {
     <TopBar title="六爻结果" eyebrow="原始六爻已锁定" back action={<span className="chip">{profile?.name ?? '未关联人物'}</span>} />
     {activeDraft.question.trim() && <Card className="question-summary"><span>本次问题</span><p>{activeDraft.question}</p></Card>}
     <Card className="hero-card result-hero">
-      <div className="card-kicker"><span>{result.movingLines.length ? '本卦 → 变卦' : '本卦'}</span></div>
+      <div className="card-kicker"><span>{result.movingLines.length ? '本卦 → 变卦' : '本卦'}</span>{querentGender && <span className="chip">占问者 · {querentGender === 'male' ? '男' : '女'}</span>}</div>
       <h2>第 {result.original.number} 卦 · {result.original.name}</h2>
       {result.movingLines.length ? <>
         <span className="result-arrow">↓</span>
@@ -111,7 +113,7 @@ export default function LiuyaoResultPage() {
     </Card>
 
     <AiReadingPanel key={activeDraft.id} module="liuyao" question={activeDraft.question} context={{
-      castAt: lockedAt, method: activeDraft.state.method, coinTosses: activeDraft.state.casts,
+      castAt: lockedAt, method: activeDraft.state.method, querentGender, coinTosses: activeDraft.state.casts,
       original: result.original, changed: result.changed, movingLines: result.movingLines,
       lines: result.lines, calendar: result.calendar, lowerTrigram: result.lowerTrigram, upperTrigram: result.upperTrigram,
       changedLowerTrigram: result.changedLowerTrigram, changedUpperTrigram: result.changedUpperTrigram,

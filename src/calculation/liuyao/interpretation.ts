@@ -1,5 +1,6 @@
 import { branchElements } from './data'
 import { hexagramPalaceLabel, liuyaoEnvironmentLabels } from './presentation'
+import type { Gender } from '../../models/types'
 import type { FiveElement, LiuyaoCalculationResult, LiuyaoLine } from './types'
 
 export interface LiuyaoEvidenceBlock {
@@ -217,6 +218,7 @@ const liuyaoCopyPrompt = '请结合我提出的问题，对以上六爻排盘进
 
 export function buildLiuyaoCopyText(input: {
   question?: string
+  querentGender?: Gender
   castAt: string
   result: LiuyaoCalculationResult
   interpretation: LiuyaoDetailedInterpretation
@@ -225,6 +227,7 @@ export function buildLiuyaoCopyText(input: {
   const lines = [
     '【六爻完整解读信息】',
     `用户原问题：${input.question?.trim() || '未填写问题'}`,
+    `占问者性别：${input.querentGender === 'male' ? '男' : input.querentGender === 'female' ? '女' : '未填写'}`,
     `起卦时间：${displayDateTime(input.castAt)}`,
     '',
     '【排盘事实】',

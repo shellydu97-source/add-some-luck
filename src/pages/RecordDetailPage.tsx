@@ -98,8 +98,8 @@ function aiContextForRecord(record: DivinationRecord): Record<string, unknown> {
     return { spread, drawMode, cards, drawnAt: record.createdAt }
   }
   if (record.type === 'liuyao') {
-    const { method, lockedAt, coinTosses, original, changed, movingLines, lines, calendar, lowerTrigram, upperTrigram, changedLowerTrigram, changedUpperTrigram, guaShen, shiShen, shenSha } = record.rawResult
-    return { method, lockedAt, coinTosses, original, changed, movingLines, lines, calendar, lowerTrigram, upperTrigram, changedLowerTrigram, changedUpperTrigram, guaShen, shiShen, shenSha }
+    const { method, querentGender, lockedAt, coinTosses, original, changed, movingLines, lines, calendar, lowerTrigram, upperTrigram, changedLowerTrigram, changedUpperTrigram, guaShen, shiShen, shenSha } = record.rawResult
+    return { method, querentGender, lockedAt, coinTosses, original, changed, movingLines, lines, calendar, lowerTrigram, upperTrigram, changedLowerTrigram, changedUpperTrigram, guaShen, shiShen, shenSha }
   }
   return record.rawResult
 }

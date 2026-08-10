@@ -45,7 +45,7 @@ describe('六爻本地详细解读', () => {
   it('复制内容与原始铜钱、卦名、动爻及专业排盘完全一致', () => {
     const result = calculate([6, 7, 8, 9, 7, 6])
     const reading = createLiuyaoDetailedInterpretation(result)
-    const text = buildLiuyaoCopyText({ question: '当前方案需要注意什么', castAt: CAST_TIME, result, interpretation: reading })
+    const text = buildLiuyaoCopyText({ question: '当前方案需要注意什么', querentGender: 'female', castAt: CAST_TIME, result, interpretation: reading })
     result.lines.forEach((line) => {
       expect(text).toContain(`第${line.index}爻（由下往上）`)
       expect(text).toContain(`${line.label}（${line.yinYang === 'yang' ? '阳爻' : '阴爻'}）`)
@@ -57,6 +57,7 @@ describe('六爻本地详细解读', () => {
     expect(text).toContain(`变卦：第${result.changed.number}卦 ${result.changed.name}`)
     expect(text).toContain(`本卦宫位：${result.original.palaceName}宫`)
     expect(text).toContain(`变卦宫位：${result.changed.palaceName}宫`)
+    expect(text).toContain('占问者性别：女')
     expect(text).toContain(`卦身：${result.guaShen.branch}`)
     expect(text).toContain(`世身：${result.shiShen.branch}`)
     expect(text).toContain('常用神煞：')
