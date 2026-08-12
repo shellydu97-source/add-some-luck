@@ -9,3 +9,11 @@ export function accountGateDestination(input: {
   return `/account?onboarding=1&next=${encodeURIComponent(input.currentPath || '/')}`
 }
 
+export function shouldWaitForAccountData(input: {
+  configured: boolean
+  authLoading: boolean
+  signedIn: boolean
+  cloudDataReady: boolean
+}) {
+  return input.configured && !input.authLoading && input.signedIn && !input.cloudDataReady
+}

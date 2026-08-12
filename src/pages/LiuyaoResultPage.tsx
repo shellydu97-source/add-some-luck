@@ -27,7 +27,7 @@ export default function LiuyaoResultPage() {
   const activeDraft = draft
   const lockedAt = draft.state.lockedAt
   const profile = activeDraft.profileId === GUEST_PROFILE_ID ? undefined : store.profiles.find((item) => item.id === activeDraft.profileId)
-  const querentGender = activeDraft.state.querentGender ?? profile?.gender
+  const querentGender = activeDraft.state.querentGender
   const result = calculateLiuyao(activeDraft.state.casts, lockedAt)
   const localInterpretation = createLiuyaoDetailedInterpretation(result)
   const rawResult = {

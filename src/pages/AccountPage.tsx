@@ -8,6 +8,23 @@ import { Button, Card, SectionHeading } from '../components/UI'
 type AccountMode = 'sign-in' | 'sign-up' | 'reset'
 type AccountStep = 'form' | 'signup-code' | 'reset-code' | 'new-password'
 
+function PasswordField({
+  label,
+  value,
+  onChange,
+  autoComplete,
+  placeholder,
+}: {
+  label: string
+  value: string
+  onChange: (value: string) => void
+  autoComplete: 'current-password' | 'new-password'
+  placeholder?: string
+}) {
+  const [visible, setVisible] = useState(false)
+  return <label className="field"><span>{label}</span><span className="password-input-wrap"><input type={visible ? 'text' : 'password'} autoComplete={autoComplete} value={value} onChange={(event) => onChange(event.target.value)} minLength={8} placeholder={placeholder} required /><button type="button" className="password-visibility" onClick={() => setVisible((current) => !current)} aria-label={visible ? `隐藏${label}` : `显示${label}`} aria-pressed={visible}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z" /><circle cx="12" cy="12" r="2.75" />{visible && <path d="m4 4 16 16" />}</svg></button></span></label>
+}
+
 function friendlyAuthError(cause: unknown) {
   const message = cause instanceof Error ? cause.message : String(cause)
   if (/invalid login credentials/i.test(message)) return '邮箱或密码不正确。'
@@ -226,8 +243,8 @@ export default function AccountPage() {
     <Card>
       <SectionHeading title="设置新密码" />
       <form className="account-form" onSubmit={setNewPassword}>
-        <label className="field"><span>新密码</span><input type="password" autoComplete="new-password" value={password} onChange={(event) => setPassword(event.target.value)} minLength={8} placeholder="至少 8 位" required /></label>
-        <label className="field"><span>再次输入新密码</span><input type="password" autoComplete="new-password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} minLength={8} required /></label>
+        <PasswordField label="新密码" value={password} onChange={setPassword} autoComplete="new-password" placeholder="至少 8 位" />
+        <PasswordField label="再次输入新密码" value={confirmPassword} onChange={setConfirmPassword} autoComplete="new-password" />
         {error && <p className="field-error account-feedback">{error}</p>}
         {message && <p className="account-success">{message}</p>}
         <Button type="submit" disabled={busy}>{busy ? '正在保存…' : '保存新密码并登录'}</Button>
@@ -245,8 +262,8 @@ export default function AccountPage() {
       {mode === 'reset' && <SectionHeading title="找回密码" />}
       <form className="account-form" onSubmit={submitAccount}>
         <label className="field"><span>邮箱</span><input type="email" inputMode="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="name@example.com" required /></label>
-        {mode !== 'reset' && <label className="field"><span>密码</span><input type="password" autoComplete={mode === 'sign-in' ? 'current-password' : 'new-password'} value={password} onChange={(event) => setPassword(event.target.value)} minLength={8} placeholder="至少 8 位" required /></label>}
-        {mode === 'sign-up' && <label className="field"><span>再次输入密码</span><input type="password" autoComplete="new-password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} minLength={8} required /></label>}
+        {mode !== 'reset' && <PasswordField label="密码" value={password} onChange={setPassword} autoComplete={mode === 'sign-in' ? 'current-password' : 'new-password'} placeholder="至少 8 位" />}
+        {mode === 'sign-up' && <PasswordField label="再次输入密码" value={confirmPassword} onChange={setConfirmPassword} autoComplete="new-password" />}
         {mode === 'sign-up' && <p className="helper">我们会向这个邮箱发送一个 6 位验证码，只需验证一次。</p>}
         {error && <p className="field-error account-feedback">{error}</p>}
         {message && <p className="account-success">{message}</p>}

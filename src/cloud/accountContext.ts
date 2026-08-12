@@ -7,6 +7,7 @@ export interface CloudAccountValue {
   configured: boolean
   session: Session | null
   authLoading: boolean
+  cloudDataReady: boolean
   syncStatus: CloudSyncStatus
   syncMessage: string
   lastSyncedAt?: string

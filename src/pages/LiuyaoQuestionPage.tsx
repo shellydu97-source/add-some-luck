@@ -11,9 +11,12 @@ import { GUEST_PROFILE_ID } from '../utils/record'
 import { getRequestedDraft } from '../utils/draftEntry'
 
 const genderOptions = [
+  { value: 'unspecified' as const, label: '不填写' },
   { value: 'female' as const, label: '女' },
   { value: 'male' as const, label: '男' },
 ]
+
+type QuerentGenderChoice = Gender | 'unspecified'
 
 export default function LiuyaoQuestionPage() {
   const navigate = useNavigate()
@@ -26,7 +29,7 @@ export default function LiuyaoQuestionPage() {
   const [question, setQuestion] = useState(entryState?.question ?? resumed?.question ?? '')
   const [category, setCategory] = useState(resumed?.category ?? categoryOptions[0])
   const [timeRange, setTimeRange] = useState(resumed?.state.timeRange ?? '')
-  const [querentGender, setQuerentGender] = useState<Gender>(resumed?.state.querentGender ?? profile?.gender ?? 'female')
+  const [querentGender, setQuerentGender] = useState<QuerentGenderChoice>(resumed?.state.querentGender ?? 'unspecified')
   const [duplicate, setDuplicate] = useState<DivinationRecord>()
 
   function submit(force = false) {
@@ -45,7 +48,7 @@ export default function LiuyaoQuestionPage() {
       createdAt: now,
       updatedAt: now,
       randomSeed: makeId('liuyao-seed'),
-      state: { querentGender, coinConventionVersion: LIUYAO_COIN_CONVENTION_VERSION, timeRange: timeRange.trim(), casts: [], locked: false },
+      state: { querentGender: querentGender === 'unspecified' ? undefined : querentGender, coinConventionVersion: LIUYAO_COIN_CONVENTION_VERSION, timeRange: timeRange.trim(), casts: [], locked: false },
     }
     store.upsertDraft(draft)
     navigate('/divination/liuyao/cast')
@@ -56,7 +59,7 @@ export default function LiuyaoQuestionPage() {
     <ConfidenceNote>写清楚一件最关心的事，后续解读会更贴近你的问题；留空也可以起卦。</ConfidenceNote>
     <Card>
       <label className="field"><span>问题（选填）</span><textarea rows={4} maxLength={120} value={question} onChange={(event) => { setQuestion(event.target.value); setDuplicate(undefined) }} placeholder="可以留空；例如：这次出行是否能按计划进行？" /></label>
-      <div className="field"><span>占问者性别</span><Segmented value={querentGender} options={genderOptions} onChange={setQuerentGender} label="占问者性别" /></div>
+      <div className="field"><span>占问者性别（选填）</span><Segmented value={querentGender} options={genderOptions} onChange={setQuerentGender} label="占问者性别（选填）" /></div>
       <label className="field"><span>问题分类</span><select value={category} onChange={(event) => setCategory(event.target.value)}>{categoryOptions.map((item) => <option key={item}>{item}</option>)}</select></label>
       <label className="field"><span>观察时间范围（选填）</span><input value={timeRange} onChange={(event) => setTimeRange(event.target.value)} placeholder="例如：未来两周" /></label>
     </Card>

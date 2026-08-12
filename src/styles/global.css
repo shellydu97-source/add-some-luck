@@ -509,6 +509,11 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 700; }
 .account-secondary-actions button { border: 0; background: transparent; color: #4d5b4f; font: inherit; font-size: 12px; text-decoration: underline; }
 .account-secondary-actions button:disabled { color: var(--muted); text-decoration: none; }
 .account-code-input { text-align: center; font-size: 22px; font-weight: 750; letter-spacing: .2em; }
+.password-input-wrap { position: relative; display: block; width: 100%; color: inherit; font-size: inherit; }
+.field .password-input-wrap input { padding-right: 52px; }
+.password-visibility { position: absolute; top: 50%; right: 8px; width: 38px; height: 38px; transform: translateY(-50%); border: 0; border-radius: 10px; background: transparent; color: var(--muted); font-size: 22px; line-height: 1; }
+.password-visibility svg { width: 21px; height: 21px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.password-visibility:hover, .password-visibility:focus-visible { background: var(--soft); color: var(--ink); }
 .account-guest-entry { margin: 18px 0 0; text-align: center; }
 .account-guest-entry button { border: 0; background: transparent; color: #4d5b4f; font: inherit; font-size: 13px; font-weight: 700; text-decoration: underline; }
 .account-guest-entry p { margin: 8px 0 0; color: var(--muted); font-size: 11px; line-height: 1.6; }

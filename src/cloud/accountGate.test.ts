@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { accountGateDestination } from './accountGateState'
+import { accountGateDestination, shouldWaitForAccountData } from './accountGateState'
 
 describe('账号启动入口', () => {
   it('首次打开且未登录时进入账号页', () => {
@@ -21,5 +21,14 @@ describe('账号启动入口', () => {
     expect(accountGateDestination({
       configured: false, authLoading: false, signedIn: false, guestAllowed: false, currentPath: '/',
     })).toBeUndefined()
+  })
+
+  it('新设备登录后先等待云端数据恢复，再进入业务页面', () => {
+    expect(shouldWaitForAccountData({
+      configured: true, authLoading: false, signedIn: true, cloudDataReady: false,
+    })).toBe(true)
+    expect(shouldWaitForAccountData({
+      configured: true, authLoading: false, signedIn: true, cloudDataReady: true,
+    })).toBe(false)
   })
 })

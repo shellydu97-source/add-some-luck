@@ -87,6 +87,7 @@ export function CloudAccountProvider({ children }: { children: ReactNode }) {
   const initializedUserId = useRef('')
   const applyingRemote = useRef(false)
   const accountUserId = session?.user.id
+  const cloudDataReady = !accountUserId || syncReadyUserId === accountUserId || syncStatus === 'error'
 
   const commitSynced = useCallback((userId: string, dataHash: string, updatedAt: string) => {
     writeSyncMeta({ userId, lastSyncedHash: dataHash, lastSyncedAt: updatedAt, dirty: false })
@@ -351,6 +352,7 @@ export function CloudAccountProvider({ children }: { children: ReactNode }) {
     configured: isCloudAccountConfigured,
     session,
     authLoading,
+    cloudDataReady,
     syncStatus,
     syncMessage,
     lastSyncedAt,
@@ -368,7 +370,7 @@ export function CloudAccountProvider({ children }: { children: ReactNode }) {
     keepCloudData,
     keepLocalData,
     mergeBoth,
-  }), [authLoading, conflictRemote, keepCloudData, keepLocalData, lastSyncedAt, mergeBoth, passwordRecovery, resendSignUpCode, sendPasswordReset, session, signIn, signOut, signUp, syncMessage, syncNow, syncStatus, updatePassword, verifyPasswordResetCode, verifySignUpCode])
+  }), [authLoading, cloudDataReady, conflictRemote, keepCloudData, keepLocalData, lastSyncedAt, mergeBoth, passwordRecovery, resendSignUpCode, sendPasswordReset, session, signIn, signOut, signUp, syncMessage, syncNow, syncStatus, updatePassword, verifyPasswordResetCode, verifySignUpCode])
 
   return <CloudAccountContext.Provider value={value}>{children}</CloudAccountContext.Provider>
 }
