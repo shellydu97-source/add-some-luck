@@ -1,11 +1,11 @@
 {
-  "testedAt": "2026-08-20T07:36:49.828Z",
-  "baseUrl": "http://127.0.0.1:4173",
+  "testedAt": "2026-08-20T07:50:04.421Z",
+  "baseUrl": "https://add-some-luck.pages.dev",
   "zhejiangCityCount": 11,
   "ritualAnimationMoved": true,
   "ritualTransforms": {
-    "before": "translate3d(-89.7336px, 0px, 0px)",
-    "after": "translate3d(-81.716px, 0px, 0px)"
+    "before": "translate3d(-13.1947px, 0px, 0px)",
+    "after": "translate3d(-0.79472px, 0px, 0px)"
   },
   "desktopOverflow": 0,
   "mobileOverflow": 0,

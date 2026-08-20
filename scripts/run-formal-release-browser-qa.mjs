@@ -82,6 +82,7 @@ async function navigate(path) {
   await send('Page.navigate', { url: `${baseUrl}${path}` })
   await waitFor(`location.href.startsWith(${JSON.stringify(`${baseUrl}${path}`)})`, `${path} navigation`)
   await waitFor(`document.readyState === 'complete'`, path)
+  await waitFor(`!document.querySelector('.startup-splash')`, `${path} startup splash dismissal`, 10000)
   await delay(350)
 }
 
@@ -141,6 +142,7 @@ await waitFor(`document.body.innerText.includes('今日运势') && document.body
 await screenshot('00-today-hub.png')
 
 await navigate('/profiles/new')
+await waitFor(`document.querySelector('.location-picker-trigger') && !document.querySelector('.location-picker-trigger').disabled`, 'birth city data', 15000)
 await clickText('选择省份和城市', 'button')
 await waitFor(`[...document.querySelectorAll('select')].some((item) => [...item.options].some((option) => option.textContent === '浙江省'))`, 'province selector')
 await evaluate(`(() => {
