@@ -264,10 +264,10 @@ export default function AccountPage() {
         <label className="field"><span>邮箱</span><input type="email" inputMode="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="name@example.com" required /></label>
         {mode !== 'reset' && <PasswordField label="密码" value={password} onChange={setPassword} autoComplete={mode === 'sign-in' ? 'current-password' : 'new-password'} placeholder="至少 8 位" />}
         {mode === 'sign-up' && <PasswordField label="再次输入密码" value={confirmPassword} onChange={setConfirmPassword} autoComplete="new-password" />}
-        {mode === 'sign-up' && <p className="helper">我们会向这个邮箱发送一个 6 位验证码，只需验证一次。</p>}
+        {mode === 'sign-up' && <p className="helper">请使用常用邮箱，之后可用于找回密码。目前注册后可直接登录。</p>}
         {error && <p className="field-error account-feedback">{error}</p>}
         {message && <p className="account-success">{message}</p>}
-        <Button type="submit" disabled={busy}>{busy ? '请稍候…' : mode === 'sign-up' ? '获取验证码' : mode === 'reset' ? '获取验证码' : '登录'}</Button>
+        <Button type="submit" disabled={busy}>{busy ? '请稍候…' : mode === 'sign-up' ? '注册' : mode === 'reset' ? '获取验证码' : '登录'}</Button>
       </form>
       <div className="account-secondary-actions">
         {mode === 'sign-in' && <button type="button" onClick={() => switchMode('reset')}>忘记密码</button>}

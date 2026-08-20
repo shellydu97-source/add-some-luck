@@ -1,7 +1,7 @@
 import type { Session, SupabaseClient } from '@supabase/supabase-js'
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import type { AppDataState } from '../models/types'
-import { pickAppData } from '../storage/appData'
+import { createEmptyAppData, pickAppData } from '../storage/appData'
 import { migrateToV12 } from '../storage/migrations'
 import { appDataSchema } from '../storage/schema'
 import { useAppStore } from '../storage/store'
@@ -10,6 +10,9 @@ import { getSupabaseClient, isCloudAccountConfigured } from './supabaseClient'
 import { CloudAccountContext, type CloudAccountValue, type CloudSyncStatus } from './accountContext'
 
 const CLOUD_META_KEY = 'add-luck-cloud-sync-meta-v1'
+const ACTIVE_DATA_OWNER_KEY = 'add-luck-active-data-owner-v1'
+const GUEST_DATA_KEY = 'add-luck-guest-data-v1'
+const GUEST_OWNER = 'guest'
 const SYNC_DELAY_MS = 900
 
 interface RemoteSnapshot {
@@ -33,6 +36,29 @@ function readSyncMeta(): CloudSyncMeta | undefined {
 
 function writeSyncMeta(meta: CloudSyncMeta) {
   window.localStorage.setItem(CLOUD_META_KEY, JSON.stringify(meta))
+}
+
+function readActiveDataOwner() {
+  const explicit = window.localStorage.getItem(ACTIVE_DATA_OWNER_KEY)
+  if (explicit) return explicit
+  return readSyncMeta()?.userId ?? GUEST_OWNER
+}
+
+function writeActiveDataOwner(ownerId: string) {
+  window.localStorage.setItem(ACTIVE_DATA_OWNER_KEY, ownerId)
+}
+
+function saveGuestData(payload: AppDataState) {
+  window.localStorage.setItem(GUEST_DATA_KEY, JSON.stringify(payload))
+}
+
+function readGuestData() {
+  try {
+    const raw = window.localStorage.getItem(GUEST_DATA_KEY)
+    return raw ? migrateToV12(appDataSchema.parse(JSON.parse(raw))) : createEmptyAppData()
+  } catch {
+    return createEmptyAppData()
+  }
 }
 
 async function readRemote(client: SupabaseClient, userId: string): Promise<RemoteSnapshot | undefined> {
@@ -90,6 +116,7 @@ export function CloudAccountProvider({ children }: { children: ReactNode }) {
   const cloudDataReady = !accountUserId || syncReadyUserId === accountUserId || syncStatus === 'error'
 
   const commitSynced = useCallback((userId: string, dataHash: string, updatedAt: string) => {
+    writeActiveDataOwner(userId)
     writeSyncMeta({ userId, lastSyncedHash: dataHash, lastSyncedAt: updatedAt, dirty: false })
     setLastSyncedAt(updatedAt)
     setSyncStatus('synced')
@@ -114,6 +141,8 @@ export function CloudAccountProvider({ children }: { children: ReactNode }) {
     setSyncStatus('checking')
     setSyncMessage('正在读取云端数据…')
     const local = getLocalData()
+    const localOwnerId = readActiveDataOwner()
+    if (localOwnerId === GUEST_OWNER) saveGuestData(local)
     const localHash = hashAppData(local)
     const remote = await readRemote(activeClient, userId)
     const decision = decideInitialSync({
@@ -122,9 +151,16 @@ export function CloudAccountProvider({ children }: { children: ReactNode }) {
       localHash,
       remoteHash: remote?.dataHash,
       meta: readSyncMeta(),
+      localOwnerId,
     })
 
-    if (decision === 'upload') {
+    if (decision === 'initialize') {
+      applyingRemote.current = true
+      useAppStore.getState().restoreCloudData(createEmptyAppData())
+      applyingRemote.current = false
+      writeActiveDataOwner(userId)
+      await pushLocal(activeClient, userId)
+    } else if (decision === 'upload') {
       await pushLocal(activeClient, userId)
     } else if (decision === 'download' && remote) {
       applyRemote(remote, userId)
@@ -151,6 +187,12 @@ export function CloudAccountProvider({ children }: { children: ReactNode }) {
       setClient(nextClient)
       void nextClient.auth.getSession().then(({ data }) => {
         if (active) {
+          if (!data.session && readActiveDataOwner() !== GUEST_OWNER) {
+            applyingRemote.current = true
+            useAppStore.getState().restoreCloudData(readGuestData())
+            applyingRemote.current = false
+            writeActiveDataOwner(GUEST_OWNER)
+          }
           setSession(data.session)
           setAuthLoading(false)
         }
@@ -307,6 +349,11 @@ export function CloudAccountProvider({ children }: { children: ReactNode }) {
 
   const signOut = useCallback(async () => {
     if (!client) return
+    setSyncReadyUserId('')
+    applyingRemote.current = true
+    useAppStore.getState().restoreCloudData(readGuestData())
+    applyingRemote.current = false
+    writeActiveDataOwner(GUEST_OWNER)
     const { error } = await client.auth.signOut()
     if (error) throw error
   }, [client])

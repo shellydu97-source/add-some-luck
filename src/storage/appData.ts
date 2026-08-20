@@ -1,5 +1,17 @@
 import type { AppDataState } from '../models/types'
 
+export function createEmptyAppData(): AppDataState {
+  return {
+    schemaVersion: '1.2',
+    lastPrimaryRoute: 'charts',
+    reduceMotion: false,
+    activeProfileId: '',
+    profiles: [],
+    records: [],
+    drafts: [],
+  }
+}
+
 export function pickAppData(state: AppDataState): AppDataState {
   return {
     schemaVersion: state.schemaVersion,

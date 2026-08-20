@@ -7,7 +7,7 @@ export interface CloudSyncMeta {
   dirty: boolean
 }
 
-export type InitialSyncDecision = 'upload' | 'download' | 'noop' | 'merge'
+export type InitialSyncDecision = 'initialize' | 'upload' | 'download' | 'noop' | 'merge'
 
 function stableSerialize(value: unknown): string {
   if (Array.isArray(value)) return `[${value.map(stableSerialize).join(',')}]`
@@ -36,8 +36,10 @@ export function decideInitialSync(input: {
   localHash: string
   remoteHash?: string
   meta?: CloudSyncMeta
+  localOwnerId?: string
 }): InitialSyncDecision {
-  const { userId, localHash, remoteHash, meta } = input
+  const { userId, localHash, remoteHash, meta, localOwnerId } = input
+  if (localOwnerId !== userId) return remoteHash ? 'download' : 'initialize'
   if (!remoteHash) return 'upload'
   if (remoteHash === localHash) return 'noop'
 

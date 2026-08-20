@@ -10,20 +10,27 @@ function data(overrides: Partial<AppDataState> = {}): AppDataState {
 }
 
 describe('云端同步决策', () => {
-  it('云端没有数据时上传本机数据', () => {
+  it('同一账号云端没有数据时上传自己的本机数据', () => {
     const local = data()
-    expect(decideInitialSync({ userId: 'u1', local, localHash: hashAppData(local) })).toBe('upload')
+    expect(decideInitialSync({ userId: 'u1', local, localHash: hashAppData(local), localOwnerId: 'u1' })).toBe('upload')
+  })
+
+  it('新账号绝不继承浏览器里其他账号或访客的数据', () => {
+    const local = data({ profiles: [{ id: 'someone-else' } as AppDataState['profiles'][number]] })
+    expect(decideInitialSync({ userId: 'u2', local, localHash: hashAppData(local), localOwnerId: 'u1' })).toBe('initialize')
+    expect(decideInitialSync({ userId: 'u2', local, localHash: hashAppData(local), localOwnerId: 'guest' })).toBe('initialize')
   })
 
   it('新设备本机为空时下载云端数据', () => {
     const local = data()
-    expect(decideInitialSync({ userId: 'u1', local, localHash: hashAppData(local), remoteHash: 'remote' })).toBe('download')
+    expect(decideInitialSync({ userId: 'u1', local, localHash: hashAppData(local), remoteHash: 'remote', localOwnerId: 'guest' })).toBe('download')
   })
 
   it('同一账号的本机和云端都变化时自动合并', () => {
     const local = data({ reduceMotion: true })
     expect(decideInitialSync({
       userId: 'u1', local, localHash: hashAppData(local), remoteHash: 'remote-new',
+      localOwnerId: 'u1',
       meta: { userId: 'u1', lastSyncedHash: 'old', lastSyncedAt: '2026-07-17T00:00:00.000Z', dirty: true },
     })).toBe('merge')
   })
@@ -32,6 +39,7 @@ describe('云端同步决策', () => {
     const local = data({ profiles: [{ id: 'browser-cache' } as AppDataState['profiles'][number]] })
     expect(decideInitialSync({
       userId: 'u1', local, localHash: hashAppData(local), remoteHash: 'remote',
+      localOwnerId: 'browser-cache-owner',
     })).toBe('download')
   })
 
@@ -39,6 +47,7 @@ describe('云端同步决策', () => {
     const local = data({ reduceMotion: true })
     expect(decideInitialSync({
       userId: 'u1', local, localHash: 'local-new', remoteHash: 'synced',
+      localOwnerId: 'u1',
       meta: { userId: 'u1', lastSyncedHash: 'synced', lastSyncedAt: '2026-07-17T00:00:00.000Z', dirty: true },
     })).toBe('upload')
   })
@@ -47,6 +56,7 @@ describe('云端同步决策', () => {
     const local = data()
     expect(decideInitialSync({
       userId: 'u1', local, localHash: 'synced', remoteHash: 'remote-new',
+      localOwnerId: 'u1',
       meta: { userId: 'u1', lastSyncedHash: 'synced', lastSyncedAt: '2026-07-17T00:00:00.000Z', dirty: false },
     })).toBe('download')
   })
