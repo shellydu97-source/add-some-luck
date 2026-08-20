@@ -4,9 +4,10 @@ import { useAppStore } from '../storage/store'
 import type { PrimaryNav } from '../models/types'
 
 const navItems = [
-  { id: 'charts' as const, to: '/charts', label: '命盘', icon: '◎' },
-  { id: 'divination' as const, to: '/divination', label: '起卦', icon: '◇' },
-  { id: 'records' as const, to: '/records', label: '记录', icon: '▤' },
+  { id: 'fortune' as const, to: '/today', label: '今日运势', icon: '◷' },
+  { id: 'charts' as const, to: '/charts', label: '命理', icon: '◎' },
+  { id: 'divination' as const, to: '/divination', label: '占卜', icon: '◇' },
+  { id: 'records' as const, to: '/me', label: '我的', icon: '▢' },
 ]
 
 export default function AppShell() {
@@ -21,9 +22,10 @@ export default function AppShell() {
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'instant' })
     let primary: PrimaryNav | undefined
-    if (location.pathname.startsWith('/charts') || location.pathname.startsWith('/profiles')) primary = 'charts'
+    if (location.pathname.startsWith('/today')) primary = 'fortune'
+    else if (location.pathname.startsWith('/charts')) primary = 'charts'
     else if (location.pathname.startsWith('/divination')) primary = 'divination'
-    else if (location.pathname.startsWith('/records')) primary = 'records'
+    else if (location.pathname.startsWith('/me') || location.pathname.startsWith('/records') || location.pathname.startsWith('/profiles') || location.pathname.startsWith('/settings')) primary = 'records'
     if (primary) setLastPrimaryRoute(primary)
   }, [location.pathname, setLastPrimaryRoute])
 
@@ -40,8 +42,8 @@ export default function AppShell() {
       <nav className="bottom-nav" aria-label="一级导航">
         {navItems.map((item) => (
           <NavLink key={item.to} to={item.to} className={({ isActive }) => {
-            const profileRoute = item.id === 'charts' && location.pathname.startsWith('/profiles')
-            return isActive || profileRoute ? 'active' : ''
+            const secondaryMineRoute = item.id === 'records' && (location.pathname.startsWith('/records') || location.pathname.startsWith('/profiles') || location.pathname.startsWith('/settings'))
+            return isActive || secondaryMineRoute ? 'active' : ''
           }}>
             <span className="nav-icon" aria-hidden="true">{item.icon}</span><span>{item.label}</span>
           </NavLink>

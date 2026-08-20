@@ -7,10 +7,10 @@ describe('启动入口', () => {
   })
 
   it('有人物时恢复可见的最后一级导航', () => {
-    expect(resolveStartupPath(2, 'records')).toBe('/records')
+    expect(resolveStartupPath(2, 'records')).toBe('/me')
   })
 
-  it('旧运势导航在 V1 基础框架版回退到命盘', () => {
-    expect(resolveStartupPath(2, 'fortune')).toBe('/charts')
+  it('恢复今日运势入口', () => {
+    expect(resolveStartupPath(2, 'fortune')).toBe('/today')
   })
 })

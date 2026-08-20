@@ -1,66 +1,86 @@
-import { useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
-import TopBar from '../components/TopBar'
+import { useMemo } from 'react'
+import { analyzeBaziFlow, calculateBazi, calculateBaziFlowDate, type TenGod } from '../calculation/bazi'
 import PersonSwitcher from '../components/PersonSwitcher'
-import { Button, Card, ConfidenceNote, DemoBadge, EmptyState, LinkButton, Segmented, SectionHeading } from '../components/UI'
+import TermHelp from '../components/TermHelp'
+import TopBar from '../components/TopBar'
+import { Card, ConfidenceNote, EmptyState, LinkButton, SectionHeading } from '../components/UI'
 import { getActiveProfile, useAppStore } from '../storage/store'
-import { getMockFortune } from '../mocks/fortune'
-import type { FortunePeriodType } from '../models/types'
 
-const periods = [
-  { value: 'day' as const, label: '每日' }, { value: 'week' as const, label: '每周' }, { value: 'month' as const, label: '每月' },
-]
-const dimensionLabels = { relationships: '感情与人际', work: '工作与学习', finance: '财务节奏', wellbeing: '情绪与状态' }
+const tenGodFocus: Record<TenGod, { theme: string; note: string }> = {
+  比肩: { theme: '自主与协作', note: '适合把自己的判断说清楚，也留意同伴之间的分工。' },
+  劫财: { theme: '竞争与取舍', note: '涉及资源或共同决定时，先把边界和优先级讲明白。' },
+  食神: { theme: '表达与推进', note: '适合把已有想法落成具体步骤，避免只停在构想里。' },
+  伤官: { theme: '调整与表达', note: '表达会更直接，重要沟通可以先理顺事实和语气。' },
+  偏财: { theme: '机会与流动', note: '容易接触临时机会，也要留意时间、精力和预算的分配。' },
+  正财: { theme: '秩序与落实', note: '适合处理清单、账目和需要持续完成的现实事项。' },
+  七杀: { theme: '压力与行动', note: '事情可能更催促，先抓关键任务，避免被紧迫感带着走。' },
+  正官: { theme: '责任与规则', note: '适合处理正式事项，重要承诺和流程需要逐项确认。' },
+  偏印: { theme: '观察与转换', note: '适合换个角度研究问题，但要防止信息过多而迟迟不动。' },
+  正印: { theme: '学习与支持', note: '适合学习、整理资料，也可以主动寻求可靠经验。' },
+}
 
-function shiftAnchor(anchor: Date, period: FortunePeriodType, direction: number) {
-  const next = new Date(anchor)
-  if (period === 'month') next.setMonth(next.getMonth() + direction)
-  else next.setDate(next.getDate() + direction * (period === 'week' ? 7 : 1))
-  return next
+function todayInShanghai() {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Asia/Shanghai', year: 'numeric', month: '2-digit', day: '2-digit',
+  }).formatToParts(new Date())
+  const value = Object.fromEntries(parts.map((part) => [part.type, part.value]))
+  return { input: `${value.year}/${value.month}/${value.day}`, display: `${value.year}年${value.month}月${value.day}日` }
+}
+
+function availableGanZhi(calendar: ReturnType<typeof calculateBaziFlowDate>, key: 'year' | 'month' | 'day') {
+  if (!calendar.ok) return '—'
+  const value = calendar[key]
+  return value.status === 'available' ? value.ganZhi : value.candidates.join(' / ')
 }
 
 export default function TodayPage() {
-  const [searchParams, setSearchParams] = useSearchParams()
-  const initialPeriod = searchParams.get('period')
-  const [period, setPeriodState] = useState<FortunePeriodType>(initialPeriod === 'week' || initialPeriod === 'month' ? initialPeriod : 'day')
-  const [anchor, setAnchor] = useState(() => new Date())
-  const [question, setQuestion] = useState('')
-  const [messages, setMessages] = useState<Array<{ role: 'user' | 'mock'; content: string }>>([])
   const store = useAppStore()
   const profile = getActiveProfile(store)
+  const today = useMemo(() => todayInShanghai(), [])
+  const calendar = useMemo(() => calculateBaziFlowDate(today.input), [today.input])
+  const bazi = useMemo(() => profile ? calculateBazi(profile) : undefined, [profile])
+  const analysis = useMemo(() => {
+    if (!bazi?.ok || !calendar.ok || calendar.day.status !== 'available') return undefined
+    return analyzeBaziFlow(bazi, calendar.day.ganZhi, '今日流日')
+  }, [bazi, calendar])
+  const focus = analysis ? tenGodFocus[analysis.stemTenGod] : undefined
 
-  if (!profile) return <>
-    <TopBar title="运势" />
-    <EmptyState title="先建立命盘" action={<LinkButton to="/profiles/new?onboarding=1">建立人物档案</LinkButton>}>个人日、周、月运势需要人物信息；当前不会展示假个人运势。</EmptyState>
-  </>
+  return <div className="today-page">
+    <TopBar title="今日运势" eyebrow={today.display} action={<PersonSwitcher compact />} />
 
-  const fortune = getMockFortune(profile.id, period, anchor)
-  const now = new Date()
-  const isCurrent = period === 'month'
-    ? anchor.getFullYear() === now.getFullYear() && anchor.getMonth() === now.getMonth()
-    : fortune.startDate <= `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}` && fortune.endDate >= `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
-  function setPeriod(next: FortunePeriodType) { setPeriodState(next); setSearchParams({ period: next }) }
-  function submitFollowUp() {
-    if (!question.trim()) return
-    setMessages((current) => [...current, { role: 'user', content: question.trim() }, { role: 'mock', content: '这是页面内固定 mock 回复：当前运势尚未接入真实推演或 AI，现有演示信息不足以支持更具体的判断。' }])
-    setQuestion('')
-  }
+    <Card className="today-calendar-card">
+      <span className="summary-label">今日干支</span>
+      <h2>{availableGanZhi(calendar, 'year')}年 · {availableGanZhi(calendar, 'month')}月 · {availableGanZhi(calendar, 'day')}日</h2>
+      <p className="helper">{calendar.ok ? calendar.lunarDate : calendar.error.message}</p>
+    </Card>
 
-  return <>
-    <TopBar title="运势" eyebrow={`${fortune.startDate} — ${fortune.endDate}`} action={<PersonSwitcher compact />} />
-    <Segmented value={period} options={periods} onChange={setPeriod} label="运势周期" />
-    <div className="period-controls"><Button className="secondary" onClick={() => setAnchor((current) => shiftAnchor(current, period, -1))}>← 前一周期</Button><Button className="secondary" disabled={isCurrent} onClick={() => setAnchor(new Date())}>回到当前</Button><Button className="secondary" onClick={() => setAnchor((current) => shiftAnchor(current, period, 1))}>后一周期 →</Button></div>
-    <ConfidenceNote>当前全部为固定演示内容，未根据人物命盘进行真实日、周或月运势推演。</ConfidenceNote>
-    {profile.timeAccuracy === 'unknown' && <ConfidenceNote>出生时间不足，上升、宫位、时柱相关运势依据不可可靠生成；下方只展示信息框架。</ConfidenceNote>}
-    {profile.normalizationStatus !== 'normalized' && <ConfidenceNote>出生信息尚未真实标准化，时区、历法和地点相关内容均为未处理状态。</ConfidenceNote>}
+    {!profile && <EmptyState title="选择人物后查看个人提示" action={<LinkButton to="/profiles/new">建立人物档案</LinkButton>}>今天的日期信息可以直接查看；个人部分需要出生资料。</EmptyState>}
 
-    <Card className="hero-card"><div className="hero-label"><span>综合趋势</span><DemoBadge /></div><h2 className="hero-title">先核对，再推进</h2><div className="chip-row">{fortune.keywords.map((item) => <span className="chip" key={item}>{item}</span>)}</div><p className="helper">{fortune.summary}</p></Card>
-    <div className="fortune-dimensions">{Object.entries(fortune.dimensions).map(([key, item]) => <Card key={key}><div className="card-kicker"><span>{dimensionLabels[key as keyof typeof dimensionLabels]}</span><span className="trend-label">{item.trend}</span></div><p>{item.summary}</p></Card>)}</div>
-    <Card><SectionHeading title="八字依据" side={<DemoBadge />} /><h3>{fortune.baziView.headline}</h3><p className="helper">{fortune.baziView.conclusion}</p><ul className="plain-list">{fortune.baziView.evidence.map((item) => <li key={item}>{item}</li>)}</ul></Card>
-    <Card><SectionHeading title="星象依据" side={<DemoBadge />} /><h3>{fortune.astrologyView.headline}</h3><p className="helper">{fortune.astrologyView.conclusion}</p><ul className="plain-list">{fortune.astrologyView.evidence.map((item) => <li key={item}>{item}</li>)}</ul></Card>
-    <Card><SectionHeading title="一致或冲突信息" /><p className="helper">{fortune.alignment}</p><ul className="plain-list">{fortune.combinedView.conflicts.map((item) => <li key={item}>{item}</li>)}</ul></Card>
-    <Card className="uncertainty-card"><SectionHeading title="不确定性与可信度" /><p>{fortune.combinedView.uncertainty}</p></Card>
-    <Card><SectionHeading title="现实建议" /><ul className="plain-list">{[...fortune.suggestions, ...fortune.cautions].map((item) => <li key={item}>{item}</li>)}</ul></Card>
-    <Card className="follow-up-card"><SectionHeading title="继续追问" side={<DemoBadge label="页面内 mock" />} /><p className="helper">本轮对话只保留在当前页面内，不写入正式占验记录，刷新后会清空。</p>{!!messages.length && <div className="chat-list">{messages.map((message, index) => <div className={`chat-bubble ${message.role}`} key={`${message.role}-${index}`}><b>{message.role === 'user' ? '你' : '演示回复'}</b><p>{message.content}</p></div>)}</div>}<div className="follow-up-input"><textarea rows={2} value={question} onChange={(event) => setQuestion(event.target.value)} placeholder="围绕本期运势继续问…" /><Button onClick={submitFollowUp}>发送</Button></div></Card>
-  </>
+    {profile && !bazi?.ok && <EmptyState title="暂时无法生成个人提示" action={<LinkButton to={`/profiles/${profile.id}/edit`}>检查出生信息</LinkButton>}>请先核对出生日期、历法和闰月信息。</EmptyState>}
+
+    {profile && bazi?.ok && <>
+      <Card className="today-focus-card">
+        <div className="card-kicker"><span>{profile.name} · 今日重点</span></div>
+        <h2>{focus?.theme ?? '按当日节奏安排事情'}</h2>
+        <p>{focus?.note ?? '今天的个人流日信息暂时无法完整生成，请以实际情况为准。'}</p>
+        {analysis && <div className="chip-row">
+          <span className="chip"><TermHelp term={analysis.stemTenGod} />{analysis.stemTenGod}</span>
+          <span className="chip">{analysis.stemElement}{analysis.branchElement}</span>
+          <span className="chip"><TermHelp term="十二长生" />{analysis.twelveStage}</span>
+          <span className="chip"><TermHelp term="纳音" />{analysis.naYin}</span>
+        </div>}
+      </Card>
+
+      {analysis && <Card>
+        <SectionHeading title="今天与命盘的关系" />
+        {!!analysis.shenSha.length && <div className="today-fact-block"><b>今日神煞</b><div className="chip-row">{analysis.shenSha.map((item, index) => <span className="chip" key={`${item.name}-${index}`}><TermHelp term={item.name} />{item.name}</span>)}</div></div>}
+        {!!analysis.relations.length && <ul className="plain-list today-relations">{analysis.relations.map((item, index) => <li key={`${item.kind}-${index}`}><b>{item.kind}</b>：{item.text}</li>)}</ul>}
+        {!analysis.shenSha.length && !analysis.relations.length && <p className="helper">今天没有命中当前收录的常用神煞或完整干支关系。</p>}
+        <p className="fact-boundary">以上是当天干支与原命盘形成的结构信息，不等同于确定会发生的事情。</p>
+      </Card>}
+
+      {profile.timeAccuracy === 'unknown' && <ConfidenceNote>出生时间未知，今日信息不使用时柱相关内容。</ConfidenceNote>}
+      <LinkButton to={`/charts/${profile.id}/bazi`}>查看完整命理与运势</LinkButton>
+    </>}
+  </div>
 }

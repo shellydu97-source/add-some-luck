@@ -5,6 +5,8 @@ import {
   calculateMeihuaByTime, createMeihuaBasicInterpretation, type MeihuaCalculationResult,
 } from '../calculation/meihua'
 import AiReadingPanel from '../components/AiReadingPanel'
+import HexagramHelp from '../components/HexagramHelp'
+import TermHelp from '../components/TermHelp'
 import TopBar from '../components/TopBar'
 import { Button, Card, EmptyState, LinkButton, SectionHeading } from '../components/UI'
 import type { MeihuaDraft } from '../models/types'
@@ -38,6 +40,8 @@ function resultContext(result: MeihuaCalculationResult) {
     original: result.original,
     mutual: result.mutual,
     changed: result.changed,
+    opposite: result.opposite,
+    reversed: result.reversed,
     movingLine: result.movingLine,
     movingLineText: result.movingLineText,
     bodyTrigram: result.bodyTrigram,
@@ -63,52 +67,58 @@ export default function MeihuaResultPage() {
     return <><TopBar title="梅花易数结果" back /><EmptyState title="当前结果无法生成" action={<LinkButton to="/divination/meihua/cast">返回检查</LinkButton>}>{caught instanceof Error ? caught.message : '请重新检查起卦信息。'}</EmptyState></>
   }
   const profile = activeDraft.profileId === GUEST_PROFILE_ID ? undefined : store.profiles.find((item) => item.id === activeDraft.profileId)
+  const subjectLabel = profile?.name ?? activeDraft.temporarySubject?.name?.trim() ?? '临时测算'
   const interpretation = createMeihuaBasicInterpretation(result)
   const rawResult = { lockedAt, ...resultContext(result), engineVersion: result.engineVersion, adapterVersion: result.adapterVersion, ruleVersion: result.ruleVersion }
 
   function ensureRecord() {
     const existing = activeDraft.state.recordId && store.records.find((record) => record.id === activeDraft.state.recordId)
     if (existing) return existing.id
-    const created = createRecord({ profile, type: 'meihua', question: activeDraft.question, category: activeDraft.category, rawResult, interpretation })
+    const created = createRecord({ profile, temporarySubject: activeDraft.temporarySubject, type: 'meihua', question: activeDraft.question, category: activeDraft.category, rawResult, interpretation })
     store.createRecordSnapshot(created)
     store.upsertDraft({ ...activeDraft, state: { ...activeDraft.state, recordId: created.id } })
     return created.id
   }
 
   return <>
-    <TopBar title="梅花易数结果" eyebrow={methodLabels[method]} back action={<span className="chip">{profile?.name ?? '未关联人物'}</span>} />
+    <TopBar title="梅花易数结果" eyebrow={methodLabels[method]} back action={<span className="chip">{subjectLabel}</span>} />
     {activeDraft.question && <Card className="question-summary"><span>本次问题</span><p>{activeDraft.question}</p></Card>}
     <Card className="hero-card result-hero">
       <div className="card-kicker"><span>本卦 → 变卦</span></div>
-      <h2>第 {result.original.number} 卦 · {result.original.name}</h2>
+      <h2><HexagramHelp hexagram={result.original} movingLines={[result.movingLine]} context="本次起卦最初得到的卦象。" /></h2>
       <span className="result-arrow">↓</span>
-      <h2>第 {result.changed.number} 卦 · {result.changed.name}</h2>
+      <h2><HexagramHelp hexagram={result.changed} context="本卦动爻变化后形成的卦象。" /></h2>
       <div className="chip-row"><span className="chip">第 {result.movingLine} 爻动</span><span className="chip">{result.bodyUseRelation.label}</span></div>
     </Card>
 
     <Card>
       <SectionHeading title="卦象结构" />
       <div className="meihua-sequence">
-        <div><span>本卦</span><b>{result.original.name}</b><small>{result.original.upper.symbol}{result.original.lower.symbol}</small></div>
+        <div><span>本卦 <TermHelp term="本卦" /></span><b>{result.original.name}</b><small>{result.original.upper.symbol}{result.original.lower.symbol}</small></div>
         <i>→</i>
-        <div><span>互卦</span><b>{result.mutual.name}</b><small>{result.mutual.upper.symbol}{result.mutual.lower.symbol}</small></div>
+        <div><span>互卦 <TermHelp term="互卦" /></span><b>{result.mutual.name}</b><small>{result.mutual.upper.symbol}{result.mutual.lower.symbol}</small></div>
         <i>→</i>
-        <div><span>变卦</span><b>{result.changed.name}</b><small>{result.changed.upper.symbol}{result.changed.lower.symbol}</small></div>
+        <div><span>变卦 <TermHelp term="变卦" /></span><b>{result.changed.name}</b><small>{result.changed.upper.symbol}{result.changed.lower.symbol}</small></div>
+      </div>
+      <div className="meihua-secondary-sequence">
+        <div><span>错卦 <TermHelp term="错卦" /></span><b>{result.opposite.name}</b><small>{result.opposite.upper.symbol}{result.opposite.lower.symbol}</small></div>
+        <div><span>综卦 <TermHelp term="综卦" /></span><b>{result.reversed.name}</b><small>{result.reversed.upper.symbol}{result.reversed.lower.symbol}</small></div>
       </div>
       <dl className="reading-summary-list">
-        <div><dt>体卦 · 主方</dt><dd>{result.bodyTrigram.symbol} {result.bodyTrigram.name} · {result.bodyTrigram.element}</dd></div>
-        <div><dt>用卦 · 所问之事</dt><dd>{result.useTrigram.symbol} {result.useTrigram.name} · {result.useTrigram.element}</dd></div>
+        <div><dt>体卦 · 主方 <TermHelp term="体卦" /></dt><dd>{result.bodyTrigram.symbol} {result.bodyTrigram.name} · {result.bodyTrigram.element}</dd></div>
+        <div><dt>用卦 · 所问之事 <TermHelp term="用卦" /></dt><dd>{result.useTrigram.symbol} {result.useTrigram.name} · {result.useTrigram.element}</dd></div>
         <div><dt>体用关系</dt><dd>{result.bodyUseRelation.label}</dd></div>
       </dl>
     </Card>
 
-    <Card className="interpretation-card summary-reading">
-      <SectionHeading title="基础说明" />
+    <Card className="interpretation-card summary-reading local-answer-card">
+      <SectionHeading title="基础答案" />
       <p className="reading-intro">{result.bodyUseRelation.summary}</p>
       <div className="reading-sections">
         <section className="reading-section"><h3>卦辞</h3><blockquote className="hexagram-text">{result.original.judgment}</blockquote></section>
         <section className="reading-section"><h3>第 {result.movingLine} 爻</h3><blockquote className="hexagram-text">{result.movingLineText}</blockquote></section>
       </div>
+      <p className="fact-boundary">以上答案来自固定卦象、动爻和体用关系，不需要调用智能解读。点击卦名可以继续查看卦辞和六爻原文。</p>
     </Card>
 
     <AiReadingPanel key={activeDraft.id} module="meihua" question={activeDraft.question} context={{ lockedAt, ...resultContext(result) }} recordId={activeDraft.state.recordId} ensureRecord={ensureRecord} title="结合卦象回答你的问题" />

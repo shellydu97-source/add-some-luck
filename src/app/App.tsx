@@ -31,6 +31,8 @@ const RecordDetailPage = lazy(() => import('../pages/RecordDetailPage'))
 const NotFoundPage = lazy(() => import('../pages/NotFoundPage'))
 const WelcomePage = lazy(() => import('../pages/WelcomePage'))
 const ChartLandingPage = lazy(() => import('../pages/ChartLandingPage'))
+const TodayPage = lazy(() => import('../pages/TodayPage'))
+const MyPage = lazy(() => import('../pages/MyPage'))
 
 function StartupRoute() {
   const profiles = useAppStore((state) => state.profiles)
@@ -53,8 +55,9 @@ export default function App() {
       <Route index element={<StartupRoute />} />
       <Route path="welcome" element={<WelcomePage />} />
       <Route element={<AppShell />}>
-        <Route path="today" element={<Navigate to="/charts" replace />} />
-        <Route path="fortune/*" element={<Navigate to="/charts" replace />} />
+        <Route path="today" element={<TodayPage />} />
+        <Route path="fortune/*" element={<Navigate to="/today" replace />} />
+        <Route path="me" element={<MyPage />} />
         <Route path="settings" element={<SettingsPage />} />
         <Route path="charts" element={<ChartLandingPage />} />
         <Route path="profiles" element={<ProfilesPage />} />

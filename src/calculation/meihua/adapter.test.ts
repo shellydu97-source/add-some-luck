@@ -124,6 +124,10 @@ describe('梅花易数独立计算 adapter', () => {
           const changedBits = `${result.changed.lower.bits}${result.changed.upper.bits}`
           expect([...changedBits].filter((bit, index) => bit !== originalBits[index])).toHaveLength(1)
           expect(changedBits[moving - 1]).not.toBe(originalBits[moving - 1])
+          const oppositeBits = `${result.opposite.lower.bits}${result.opposite.upper.bits}`
+          const reversedBits = `${result.reversed.lower.bits}${result.reversed.upper.bits}`
+          expect(oppositeBits).toBe([...originalBits].map((bit) => bit === '1' ? '0' : '1').join(''))
+          expect(reversedBits).toBe([...originalBits].reverse().join(''))
         }
       }
     }

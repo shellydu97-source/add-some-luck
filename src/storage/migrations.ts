@@ -93,6 +93,7 @@ function migrateRecord(value: unknown, now: string): RecordSnapshot {
     id: string(item.id, makeId('record')),
     type: ['bazi', 'astrology', 'liuyao', 'meihua', 'tarot'].includes(string(item.type)) ? item.type as RecordSnapshot['type'] : 'tarot',
     profileId: string(item.profileId, 'guest'), profileNameSnapshot: name, profileSnapshot,
+    subjectType: item.subjectType === 'temporary' || item.subjectType === 'profile' ? item.subjectType : undefined,
     question: string(item.question), category: string(item.category), createdAt: string(item.createdAt, now),
     rawResult: object(item.rawResult), calculationVersion: string(item.calculationVersion, 'v1.1-demo'),
     ruleVersion: string(item.ruleVersion, 'v1.1-system-default-demo'), interpretationVersion: string(item.interpretationVersion, 'v1.1-mock'),

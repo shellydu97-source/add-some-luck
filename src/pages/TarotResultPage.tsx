@@ -2,8 +2,9 @@ import { useNavigate } from 'react-router-dom'
 import { getTarotCard, spreadPositions } from '../calculation/tarotMock'
 import { buildTarotCopyText, createTarotSpreadInterpretation, getTarotElement } from '../calculation/tarotInterpretation'
 import AiReadingPanel from '../components/AiReadingPanel'
+import TarotCardVisual from '../components/TarotCardVisual'
 import TopBar from '../components/TopBar'
-import { Button, Card, EmptyState, LinkButton } from '../components/UI'
+import { Button, Card, EmptyState, LinkButton, SectionHeading } from '../components/UI'
 import { getTarotKnowledge } from '../data/tarotMeanings'
 import type { Interpretation } from '../models/types'
 import { getDraft, useAppStore } from '../storage/store'
@@ -20,6 +21,7 @@ export default function TarotResultPage() {
   const activeDraft = draft
   const spread = draft.state.spread
   const profile = activeDraft.profileId === GUEST_PROFILE_ID ? undefined : store.profiles.find((item) => item.id === activeDraft.profileId)
+  const subjectLabel = profile?.name ?? activeDraft.temporarySubject?.name?.trim() ?? '临时测算'
 
   const cards = activeDraft.state.selected.map((cardId, index) => {
     const card = getTarotCard(cardId)
@@ -29,6 +31,7 @@ export default function TarotResultPage() {
     const arcana = card?.arcana ?? 'major'
     return {
       id: cardId,
+      order: card?.order ?? 0,
       nameZh: card?.nameZh ?? cardId,
       nameEn: card?.nameEn ?? '',
       orientation,
@@ -71,7 +74,7 @@ export default function TarotResultPage() {
   function ensureRecord() {
     const existing = activeDraft.state.recordId && store.records.find((record) => record.id === activeDraft.state.recordId)
     if (existing) return existing.id
-    const created = createRecord({ profile, type: 'tarot', question: activeDraft.question, category: activeDraft.category, rawResult, interpretation: recordInterpretation() })
+    const created = createRecord({ profile, temporarySubject: activeDraft.temporarySubject, type: 'tarot', question: activeDraft.question, category: activeDraft.category, rawResult, interpretation: recordInterpretation() })
     store.createRecordSnapshot(created)
     store.upsertDraft({ ...activeDraft, state: { ...activeDraft.state, recordId: created.id } })
     return created.id
@@ -91,9 +94,15 @@ export default function TarotResultPage() {
   }
 
   return <>
-    <TopBar title="塔罗结果" eyebrow={spreadNames[spread]} back action={<span className="chip">{profile?.name ?? '未关联人物'}</span>} />
+    <TopBar title="塔罗结果" eyebrow={spreadNames[spread]} back action={<span className="chip">{subjectLabel}</span>} />
     {activeDraft.question.trim() && <Card className="question-summary"><span>本次问题</span><p>{activeDraft.question}</p></Card>}
-    <div className="revealed-cards">{cards.map((card) => <div className="revealed-wrap" key={card.id}><div className={`tarot-face ${card.orientation === 'reversed' ? 'reversed' : ''}`}><span>{card.nameEn || 'TAROT'}</span><b>{card.nameZh}</b><small>{card.orientation === 'reversed' ? '逆位' : '正位'}</small></div><strong>{card.position}</strong></div>)}</div>
+    <div className="revealed-cards">{cards.map((card) => <div className="revealed-wrap" key={card.id}><TarotCardVisual card={card} orientation={card.orientation} keywords={card.keywords} basicMeaning={card.basicMeaning} position={card.position} /><strong>{card.position}</strong><small>{card.orientation === 'reversed' ? '逆位' : '正位'}</small></div>)}</div>
+
+    <Card className="local-answer-card summary-reading">
+      <SectionHeading title="基础答案" />
+      <p className="local-answer-lead">{localInterpretation.summary}</p>
+      <p className="fact-boundary">这是牌阵与固定牌义形成的基础答案，不需要调用智能解读。点击每张牌可以继续查看对应位置、关键词和基础牌义。</p>
+    </Card>
 
     <AiReadingPanel key={activeDraft.id} module="tarot" question={activeDraft.question} context={{ spread, drawnAt: activeDraft.createdAt, cards }} recordId={activeDraft.state.recordId} ensureRecord={ensureRecord} title="结合这组牌回答你的问题" />
 

@@ -1,19 +1,19 @@
 {
-  "testedAt": "2026-07-15T06:49:21.925Z",
-  "baseUrl": "http://127.0.0.1:4174",
+  "testedAt": "2026-08-20T07:36:49.828Z",
+  "baseUrl": "http://127.0.0.1:4173",
   "zhejiangCityCount": 11,
   "ritualAnimationMoved": true,
   "ritualTransforms": {
-    "before": "translate3d(-83.5824px, 0px, 0px)",
-    "after": "translate3d(-75.5912px, 0px, 0px)"
+    "before": "translate3d(-89.7336px, 0px, 0px)",
+    "after": "translate3d(-81.716px, 0px, 0px)"
   },
   "desktopOverflow": 0,
   "mobileOverflow": 0,
   "visibleForbiddenTerms": [],
   "browserErrors": [],
   "screenshots": [
-    "00-astrology-overview.png",
     "00-bazi-overview.png",
+    "00-today-hub.png",
     "01-province-city-selector.png",
     "02-tarot-ritual-rolling.png",
     "03-tarot-formal-result.png",
@@ -24,6 +24,7 @@
     "08-liuyao-basic-result.png",
     "09-liuyao-professional-chart.png",
     "10-liuyao-record-detail.png",
+    "10-my-hub.png",
     "11-mobile-390-record-detail.png",
     "12-settings-clean.png"
   ]

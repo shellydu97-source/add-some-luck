@@ -120,12 +120,12 @@ function NatalFacts({ analysis, compact = false }: { analysis: BaziNatalAnalysis
   return <>
     <Card>
       <SectionHeading title="十神结构" side={<span className="helper">显干与藏干出现次数</span>} />
-      <div className="bazi-fact-chips">{tenGods.map((item) => <span className="chip" key={item.name}><b>{item.name}</b> × {item.count}</span>)}</div>
+      <div className="bazi-fact-chips">{tenGods.map((item) => <span className="chip" key={item.name}><TermHelp term={item.name} /><b>{item.name}</b> × {item.count}</span>)}</div>
       <p className="fact-boundary">这里展示十神在原局中的客观出现位置与次数，不直接等同于旺衰、格局或吉凶。</p>
     </Card>
     <Card>
       <SectionHeading title="常用神煞" side={<span className="helper">按日干、日支查表</span>} />
-      {shenSha.length ? <div className="bazi-fact-list">{shenSha.slice(0, compact ? 5 : undefined).map((item, index) => <div key={`${item.name}-${item.target}-${index}`}><b>{item.name}</b><span>{item.target}</span><small>{item.basis}</small></div>)}</div> : <p className="helper">当前可确定的柱中，没有命中本版收录的常用神煞。</p>}
+      {shenSha.length ? <div className="bazi-fact-list">{shenSha.slice(0, compact ? 5 : undefined).map((item, index) => <div key={`${item.name}-${item.target}-${index}`}><b><TermHelp term={item.name} />{item.name}</b><span>{item.target}</span><small>{item.basis}</small></div>)}</div> : <p className="helper">当前可确定的柱中，没有命中本版收录的常用神煞。</p>}
       {compact && shenSha.length > 5 && <p className="helper">完整位置可在“排盘”页查看。</p>}
     </Card>
     <Card>
@@ -141,12 +141,12 @@ function FlowFacts({ analysis, label }: { analysis?: BaziFlowAnalysis; label: st
   return <Card className="flow-facts-card">
     <SectionHeading title={`${label}与原局`} />
     <div className="flow-fact-grid">
-      <div><span>天干十神</span><b>{analysis.stem} · {analysis.stemTenGod}</b></div>
+      <div><span>天干十神 <TermHelp term={analysis.stemTenGod} /></span><b>{analysis.stem} · {analysis.stemTenGod}</b></div>
       <div><span>五行</span><b>{analysis.stemElement} · {analysis.branchElement}</b></div>
-      <div><span>十二长生</span><b>{analysis.twelveStage}</b></div>
-      <div><span>纳音</span><b>{analysis.naYin}</b></div>
+      <div><span>十二长生 <TermHelp term="十二长生" /></span><b>{analysis.twelveStage}</b></div>
+      <div><span>纳音 <TermHelp term="纳音" /></span><b>{analysis.naYin}</b></div>
     </div>
-    {!!analysis.shenSha.length && <div className="flow-fact-section"><b>本期神煞</b><div className="chip-row">{analysis.shenSha.map((item, index) => <span className="chip" title={item.basis} key={`${item.name}-${index}`}>{item.name}</span>)}</div></div>}
+    {!!analysis.shenSha.length && <div className="flow-fact-section"><b>本期神煞</b><div className="chip-row">{analysis.shenSha.map((item, index) => <span className="chip" title={item.basis} key={`${item.name}-${index}`}><TermHelp term={item.name} />{item.name}</span>)}</div></div>}
     {!!analysis.relations.length && <details className="inline-facts"><summary>查看与原局的干支关系</summary><ul className="plain-list">{analysis.relations.map((item, index) => <li key={`${item.kind}-${index}`}><b>{item.kind}</b>：{item.text}</li>)}</ul></details>}
     {!analysis.shenSha.length && !analysis.relations.length && <p className="helper">本期未命中本版收录的常用神煞或完整干支关系。</p>}
   </Card>

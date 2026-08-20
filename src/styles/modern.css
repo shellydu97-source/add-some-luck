@@ -83,7 +83,7 @@ button, input, select, textarea { accent-color: var(--blue); }
 .section-heading { margin-top: 8px; }
 .section-heading h2 { font-size: 17px; }
 
-.bottom-nav { min-height: calc(74px + env(safe-area-inset-bottom)); padding: 7px 18px env(safe-area-inset-bottom); border-color: rgba(222,226,235,.9); background: rgba(255,255,255,.94); box-shadow: 0 -8px 28px rgba(47,60,87,.055); backdrop-filter: blur(22px); }
+.bottom-nav { min-height: calc(74px + env(safe-area-inset-bottom)); padding: 7px 18px env(safe-area-inset-bottom); grid-template-columns: repeat(4, minmax(0, 1fr)); border-color: rgba(222,226,235,.9); background: rgba(255,255,255,.94); box-shadow: 0 -8px 28px rgba(47,60,87,.055); backdrop-filter: blur(22px); }
 .bottom-nav a { position: relative; min-height: 59px; gap: 5px; border-radius: 16px; font-size: 11px; }
 .bottom-nav a.active { color: var(--blue); background: transparent; }
 .bottom-nav a.active::before { content: ''; position: absolute; top: -7px; width: 44px; height: 3px; border-radius: 999px; background: var(--blue); }
@@ -194,6 +194,84 @@ button, input, select, textarea { accent-color: var(--blue); }
 .record-hexagram div { border-color: #dce5fa; background: var(--blue-soft); }
 .record-hexagram div:last-child { border-color: #d8eee9; background: var(--teal-soft); }
 
+/* 人物选择与四个一级页面 */
+.divination-subject-field { margin: 4px 0 18px; }
+.divination-subject-field .field:last-child { margin-bottom: 0; }
+.subject-note { margin: -7px 2px 14px; color: var(--muted); font-size: 12px; line-height: 1.6; }
+.temporary-subject-fields { padding: 16px; border: 1px solid var(--line); border-radius: 17px; background: #f7f9fc; }
+.temporary-subject-fields .segmented { margin-bottom: 10px; }
+.temporary-subject-fields .subject-note { margin: 8px 0 0; }
+
+.my-account-card { display: flex; align-items: center; justify-content: space-between; gap: 18px; }
+.my-account-card > div { min-width: 0; }
+.my-account-card h2 { margin: 5px 0 6px; overflow-wrap: anywhere; }
+.my-account-card .button { width: auto; min-width: 108px; }
+.my-entry-grid { display: grid; gap: 10px; margin-bottom: 26px; }
+.my-entry-card { min-height: 82px; display: grid; grid-template-columns: 46px minmax(0,1fr) auto; align-items: center; gap: 13px; padding: 15px 17px; border: 1px solid var(--line); border-radius: 18px; background: rgba(255,255,255,.94); box-shadow: 0 7px 24px rgba(48,62,91,.04); }
+.my-entry-card > span:nth-child(2) { display: grid; gap: 5px; }
+.my-entry-card small { color: var(--muted); font-size: 12px; }
+.my-entry-card i { color: #9298a4; font-size: 25px; font-style: normal; }
+.my-entry-icon { width: 46px; height: 46px; display: grid; place-items: center; border-radius: 15px; background: var(--blue-soft); color: var(--blue); font-size: 22px; }
+.my-entry-card:nth-child(2) .my-entry-icon { background: var(--teal-soft); color: var(--teal); }
+.my-entry-card:nth-child(3) .my-entry-icon { background: var(--coral-soft); color: var(--coral); }
+.my-recent-list { padding: 5px 17px; }
+.my-recent-list > a { min-height: 76px; display: grid; grid-template-columns: 40px minmax(0,1fr) auto; align-items: center; gap: 12px; border-bottom: 1px solid var(--line); }
+.my-recent-list > a:last-child { border-bottom: 0; }
+.my-recent-list > a > span:nth-child(2) { min-width: 0; display: grid; gap: 4px; }
+.my-recent-list b, .my-recent-list small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.my-recent-list small { color: var(--muted); font-size: 11px; }
+.my-recent-list i { color: #9aa0aa; font-size: 22px; font-style: normal; }
+
+.today-calendar-card { padding: 24px; background: linear-gradient(145deg, #fff, #f4f8ff); }
+.today-calendar-card h2 { margin: 7px 0; font-size: clamp(22px, 6vw, 30px); }
+.today-focus-card { border-color: #dce6ff; background: linear-gradient(145deg, #fff, #f7faff); }
+.today-focus-card > p { color: #4f5664; line-height: 1.75; }
+.today-fact-block { margin-bottom: 14px; }
+.today-fact-block > b { display: block; margin-bottom: 8px; }
+.today-relations { margin-top: 6px; }
+
+/* 可点开的固定资料与基础答案 */
+.hexagram-help-trigger { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 0; border: 0; background: transparent; color: inherit; font: inherit; font-weight: inherit; text-align: center; }
+.hexagram-help-trigger > span { color: var(--blue); font-size: 13px; }
+.hexagram-help-sheet, .tarot-help-sheet { align-self: center; width: min(100%, 600px); max-height: min(88vh, 760px); overflow-y: auto; padding: 22px; border: 1px solid var(--line); border-radius: 22px; background: #fff; box-shadow: 0 24px 70px rgba(29,39,62,.2); }
+.sheet-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
+.sheet-heading h2 { margin: 4px 0 0; font-size: 27px; }
+.hexagram-trigrams { display: grid; grid-template-columns: repeat(2,1fr); gap: 10px; margin-bottom: 16px; }
+.hexagram-trigrams > div { display: grid; gap: 6px; padding: 14px; border-radius: 15px; background: var(--soft); }
+.hexagram-trigrams span, .hexagram-help-section > b { color: var(--muted); font-size: 12px; }
+.hexagram-help-section { margin: 18px 0; }
+.hexagram-help-section p { margin: 8px 0 0; line-height: 1.75; }
+.hexagram-line-list { display: grid; gap: 2px; margin: 9px 0 0; padding: 0; list-style: none; }
+.hexagram-line-list li { display: grid; grid-template-columns: 52px minmax(0,1fr); gap: 9px; padding: 10px 11px; border-radius: 11px; }
+.hexagram-line-list li.active { background: var(--blue-soft); color: #255fce; }
+.hexagram-line-list li b { font-size: 12px; }
+.fact-boundary { color: var(--muted); font-size: 12px; line-height: 1.65; }
+.professional-term-row { display: flex; flex-wrap: wrap; gap: 7px; margin: 14px 0 4px; }
+.professional-term-row .term-help-trigger { padding: 7px 10px; border: 1px solid var(--line); border-radius: 999px; background: #fff; }
+.meihua-secondary-sequence { display: grid; grid-template-columns: repeat(2,1fr); gap: 10px; margin: -8px 0 18px; }
+.meihua-secondary-sequence > div { display: grid; gap: 5px; place-items: center; padding: 14px; border-radius: 16px; background: #f7f9fc; text-align: center; }
+.meihua-secondary-sequence span, .meihua-secondary-sequence small { color: var(--muted); }
+.local-answer-card { border-color: #d8eee9; background: linear-gradient(145deg, #fff, #f5fbfa); }
+.local-answer-card .local-answer-lead { margin: 0; color: #3f4753; font-size: 15px; line-height: 1.8; }
+
+/* 不依赖图片版权的塔罗图形卡面 */
+.tarot-card-button { width: 100%; padding: 0; border: 0; background: transparent; }
+.tarot-art { position: relative; width: 100%; height: 162px; display: grid; grid-template-rows: auto 1fr auto; overflow: hidden; padding: 10px; border: 1px solid #8daef5; border-radius: 11px; background: linear-gradient(160deg,#fff,#f2f6ff); box-shadow: inset 0 0 0 4px #f7f9ff, 0 7px 20px rgba(46,74,133,.08); color: var(--blue); transition: transform .18s ease, box-shadow .18s ease; }
+.tarot-card-button:active .tarot-art { transform: scale(.985); }
+.tarot-art.is-reversed { border-color: #ff9d94; background: linear-gradient(160deg,#fff,#fff4f2); color: var(--coral); }
+.tarot-art-corner { justify-self: start; font-size: 10px; font-weight: 800; }
+.tarot-art-symbols { display: flex; flex-wrap: wrap; align-content: center; justify-content: center; gap: 4px; padding: 7px 2px; }
+.tarot-art-symbols i { width: 18px; height: 18px; display: grid; place-items: center; font-style: normal; font-size: 15px; }
+.tarot-art-symbols .tarot-major-symbol { width: auto; height: auto; font-size: 48px; font-weight: 350; }
+.tarot-art-name { color: var(--ink); font-size: 11px; font-weight: 750; }
+.tarot-cups { border-color: #79c9bd; color: var(--teal); background: linear-gradient(160deg,#fff,#effaf8); }
+.tarot-pentacles { border-color: #e7b994; color: #c16e30; background: linear-gradient(160deg,#fff,#fff7ef); }
+.tarot-swords { border-color: #9ca5b4; color: #657084; background: linear-gradient(160deg,#fff,#f3f5f8); }
+.tarot-wands { border-color: #f29b91; color: var(--coral); background: linear-gradient(160deg,#fff,#fff3f1); }
+.tarot-help-sheet .chip-row { margin-bottom: 16px; }
+.tarot-help-meaning { padding: 15px; border-radius: 15px; background: var(--soft); line-height: 1.8; }
+.revealed-wrap > small { color: var(--muted); font-size: 11px; }
+
 /* 命盘、记录、设置与通用数据 */
 .chart-toolbar a { border-color: var(--line); border-radius: 999px; background: #fff; color: #626875; }
 .chart-toolbar a[aria-current="page"], .chart-toolbar a.active { color: var(--blue); border-color: #cddcff; background: var(--blue-soft); }
@@ -235,6 +313,10 @@ button, input, select, textarea { accent-color: var(--blue); }
   .question-summary { min-height: 108px; padding: 19px 105px 19px 19px; background-size: 128px; }
   .question-summary p { font-size: 15px; }
   .bottom-nav { padding-left: 10px; padding-right: 10px; }
+  .my-account-card { align-items: stretch; flex-direction: column; }
+  .my-account-card .button { width: 100%; }
+  .hexagram-help-sheet, .tarot-help-sheet { align-self: flex-end; max-height: 90vh; padding: 18px; border-radius: 22px 22px 14px 14px; }
+  .tarot-art { height: 148px; }
 }
 
 @media (max-width: 390px) {
@@ -249,7 +331,13 @@ button, input, select, textarea { accent-color: var(--blue); }
   .button-row .button { width: 100%; }
   .question-summary { padding-right: 92px; background-size: 112px; }
   .revealed-wrap { min-width: 86px; }
-  .tarot-face { height: 140px; }
+  .tarot-face, .tarot-art { height: 140px; }
+  .tarot-art-symbols i { width: 15px; height: 15px; font-size: 13px; }
+  .tarot-art-symbols .tarot-major-symbol { font-size: 40px; }
+  .bottom-nav { padding-left: 4px; padding-right: 4px; }
+  .bottom-nav a { font-size: 10px; }
+  .nav-icon { font-size: 20px; }
+  .meihua-secondary-sequence { grid-template-columns: 1fr; }
   .result-line { grid-template-columns: 58px minmax(0,1fr) 72px; }
   .top-actions-inline { gap: 5px; }
 }

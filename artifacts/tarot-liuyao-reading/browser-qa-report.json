@@ -1,26 +1,26 @@
 {
-  "testedAt": "2026-07-15T06:41:29.025Z",
-  "baseUrl": "http://127.0.0.1:4174",
+  "testedAt": "2026-08-20T07:32:48.648Z",
+  "baseUrl": "http://127.0.0.1:4173",
   "ritualSpeedConstant": 264,
-  "ritualMotionDistanceIn500ms": 131.99998,
+  "ritualMotionDistanceIn500ms": 136.40879999999999,
   "ritualMotionBefore": {
     "cursor": 0,
-    "offset": 57.1914,
-    "distance": 57.1914,
-    "transform": "translate3d(-57.1914px, 0px, 0px)"
+    "offset": 77.4312,
+    "distance": 77.4312,
+    "transform": "translate3d(-77.4312px, 0px, 0px)"
   },
   "ritualMotionAfter": {
     "cursor": 2,
-    "offset": 5.19138,
-    "distance": 189.19138,
-    "transform": "translate3d(-5.19138px, 0px, 0px)"
+    "offset": 29.84,
+    "distance": 213.84,
+    "transform": "translate3d(-29.84px, 0px, 0px)"
   },
   "ritualPauseLocked": true,
   "threeCardSectionsPresent": true,
   "fiveCardSectionsPresent": true,
   "noMovingState": {
     "originalHeadings": [
-      "第 63 卦 · 水火既济"
+      "第 63 卦 · 水火既济ⓘ"
     ],
     "hasArrow": false,
     "hasNoMovingMessage": true
@@ -30,9 +30,9 @@
     4,
     6
   ],
-  "tarotThreeCopyCharacters": 1314,
-  "tarotFiveCopyCharacters": 2011,
-  "liuyaoCopyCharacters": 3079,
+  "tarotThreeCopyCharacters": 1303,
+  "tarotFiveCopyCharacters": 2043,
+  "liuyaoCopyCharacters": 3506,
   "desktopOverflow": 0,
   "mobileOverflow": 0,
   "browserErrors": []

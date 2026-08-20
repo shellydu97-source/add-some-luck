@@ -2,8 +2,8 @@ import { getMeihuaCalendarContext, MEIHUA_CALENDAR_ENGINE_VERSION, shanghaiLocal
 import { hexagramFromBits, trigramFromNumber } from './data'
 import type { MeihuaBodyUseRelation, MeihuaCalculationResult, MeihuaFiveElement, MeihuaMethod, MeihuaTrigram } from './types'
 
-export const MEIHUA_ADAPTER_VERSION = 'meihua-calculation-adapter-1.1.0'
-export const MEIHUA_RULE_VERSION = 'xiantian-time-numbers-text-object-sound-1.1.0'
+export const MEIHUA_ADAPTER_VERSION = 'meihua-calculation-adapter-1.2.0'
+export const MEIHUA_RULE_VERSION = 'xiantian-time-numbers-text-object-sound-1.2.0'
 
 const generation: Record<MeihuaFiveElement, MeihuaFiveElement> = { 木: '火', 火: '土', 土: '金', 金: '水', 水: '木' }
 const overcoming: Record<MeihuaFiveElement, MeihuaFiveElement> = { 木: '土', 土: '水', 水: '火', 火: '金', 金: '木' }
@@ -61,6 +61,8 @@ export function calculateMeihuaFromTrigramNumbers(input: {
   const original = hexagramFromBits(originalBits)
   const mutual = hexagramFromBits(mutualBits)
   const changed = hexagramFromBits(changedBitsArray.join(''))
+  const opposite = hexagramFromBits([...originalBits].map((bit) => bit === '1' ? '0' : '1').join(''))
+  const reversed = hexagramFromBits([...originalBits].reverse().join(''))
   const lowerIsUse = movingLine <= 3
   const bodyTrigram = lowerIsUse ? upper : lower
   const useTrigram = lowerIsUse ? lower : upper
@@ -83,6 +85,8 @@ export function calculateMeihuaFromTrigramNumbers(input: {
     original,
     mutual,
     changed,
+    opposite,
+    reversed,
     movingLine,
     movingLineText: original.lineTexts[movingLine - 1]!,
     bodyTrigram,

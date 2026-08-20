@@ -63,6 +63,8 @@ export interface MeihuaCalculationResult {
   original: MeihuaHexagram
   mutual: MeihuaHexagram
   changed: MeihuaHexagram
+  opposite: MeihuaHexagram
+  reversed: MeihuaHexagram
   movingLine: number
   movingLineText: string
   bodyTrigram: MeihuaTrigram

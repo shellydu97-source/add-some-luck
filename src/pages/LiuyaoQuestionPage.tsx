@@ -2,21 +2,14 @@ import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { LIUYAO_COIN_CONVENTION_VERSION } from '../calculation/liuyao'
 import TopBar from '../components/TopBar'
-import { Button, Card, ConfidenceNote, Segmented } from '../components/UI'
+import DivinationSubjectField, { TEMPORARY_SUBJECT_ID } from '../components/DivinationSubjectField'
+import { Button, Card, ConfidenceNote } from '../components/UI'
 import { categoryOptions } from '../models/labels'
 import type { DivinationRecord, Gender, LiuyaoDraft } from '../models/types'
 import { getActiveProfile, getDraft, useAppStore } from '../storage/store'
 import { makeId } from '../utils/id'
 import { GUEST_PROFILE_ID } from '../utils/record'
 import { getRequestedDraft } from '../utils/draftEntry'
-
-const genderOptions = [
-  { value: 'unspecified' as const, label: '不填写' },
-  { value: 'female' as const, label: '女' },
-  { value: 'male' as const, label: '男' },
-]
-
-type QuerentGenderChoice = Gender | 'unspecified'
 
 export default function LiuyaoQuestionPage() {
   const navigate = useNavigate()
@@ -26,29 +19,36 @@ export default function LiuyaoQuestionPage() {
   const previous = getDraft(store, 'liuyao')
   const entryState = location.state as { question?: string; resumeDraftId?: string } | null
   const resumed = getRequestedDraft(previous, entryState?.resumeDraftId)
+  const resumedProfileExists = store.profiles.some((item) => item.id === resumed?.profileId)
+  const initialSubjectId = resumed ? (resumedProfileExists ? resumed.profileId : TEMPORARY_SUBJECT_ID) : (profile?.id ?? TEMPORARY_SUBJECT_ID)
   const [question, setQuestion] = useState(entryState?.question ?? resumed?.question ?? '')
   const [category, setCategory] = useState(resumed?.category ?? categoryOptions[0])
   const [timeRange, setTimeRange] = useState(resumed?.state.timeRange ?? '')
-  const [querentGender, setQuerentGender] = useState<QuerentGenderChoice>(resumed?.state.querentGender ?? 'unspecified')
+  const [subjectId, setSubjectId] = useState(initialSubjectId)
+  const [temporaryName, setTemporaryName] = useState(resumed?.temporarySubject?.name ?? '')
+  const [temporaryGender, setTemporaryGender] = useState<Gender | undefined>(resumed?.temporarySubject?.gender ?? resumed?.state.querentGender)
   const [duplicate, setDuplicate] = useState<DivinationRecord>()
 
   function submit(force = false) {
     const normalizedQuestion = question.trim()
+    const selectedProfile = store.profiles.find((item) => item.id === subjectId)
+    const recordProfileId = selectedProfile?.id ?? GUEST_PROFILE_ID
     if (!force && normalizedQuestion) {
-      const found = store.findDuplicate(profile?.id ?? GUEST_PROFILE_ID, 'liuyao', normalizedQuestion)
+      const found = store.findDuplicate(recordProfileId, 'liuyao', normalizedQuestion)
       if (found) { setDuplicate(found); return }
     }
     const now = new Date().toISOString()
     const draft: LiuyaoDraft = {
       id: makeId('draft-liuyao'),
       type: 'liuyao',
-      profileId: profile?.id ?? GUEST_PROFILE_ID,
+      profileId: recordProfileId,
       question: normalizedQuestion,
       category,
       createdAt: now,
       updatedAt: now,
       randomSeed: makeId('liuyao-seed'),
-      state: { querentGender: querentGender === 'unspecified' ? undefined : querentGender, coinConventionVersion: LIUYAO_COIN_CONVENTION_VERSION, timeRange: timeRange.trim(), casts: [], locked: false },
+      temporarySubject: selectedProfile ? undefined : { name: temporaryName.trim() || undefined, gender: temporaryGender },
+      state: { querentGender: selectedProfile?.gender ?? temporaryGender, coinConventionVersion: LIUYAO_COIN_CONVENTION_VERSION, timeRange: timeRange.trim(), casts: [], locked: false },
     }
     store.upsertDraft(draft)
     navigate('/divination/liuyao/cast')
@@ -58,8 +58,8 @@ export default function LiuyaoQuestionPage() {
     <TopBar title="六爻起卦" eyebrow="第 1 步 · 问题选填" back />
     <ConfidenceNote>写清楚一件最关心的事，后续解读会更贴近你的问题；留空也可以起卦。</ConfidenceNote>
     <Card>
+      <DivinationSubjectField profiles={store.profiles} subjectId={subjectId} temporaryName={temporaryName} temporaryGender={temporaryGender} includeGender onSubjectChange={setSubjectId} onTemporaryNameChange={setTemporaryName} onTemporaryGenderChange={setTemporaryGender} />
       <label className="field"><span>问题（选填）</span><textarea rows={4} maxLength={120} value={question} onChange={(event) => { setQuestion(event.target.value); setDuplicate(undefined) }} placeholder="可以留空；例如：这次出行是否能按计划进行？" /></label>
-      <div className="field"><span>占问者性别（选填）</span><Segmented value={querentGender} options={genderOptions} onChange={setQuerentGender} label="占问者性别（选填）" /></div>
       <label className="field"><span>问题分类</span><select value={category} onChange={(event) => setCategory(event.target.value)}>{categoryOptions.map((item) => <option key={item}>{item}</option>)}</select></label>
       <label className="field"><span>观察时间范围（选填）</span><input value={timeRange} onChange={(event) => setTimeRange(event.target.value)} placeholder="例如：未来两周" /></label>
     </Card>

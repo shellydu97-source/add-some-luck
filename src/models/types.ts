@@ -77,6 +77,11 @@ export interface FollowUpMessage {
   createdAt: string
 }
 
+export interface TemporarySubject {
+  name?: string
+  gender?: Gender
+}
+
 export type AiModule = RecordType
 
 export interface AiReadingSection {
@@ -127,6 +132,7 @@ export interface RecordSnapshot {
   profileId: string
   profileNameSnapshot: string
   profileSnapshot?: Partial<Profile>
+  subjectType?: 'profile' | 'temporary'
   question?: string
   category?: string
   createdAt: string
@@ -233,6 +239,7 @@ interface DraftBase {
   createdAt: string
   updatedAt: string
   randomSeed?: string
+  temporarySubject?: TemporarySubject
 }
 
 export interface LiuyaoDraft extends DraftBase {

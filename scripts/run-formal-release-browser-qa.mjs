@@ -1,5 +1,5 @@
 import { spawn } from 'node:child_process'
-import { mkdir, readFile, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { resolve } from 'node:path'
 
@@ -8,6 +8,7 @@ const baseUrl = process.env.QA_BASE_URL ?? 'http://127.0.0.1:4173'
 const port = Number(process.env.QA_CDP_PORT ?? 9337)
 const outputDir = resolve(process.env.QA_SCREENSHOT_DIR ?? 'artifacts/formal-release/screenshots')
 const profileDir = resolve(process.env.QA_CHROME_PROFILE ?? resolve(tmpdir(), 'luck-app-formal-release-browser-qa'))
+await rm(outputDir, { recursive: true, force: true })
 await mkdir(outputDir, { recursive: true })
 await mkdir(profileDir, { recursive: true })
 
@@ -96,6 +97,7 @@ async function clickText(text, selector = 'button, a') {
 }
 
 async function screenshot(filename) {
+  await waitFor(`!document.querySelector('.startup-splash')`, 'startup splash dismissal', 3000)
   const image = await send('Page.captureScreenshot', { format: 'png', fromSurface: true, captureBeyondViewport: true })
   await writeFile(resolve(outputDir, filename), Buffer.from(image.data, 'base64'))
 }
@@ -124,6 +126,7 @@ const profile = {
 }
 const state = { schemaVersion: '1.2', lastPrimaryRoute: 'charts', reduceMotion: false, activeProfileId: profile.id, profiles: [profile], records: [], drafts: [] }
 await navigate('/welcome')
+await evaluate(`localStorage.setItem('add-luck-guest-access-v1', 'allowed')`)
 await evaluate(`localStorage.setItem('add-luck-v1-demo', ${JSON.stringify(JSON.stringify({ state, version: 4 }))})`)
 
 await navigate(`/charts/${profile.id}/bazi`)
@@ -131,10 +134,14 @@ await waitFor(`document.querySelector('.hero-title') && document.querySelector('
 await screenshot('00-bazi-overview.png')
 
 await navigate(`/charts/${profile.id}/astrology`)
-await waitFor(`document.querySelector('.astrology-wheel') && document.querySelector('.ai-reading-panel')`, 'astrology overview')
-await screenshot('00-astrology-overview.png')
+await waitFor(`location.pathname === ${JSON.stringify(`/charts/${profile.id}/bazi`)} && !document.querySelector('.astrology-wheel')`, 'hidden astrology redirect')
+
+await navigate('/today')
+await waitFor(`document.body.innerText.includes('今日运势') && document.body.innerText.includes('小橙')`, 'today hub')
+await screenshot('00-today-hub.png')
 
 await navigate('/profiles/new')
+await clickText('选择省份和城市', 'button')
 await waitFor(`[...document.querySelectorAll('select')].some((item) => [...item.options].some((option) => option.textContent === '浙江省'))`, 'province selector')
 await evaluate(`(() => {
   const select = [...document.querySelectorAll('select')].find((item) => [...item.options].some((option) => option.textContent === '浙江省'))
@@ -142,7 +149,7 @@ await evaluate(`(() => {
   select.dispatchEvent(new Event('change', { bubbles: true }))
 })()`)
 await waitFor(`[...document.querySelectorAll('[role="option"]')].some((item) => item.textContent.includes('舟山市'))`, 'complete Zhejiang city list')
-const zhejiangCityCount = await evaluate(`[...document.querySelectorAll('[role="option"]')].filter((item) => item.textContent.includes('浙江省')).length`)
+const zhejiangCityCount = await evaluate(`document.querySelectorAll('[role="option"]').length`)
 await screenshot('01-province-city-selector.png')
 
 await navigate('/divination/tarot/question')
@@ -201,6 +208,10 @@ await clickText('保存到记录')
 await waitFor(`location.pathname.startsWith('/records/')`, 'liuyao record detail')
 await evaluate(`(() => { const disclosure = document.querySelector('.result-disclosure'); disclosure?.setAttribute('open', ''); disclosure?.querySelector('.professional-details')?.setAttribute('open', '') })()`)
 await screenshot('10-liuyao-record-detail.png')
+
+await navigate('/me')
+await waitFor(`document.body.innerText.includes('我的') && document.body.innerText.includes('最近记录')`, 'my hub')
+await screenshot('10-my-hub.png')
 
 const desktopOverflow = await evaluate(`document.documentElement.scrollWidth - document.documentElement.clientWidth`)
 await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 1, mobile: true })

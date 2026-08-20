@@ -173,6 +173,7 @@ try {
 
   const state = { schemaVersion: '1.2', lastPrimaryRoute: 'charts', reduceMotion: false, activeProfileId: '', profiles: [], records: [], drafts: [] }
   await navigate('/welcome')
+  await evaluate(`localStorage.setItem('add-luck-guest-access-v1', 'allowed')`)
   await evaluate(`localStorage.setItem('add-luck-v1-demo', ${JSON.stringify(JSON.stringify({ state, version: 4 }))})`)
 
   await startTarot('单牌', '我现在最需要留意什么？')
@@ -239,9 +240,10 @@ try {
   await clickText('复制完整排盘信息')
   await waitFor(`document.body.innerText.includes('已复制，可以粘贴到你常用的大模型中。')`, 'liuyao copy notice')
   const liuyaoCopy = await evaluate(`globalThis.__copiedText`)
-  const requiredLiuyaoCopyTerms = ['阳面3', '阴面2', '本卦：', '变卦：', '动爻：', '八宫', '纳甲', '月建', '日辰', '旬空', '不得修改本卦、变卦、动爻或排盘字段']
-  if (!requiredLiuyaoCopyTerms.every((term) => liuyaoCopy.includes(term))) throw new Error('Liuyao copy is missing required fields.')
+  const requiredLiuyaoCopyTerms = ['老阴 · 动', '少阳 · 静', '少阴 · 静', '老阳 · 动', '本卦：', '变卦：', '动爻：', '本卦宫位：', '纳甲', '月建', '日辰', '旬空', '卦身：', '世身：', '不得修改本卦、变卦、动爻或排盘字段']
   await writeFile(resolve(outputDir, '../liuyao-copy.txt'), liuyaoCopy, 'utf8')
+  const missingLiuyaoCopyTerms = requiredLiuyaoCopyTerms.filter((term) => !liuyaoCopy.includes(term))
+  if (missingLiuyaoCopyTerms.length) throw new Error(`Liuyao copy is missing required fields: ${missingLiuyaoCopyTerms.join(', ')}`)
 
   const desktopOverflow = await evaluate(`document.documentElement.scrollWidth - document.documentElement.clientWidth`)
   await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 1, mobile: true })
