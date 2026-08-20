@@ -22,7 +22,7 @@ export default function LiuyaoCastPage() {
   const upsertDraft = useAppStore((state) => state.upsertDraft)
   const [manualCoins, setManualCoins] = useState<CoinToss['coins']>(['yang', 'yang', 'yang'])
   useFlowExitGuard(!!draft && !draft.state.locked)
-  if (!draft) return <><TopBar title="六爻起爻" back /><EmptyState title="还没有六爻草稿" action={<LinkButton to="/divination/liuyao/question">返回六爻起卦</LinkButton>}>问题可以留空，但需要先开始一次新流程。</EmptyState></>
+  if (!draft) return <><TopBar title="六爻起爻" back /><EmptyState title="还没有六爻草稿" action={<LinkButton to="/divination/liuyao/question">返回六爻占问</LinkButton>}>问题可以留空，但需要先开始一次新流程。</EmptyState></>
   if (draft.state.locked) return <Navigate to="/divination/liuyao/result" replace />
   const activeDraft = draft
 

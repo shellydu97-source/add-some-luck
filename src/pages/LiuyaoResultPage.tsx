@@ -16,6 +16,7 @@ import type { Interpretation } from '../models/types'
 import { getDraft, useAppStore } from '../storage/store'
 import { copyText } from '../utils/clipboard'
 import { createRecord, GUEST_PROFILE_ID } from '../utils/record'
+import { formatDate } from '../utils/text'
 
 function lineSymbol(yinYang: 'yin' | 'yang') {
   return yinYang === 'yang' ? '━━━━━━' : '━━  ━━'
@@ -32,6 +33,8 @@ export default function LiuyaoResultPage() {
   const subjectLabel = profile?.name ?? activeDraft.temporarySubject?.name?.trim() ?? '临时测算'
   const querentGender = activeDraft.state.querentGender
   const result = calculateLiuyao(activeDraft.state.casts, lockedAt)
+  const shiLine = result.lines.find((line) => line.shiYing === '世')
+  const yingLine = result.lines.find((line) => line.shiYing === '应')
   const localInterpretation = createLiuyaoDetailedInterpretation(result)
   const rawResult = {
     method: activeDraft.state.method,
@@ -109,6 +112,30 @@ export default function LiuyaoResultPage() {
       </> : <p className="no-moving-note">无动爻，变卦同本卦</p>}
     </Card>
 
+    <Card className="liuyao-key-card">
+      <SectionHeading title="排盘要点" />
+      <div className="liuyao-key-grid">
+        <div><span>起卦时间</span><b>{formatDate(lockedAt, true)}</b></div>
+        <div><span>占问人物</span><b>{subjectLabel}</b></div>
+        <div><span><TermHelp term="月建" /></span><b>{result.calendar.monthBranch}</b></div>
+        <div><span><TermHelp term="日辰" /></span><b>{result.calendar.dayGanZhi}</b></div>
+        <div><span><TermHelp term="旬空" /></span><b>{result.calendar.xunKong}</b></div>
+        <div><span>卦宫</span><b>{hexagramPalaceLabel(result.original)} · {result.original.palaceElement}</b></div>
+        <div><span><TermHelp term="世爻" /></span><b>{shiLine ? `第 ${shiLine.index} 爻 · ${shiLine.relation}` : '—'}</b></div>
+        <div><span><TermHelp term="应爻" /></span><b>{yingLine ? `第 ${yingLine.index} 爻 · ${yingLine.relation}` : '—'}</b></div>
+      </div>
+      <div className="liuyao-compact-board" aria-label="六爻基础排盘">
+        {[...result.lines].reverse().map((line) => <div className={`liuyao-compact-line ${line.moving ? 'is-moving' : ''}`} key={line.index}>
+          <b>第 {line.index} 爻</b>
+          <span>{line.spirit}</span>
+          <span>{line.relation} · {line.naJia}{line.element}</span>
+          <i>{lineSymbol(line.yinYang)}</i>
+          <strong>{line.shiYing ?? ''}{line.moving ? `${line.shiYing ? ' · ' : ''}动` : ''}</strong>
+        </div>)}
+      </div>
+      <p className="helper liuyao-key-note">点击月建、日辰、旬空、世爻或应爻，可查看对应含义；完整纳甲与日月关系可在下方展开。</p>
+    </Card>
+
     <Card className="interpretation-card summary-reading">
       <SectionHeading title="基础提示" />
       <p className="reading-intro">{localInterpretation.overview.overallState}</p>
@@ -175,14 +202,14 @@ export default function LiuyaoResultPage() {
           <li><span>变卦宫位</span><b>{hexagramPalaceLabel(result.changed)} · {result.changed.palaceElement}</b></li>
           <li><span>本卦上卦 / 下卦</span><b>{result.upperTrigram.name} / {result.lowerTrigram.name}</b></li>
           <li><span>变卦上卦 / 下卦</span><b>{result.changedUpperTrigram.name} / {result.changedLowerTrigram.name}</b></li>
-          <li><span>月建 <TermHelp term="月建" /></span><b>{result.calendar.monthBranch}</b></li>
-          <li><span>日辰 <TermHelp term="日辰" /></span><b>{result.calendar.dayGanZhi}</b></li>
-          <li><span>旬空 <TermHelp term="旬空" /></span><b>{result.calendar.xunKong}</b></li>
-          <li><span>卦身 <TermHelp term="卦身" /></span><b>{result.guaShen.branch}{result.guaShen.presentAtLines.length ? ` · 现于第 ${result.guaShen.presentAtLines.join('、')} 爻` : ' · 不现于本卦六爻'}</b></li>
-          <li><span>世身 <TermHelp term="世身" /></span><b>{result.shiShen.branch} · 第 {result.shiShen.lineIndex} 爻</b></li>
+          <li><span><TermHelp term="月建" /></span><b>{result.calendar.monthBranch}</b></li>
+          <li><span><TermHelp term="日辰" /></span><b>{result.calendar.dayGanZhi}</b></li>
+          <li><span><TermHelp term="旬空" /></span><b>{result.calendar.xunKong}</b></li>
+          <li><span><TermHelp term="卦身" /></span><b>{result.guaShen.branch}{result.guaShen.presentAtLines.length ? ` · 现于第 ${result.guaShen.presentAtLines.join('、')} 爻` : ' · 不现于本卦六爻'}</b></li>
+          <li><span><TermHelp term="世身" /></span><b>{result.shiShen.branch} · 第 {result.shiShen.lineIndex} 爻</b></li>
           <li><span>常用神煞</span><b>{result.shenSha.map((item) => `${item.name}${item.branch}${item.presentAtLines.length ? `（第${item.presentAtLines.join('、')}爻）` : ''}`).join(' · ')}</b></li>
         </ul>
-        <div className="professional-term-row"><span><TermHelp term="世爻" />世爻</span><span><TermHelp term="应爻" />应爻</span><span><TermHelp term="六亲" />六亲</span><span><TermHelp term="六神" />六神</span><span><TermHelp term="伏神" />伏神</span><span><TermHelp term="纳甲" />纳甲</span></div>
+        <div className="professional-term-row"><span><TermHelp term="世爻" /></span><span><TermHelp term="应爻" /></span><span><TermHelp term="六亲" /></span><span><TermHelp term="六神" /></span><span><TermHelp term="伏神" /></span><span><TermHelp term="纳甲" /></span></div>
         <div className="table-scroll">
           <table className="professional-table">
             <thead><tr><th>爻位</th><th>六神</th><th>伏神</th><th>本卦六亲</th><th>本卦纳甲</th><th>本卦世应</th><th>本卦</th><th>日月标记</th><th>变卦六亲</th><th>变卦纳甲</th><th>变卦世应</th><th>变卦</th><th>变卦日月标记</th></tr></thead>
@@ -207,6 +234,6 @@ export default function LiuyaoResultPage() {
     </details></details>
 
     <Button className="copy-reading-button secondary" onClick={handleCopy}>复制完整排盘信息</Button>
-    <div className="button-row"><LinkButton to="/divination" secondary>返回起卦</LinkButton><Button onClick={saveRecord}>{activeDraft.state.recordId ? '查看已保存记录' : '保存到记录'}</Button></div>
+    <div className="button-row"><LinkButton to="/divination" secondary>返回占卜</LinkButton><Button onClick={saveRecord}>{activeDraft.state.recordId ? '查看已保存记录' : '保存到记录'}</Button></div>
   </>
 }

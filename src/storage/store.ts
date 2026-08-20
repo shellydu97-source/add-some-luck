@@ -30,6 +30,7 @@ interface AppState extends AppDataState {
   setDefaultProfile: (id: string) => void
   createRecordSnapshot: (record: RecordSnapshot) => void
   deleteRecord: (id: string) => void
+  deleteRecords: (ids: string[]) => void
   appendRecordFollowUps: (id: string, messages: FollowUpMessage[]) => void
   appendRecordAiInterpretation: (id: string, interpretation: AiInterpretationSnapshot) => void
   appendRecordAiMessages: (id: string, messages: AiConversationMessage[]) => void
@@ -105,6 +106,17 @@ export const useAppStore = create<AppState>()(persist((set, get) => ({
       : draft),
     notice: '记录已删除。',
   })),
+  deleteRecords: (ids) => set((state) => {
+    const targets = new Set(ids)
+    if (!targets.size) return {}
+    return {
+      records: state.records.filter((item) => !targets.has(item.id)),
+      drafts: state.drafts.map((draft) => draft.state.recordId && targets.has(draft.state.recordId)
+        ? { ...draft, state: { ...draft.state, recordId: undefined } } as DivinationDraft
+        : draft),
+      notice: `已删除 ${targets.size} 条记录。`,
+    }
+  }),
   appendRecordFollowUps: (id, messages) => set((state) => ({
     records: state.records.map((item) => item.id === id ? { ...item, followUpMessages: [...item.followUpMessages, ...clone(messages)] } : item),
   })),

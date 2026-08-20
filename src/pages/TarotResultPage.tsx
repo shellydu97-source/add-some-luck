@@ -115,6 +115,6 @@ export default function TarotResultPage() {
 
     <details className="result-disclosure"><summary>查看每张牌的关键词与基础牌义</summary><Card><ul className="position-readings">{cards.map((card) => <li key={card.id}><b>{card.position} · {card.nameZh}（{card.orientation === 'reversed' ? '逆位' : '正位'}）</b><div className="chip-row">{card.keywords.map((keyword) => <span className="chip" key={keyword}>{keyword}</span>)}</div><p>{card.basicMeaning}</p></li>)}</ul></Card></details>
     <Button className="copy-reading-button secondary" onClick={handleCopy}>复制完整牌面信息</Button>
-    <div className="button-row"><LinkButton to="/divination" secondary>返回起卦</LinkButton><Button onClick={saveRecord}>{activeDraft.state.recordId ? '查看已保存记录' : '保存到记录'}</Button></div>
+    <div className="button-row"><LinkButton to="/divination" secondary>返回占卜</LinkButton><Button onClick={saveRecord}>{activeDraft.state.recordId ? '查看已保存记录' : '保存到记录'}</Button></div>
   </>
 }

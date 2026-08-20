@@ -53,7 +53,7 @@ export default function MeihuaQuestionPage() {
       <label className="field"><span>你想了解什么</span><textarea rows={4} maxLength={120} value={question} onChange={(event) => { setQuestion(event.target.value); setDuplicate(undefined) }} placeholder="可以留空；例如：这件事接下来应留意什么？" /></label>
       <label className="field"><span>问题分类</span><select value={category} onChange={(event) => setCategory(event.target.value)}>{categoryOptions.map((item) => <option key={item}>{item}</option>)}</select></label>
     </Card>
-    {duplicate && <Card className="duplicate-card"><h3>最近问过同样的问题</h3><p className="helper">可以先查看上次记录，也可以重新起卦。</p><div className="button-row"><Link className="button secondary" to={`/records/${duplicate.id}`}>查看旧记录</Link><Button onClick={() => submit(true)}>重新起卦</Button></div></Card>}
-    {!duplicate && <Button onClick={() => submit()}>下一步：选择起卦方式</Button>}
+    {duplicate && <Card className="duplicate-card"><h3>最近问过同样的问题</h3><p className="helper">可以先查看上次记录，也可以重新占问。</p><div className="button-row"><Link className="button secondary" to={`/records/${duplicate.id}`}>查看旧记录</Link><Button onClick={() => submit(true)}>重新占问</Button></div></Card>}
+    {!duplicate && <Button onClick={() => submit()}>下一步：选择推演方式</Button>}
   </>
 }

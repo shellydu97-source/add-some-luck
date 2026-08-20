@@ -87,6 +87,8 @@ button, input, select, textarea { accent-color: var(--blue); }
 .bottom-nav a { position: relative; min-height: 59px; gap: 5px; border-radius: 16px; font-size: 11px; }
 .bottom-nav a.active { color: var(--blue); background: transparent; }
 .bottom-nav a.active::before { content: ''; position: absolute; top: -7px; width: 44px; height: 3px; border-radius: 999px; background: var(--blue); }
+.bottom-nav .nav-icon { width: 24px; height: 24px; display: grid; place-items: center; }
+.bottom-nav .nav-icon svg { width: 23px; height: 23px; fill: none; stroke: currentColor; stroke-width: 1.65; stroke-linecap: round; stroke-linejoin: round; }
 .nav-icon { font-size: 22px; }
 .toast { bottom: 100px; border-radius: 999px; background: #232731; box-shadow: 0 12px 34px rgba(23,28,38,.2); }
 
@@ -254,21 +256,14 @@ button, input, select, textarea { accent-color: var(--blue); }
 .local-answer-card { border-color: #d8eee9; background: linear-gradient(145deg, #fff, #f5fbfa); }
 .local-answer-card .local-answer-lead { margin: 0; color: #3f4753; font-size: 15px; line-height: 1.8; }
 
-/* 不依赖图片版权的塔罗图形卡面 */
+/* 塔罗牌面 */
 .tarot-card-button { width: 100%; padding: 0; border: 0; background: transparent; }
-.tarot-art { position: relative; width: 100%; height: 162px; display: grid; grid-template-rows: auto 1fr auto; overflow: hidden; padding: 10px; border: 1px solid #8daef5; border-radius: 11px; background: linear-gradient(160deg,#fff,#f2f6ff); box-shadow: inset 0 0 0 4px #f7f9ff, 0 7px 20px rgba(46,74,133,.08); color: var(--blue); transition: transform .18s ease, box-shadow .18s ease; }
+.tarot-art { position: relative; width: 100%; aspect-ratio: 300 / 527; display: block; overflow: hidden; border: 1px solid #d7deeb; border-radius: 11px; background: #f4f6fa; box-shadow: 0 7px 20px rgba(46,74,133,.12); transition: transform .18s ease, box-shadow .18s ease; }
 .tarot-card-button:active .tarot-art { transform: scale(.985); }
-.tarot-art.is-reversed { border-color: #ff9d94; background: linear-gradient(160deg,#fff,#fff4f2); color: var(--coral); }
-.tarot-art-corner { justify-self: start; font-size: 10px; font-weight: 800; }
-.tarot-art-symbols { display: flex; flex-wrap: wrap; align-content: center; justify-content: center; gap: 4px; padding: 7px 2px; }
-.tarot-art-symbols i { width: 18px; height: 18px; display: grid; place-items: center; font-style: normal; font-size: 15px; }
-.tarot-art-symbols .tarot-major-symbol { width: auto; height: auto; font-size: 48px; font-weight: 350; }
-.tarot-art-name { color: var(--ink); font-size: 11px; font-weight: 750; }
-.tarot-cups { border-color: #79c9bd; color: var(--teal); background: linear-gradient(160deg,#fff,#effaf8); }
-.tarot-pentacles { border-color: #e7b994; color: #c16e30; background: linear-gradient(160deg,#fff,#fff7ef); }
-.tarot-swords { border-color: #9ca5b4; color: #657084; background: linear-gradient(160deg,#fff,#f3f5f8); }
-.tarot-wands { border-color: #f29b91; color: var(--coral); background: linear-gradient(160deg,#fff,#fff3f1); }
+.tarot-art img, .tarot-help-image img { width: 100%; height: 100%; display: block; object-fit: cover; transition: transform .2s ease; }
+.tarot-art img.is-reversed, .tarot-help-image img.is-reversed { transform: rotate(180deg); }
 .tarot-help-sheet .chip-row { margin-bottom: 16px; }
+.tarot-help-image { width: min(42vw, 210px); aspect-ratio: 300 / 527; overflow: hidden; margin: 0 auto 18px; border-radius: 14px; box-shadow: 0 12px 30px rgba(29,39,62,.14); }
 .tarot-help-meaning { padding: 15px; border-radius: 15px; background: var(--soft); line-height: 1.8; }
 .revealed-wrap > small { color: var(--muted); font-size: 11px; }
 
@@ -316,7 +311,7 @@ button, input, select, textarea { accent-color: var(--blue); }
   .my-account-card { align-items: stretch; flex-direction: column; }
   .my-account-card .button { width: 100%; }
   .hexagram-help-sheet, .tarot-help-sheet { align-self: flex-end; max-height: 90vh; padding: 18px; border-radius: 22px 22px 14px 14px; }
-  .tarot-art { height: 148px; }
+  .tarot-help-image { width: min(48vw, 190px); }
 }
 
 @media (max-width: 390px) {
@@ -331,9 +326,7 @@ button, input, select, textarea { accent-color: var(--blue); }
   .button-row .button { width: 100%; }
   .question-summary { padding-right: 92px; background-size: 112px; }
   .revealed-wrap { min-width: 86px; }
-  .tarot-face, .tarot-art { height: 140px; }
-  .tarot-art-symbols i { width: 15px; height: 15px; font-size: 13px; }
-  .tarot-art-symbols .tarot-major-symbol { font-size: 40px; }
+  .tarot-face { height: 140px; }
   .bottom-nav { padding-left: 4px; padding-right: 4px; }
   .bottom-nav a { font-size: 10px; }
   .nav-icon { font-size: 20px; }

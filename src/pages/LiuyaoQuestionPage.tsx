@@ -55,7 +55,7 @@ export default function LiuyaoQuestionPage() {
   }
 
   return <>
-    <TopBar title="六爻起卦" eyebrow="第 1 步 · 问题选填" back />
+    <TopBar title="六爻占问" eyebrow="第 1 步 · 问题选填" back />
     <ConfidenceNote>写清楚一件最关心的事，后续解读会更贴近你的问题；留空也可以起卦。</ConfidenceNote>
     <Card>
       <DivinationSubjectField profiles={store.profiles} subjectId={subjectId} temporaryName={temporaryName} temporaryGender={temporaryGender} includeGender onSubjectChange={setSubjectId} onTemporaryNameChange={setTemporaryName} onTemporaryGenderChange={setTemporaryGender} />
@@ -63,7 +63,7 @@ export default function LiuyaoQuestionPage() {
       <label className="field"><span>问题分类</span><select value={category} onChange={(event) => setCategory(event.target.value)}>{categoryOptions.map((item) => <option key={item}>{item}</option>)}</select></label>
       <label className="field"><span>观察时间范围（选填）</span><input value={timeRange} onChange={(event) => setTimeRange(event.target.value)} placeholder="例如：未来两周" /></label>
     </Card>
-    {duplicate && <Card className="duplicate-card"><h3>最近问过同样的问题</h3><p className="helper">可以先看看上次的变化，也可以重新起卦。</p><div className="button-row"><Link className="button secondary" to={`/records/${duplicate.id}`}>查看旧记录</Link><Button onClick={() => submit(true)}>重新起卦</Button></div></Card>}
+    {duplicate && <Card className="duplicate-card"><h3>最近问过同样的问题</h3><p className="helper">可以先看看上次的变化，也可以重新占问。</p><div className="button-row"><Link className="button secondary" to={`/records/${duplicate.id}`}>查看旧记录</Link><Button onClick={() => submit(true)}>重新占问</Button></div></Card>}
     {!duplicate && <Button onClick={() => submit()}>下一步：选择起爻方式</Button>}
   </>
 }

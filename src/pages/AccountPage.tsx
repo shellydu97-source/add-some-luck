@@ -213,7 +213,7 @@ export default function AccountPage() {
     <Card>
       <SectionHeading title="已登录" side={<span className="chip">{syncStatusLabel(account.syncStatus)}</span>} />
       <p className="account-email">{account.session.user.email}</p>
-      <p className="helper">{account.syncMessage || '人物档案、记录和未完成的起卦流程会自动保存到云端，换设备登录后会自动恢复。'}</p>
+      <p className="helper">{account.syncMessage || '人物档案、记录和未完成的占卜流程会自动保存到云端，换设备登录后会自动恢复。'}</p>
       {account.lastSyncedAt && <p className="account-meta">最近同步：{new Date(account.lastSyncedAt).toLocaleString('zh-CN')}</p>}
       {account.syncStatus === 'error' && <Button className="secondary" disabled={busy} onClick={() => void runAccountAction(account.syncNow)}>重新同步</Button>}
       {error && <p className="field-error account-feedback">{error}</p>}

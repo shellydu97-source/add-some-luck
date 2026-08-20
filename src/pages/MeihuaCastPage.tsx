@@ -109,7 +109,7 @@ export default function MeihuaCastPage() {
   }
 
   return <>
-    <TopBar title="选择起卦方式" eyebrow="确认后锁定结果" back />
+    <TopBar title="选择推演方式" eyebrow="确认后锁定结果" back />
     <ConfidenceNote>选择最符合当下情境的一种方式即可；确认后，输入和卦象都会保持不变。</ConfidenceNote>
     <div className="meihua-method-grid" role="radiogroup" aria-label="梅花易数起卦方式">{methodOptions.map((option) => <button
       type="button" role="radio" aria-checked={method === option.value} className={`meihua-method-option${method === option.value ? ' active' : ''}`}

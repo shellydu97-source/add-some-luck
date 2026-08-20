@@ -114,6 +114,21 @@ describe('不可变记录快照', () => {
     expect(useAppStore.getState().records).toHaveLength(0)
     expect(useAppStore.getState().drafts[0]?.state.recordId).toBeUndefined()
   })
+
+  it('批量删除只移除选中记录，并同时清理对应草稿引用', () => {
+    const first = structuredClone(seedRecords[0])
+    const second = { ...structuredClone(seedRecords[1]), id: 'record-keep' }
+    useAppStore.setState({
+      records: [first, second],
+      drafts: [{
+        id: 'draft-with-batch-record', type: 'tarot', profileId: 'guest', question: '', createdAt: '2026-07-15T00:00:00.000Z', updatedAt: '2026-07-15T00:00:00.000Z',
+        state: { isChoice: false, phase: 'revealed', deckOrder: [], orientations: {}, selected: [], cursor: 0, revealed: true, recordId: first.id },
+      }],
+    })
+    useAppStore.getState().deleteRecords([first.id])
+    expect(useAppStore.getState().records.map((record) => record.id)).toEqual(['record-keep'])
+    expect(useAppStore.getState().drafts[0]?.state.recordId).toBeUndefined()
+  })
 })
 
 describe('人物切换', () => {

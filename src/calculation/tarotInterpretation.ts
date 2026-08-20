@@ -200,12 +200,28 @@ export function createTarotSpreadInterpretation(spread: TarotSpread, cards: Taro
     )
   }
 
+  const summary = (() => {
+    if (spread === 'single') {
+      const card = cards[0]!
+      return `${card.nameZh}${orientationLabel(card)}把本次重点放在“${card.keywords.slice(0, 2).join('、') || '当前主题'}”。`
+    }
+    if (spread === 'three') {
+      const current = byPosition.get('现状') ?? cards[0]!
+      const obstacle = byPosition.get('阻碍') ?? cards[1]!
+      const advice = byPosition.get('建议') ?? cards[2]!
+      return `牌阵从“${current.keywords[0] ?? current.nameZh}”展开，主要卡点是“${obstacle.keywords[0] ?? obstacle.nameZh}”，可从“${advice.keywords[0] ?? advice.nameZh}”开始调整。`
+    }
+    const aDevelopment = byPosition.get('A 路径发展') ?? cards[1]!
+    const aOutcome = byPosition.get('A 路径结果') ?? cards[2]!
+    const bDevelopment = byPosition.get('B 路径发展') ?? cards[3]!
+    const bOutcome = byPosition.get('B 路径结果') ?? cards[4]!
+    return `A 路径更偏向“${aDevelopment.keywords[0] ?? aDevelopment.nameZh} → ${aOutcome.keywords[0] ?? aOutcome.nameZh}”，B 路径更偏向“${bDevelopment.keywords[0] ?? bDevelopment.nameZh} → ${bOutcome.keywords[0] ?? bOutcome.nameZh}”；适合结合现实条件比较两边的代价与可行性。`
+  })()
+
   return {
     spread,
     spreadName: spreadNames[spread],
-    summary: spread === 'single'
-      ? '这是一张牌提供的当前观察角度。'
-      : `本地规则依据 ${cards.length} 个牌阵位置及牌面关系生成综合阅读，不分析自由文本问题的复杂语义。`,
+    summary,
     sections,
     patterns,
     uncertainty: '塔罗牌面用于整理视角与行动选项，不构成确定预测；现实判断仍应结合可核实信息与实际条件。',

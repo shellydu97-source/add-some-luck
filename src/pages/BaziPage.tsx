@@ -120,17 +120,17 @@ function NatalFacts({ analysis, compact = false }: { analysis: BaziNatalAnalysis
   return <>
     <Card>
       <SectionHeading title="十神结构" side={<span className="helper">显干与藏干出现次数</span>} />
-      <div className="bazi-fact-chips">{tenGods.map((item) => <span className="chip" key={item.name}><TermHelp term={item.name} /><b>{item.name}</b> × {item.count}</span>)}</div>
+      <div className="bazi-fact-chips">{tenGods.map((item) => <span className="chip" key={item.name}><b><TermHelp term={item.name} /></b> × {item.count}</span>)}</div>
       <p className="fact-boundary">这里展示十神在原局中的客观出现位置与次数，不直接等同于旺衰、格局或吉凶。</p>
     </Card>
     <Card>
       <SectionHeading title="常用神煞" side={<span className="helper">按日干、日支查表</span>} />
-      {shenSha.length ? <div className="bazi-fact-list">{shenSha.slice(0, compact ? 5 : undefined).map((item, index) => <div key={`${item.name}-${item.target}-${index}`}><b><TermHelp term={item.name} />{item.name}</b><span>{item.target}</span><small>{item.basis}</small></div>)}</div> : <p className="helper">当前可确定的柱中，没有命中本版收录的常用神煞。</p>}
-      {compact && shenSha.length > 5 && <p className="helper">完整位置可在“排盘”页查看。</p>}
+      {shenSha.length ? <div className="bazi-fact-list">{shenSha.slice(0, compact ? 8 : undefined).map((item, index) => <div key={`${item.name}-${item.target}-${index}`}><b><TermHelp term={item.name} /></b><span>{item.target}</span><small>{item.basis}</small></div>)}</div> : <p className="helper">当前命盘没有出现这些常用神煞。</p>}
+      {compact && shenSha.length > 8 && <p className="helper">完整位置可在“排盘”页查看。</p>}
     </Card>
     <Card>
       <SectionHeading title="原局干支关系" />
-      {relations.length ? <ul className="plain-list bazi-relation-list">{relations.slice(0, compact ? 4 : undefined).map((item, index) => <li key={`${item.kind}-${index}`}><b>{item.kind}</b>：{item.text}</li>)}</ul> : <p className="helper">当前可确定的柱中，没有形成本版收录的完整合、冲、刑、害、破组合。</p>}
+      {relations.length ? <ul className="plain-list bazi-relation-list">{relations.slice(0, compact ? 4 : undefined).map((item, index) => <li key={`${item.kind}-${index}`}><b>{item.kind}</b>：{item.text}</li>)}</ul> : <p className="helper">当前命盘没有形成完整的合、冲、刑、害、破组合。</p>}
       <p className="fact-boundary">这里只标记结构关系，不判断是否成化，也不把单一关系直接解释为好或坏。</p>
     </Card>
   </>
@@ -141,14 +141,32 @@ function FlowFacts({ analysis, label }: { analysis?: BaziFlowAnalysis; label: st
   return <Card className="flow-facts-card">
     <SectionHeading title={`${label}与原局`} />
     <div className="flow-fact-grid">
-      <div><span>天干十神 <TermHelp term={analysis.stemTenGod} /></span><b>{analysis.stem} · {analysis.stemTenGod}</b></div>
+      <div><span><TermHelp term={analysis.stemTenGod} label="天干十神" /></span><b>{analysis.stem} · {analysis.stemTenGod}</b></div>
       <div><span>五行</span><b>{analysis.stemElement} · {analysis.branchElement}</b></div>
-      <div><span>十二长生 <TermHelp term="十二长生" /></span><b>{analysis.twelveStage}</b></div>
-      <div><span>纳音 <TermHelp term="纳音" /></span><b>{analysis.naYin}</b></div>
+      <div><span><TermHelp term="十二长生" /></span><b>{analysis.twelveStage}</b></div>
+      <div><span><TermHelp term="纳音" /></span><b>{analysis.naYin}</b></div>
     </div>
-    {!!analysis.shenSha.length && <div className="flow-fact-section"><b>本期神煞</b><div className="chip-row">{analysis.shenSha.map((item, index) => <span className="chip" title={item.basis} key={`${item.name}-${index}`}><TermHelp term={item.name} />{item.name}</span>)}</div></div>}
+    {!!analysis.shenSha.length && <div className="flow-fact-section"><b>本期神煞</b><div className="chip-row">{analysis.shenSha.map((item, index) => <span className="chip" title={item.basis} key={`${item.name}-${index}`}><TermHelp term={item.name} /></span>)}</div></div>}
     {!!analysis.relations.length && <details className="inline-facts"><summary>查看与原局的干支关系</summary><ul className="plain-list">{analysis.relations.map((item, index) => <li key={`${item.kind}-${index}`}><b>{item.kind}</b>：{item.text}</li>)}</ul></details>}
-    {!analysis.shenSha.length && !analysis.relations.length && <p className="helper">本期未命中本版收录的常用神煞或完整干支关系。</p>}
+    {!analysis.shenSha.length && !analysis.relations.length && <p className="helper">本期没有出现常用神煞或完整干支关系。</p>}
+  </Card>
+}
+
+function FortuneBoard({ natal, periods }: {
+  natal: Extract<BaziPillar, { status: 'available' }>
+  periods: Array<{ label: string; analysis?: BaziFlowAnalysis }>
+}) {
+  const columns = [{ label: '本命日柱', natal }, ...periods.filter((item) => item.analysis)]
+  return <Card className="fortune-board-card">
+    <SectionHeading title="所选运势排盘" side={<span className="helper">选择下方时间即可联动</span>} />
+    <div className="fortune-board-scroll"><div className="fortune-board" style={{ gridTemplateColumns: `92px repeat(${columns.length}, minmax(112px, 1fr))` }}>
+      <b></b>{columns.map((column) => <b key={column.label}>{column.label}</b>)}
+      <span>干支</span>{columns.map((column) => <strong key={`gz-${column.label}`}>{'natal' in column ? column.natal.ganZhi : column.analysis?.ganZhi}</strong>)}
+      <span>主星</span>{columns.map((column) => <em key={`tg-${column.label}`}>{'natal' in column ? '日主' : column.analysis?.stemTenGod}</em>)}
+      <span>五行</span>{columns.map((column) => <em key={`el-${column.label}`}>{'natal' in column ? `${column.natal.fiveElements.stem} · ${column.natal.fiveElements.branch}` : `${column.analysis?.stemElement} · ${column.analysis?.branchElement}`}</em>)}
+      <span>十二长生</span>{columns.map((column) => <em key={`st-${column.label}`}>{'natal' in column ? column.natal.twelveStage : column.analysis?.twelveStage}</em>)}
+      <span>神煞</span>{columns.map((column) => <em key={`ss-${column.label}`}>{'natal' in column ? '—' : column.analysis?.shenSha.map((item) => item.name).join(' · ') || '—'}</em>)}
+    </div></div>
   </Card>
 }
 
@@ -198,6 +216,12 @@ export default function BaziPage() {
   const currentDayAnalysis = result?.ok && currentFlow.ok && currentFlow.day.status === 'available'
     ? analyzeBaziFlow(result, currentFlow.day.ganZhi, '今日流日')
     : undefined
+  const fortuneBoardPeriods = result?.ok ? [
+    { label: '大运', analysis: activeCycle ? analyzeBaziFlow(result, activeCycle.ganZhi, '所选大运') : undefined },
+    { label: '流年', analysis: activeAnnual ? analyzeBaziFlow(result, activeAnnual.ganZhi, '所选流年') : undefined },
+    { label: '流月', analysis: activeMonth ? analyzeBaziFlow(result, activeMonth.ganZhi, '所选流月') : undefined },
+    { label: '流日', analysis: selectedFlow.ok && selectedFlow.day.status === 'available' ? analyzeBaziFlow(result, selectedFlow.day.ganZhi, '所选流日') : undefined },
+  ] : []
 
   if (!profile) return <Navigate to={profiles.length ? '/charts' : '/welcome'} replace />
   if (!result) return null
@@ -239,7 +263,7 @@ export default function BaziPage() {
     {result.ok && <>
       {tab === 'overview' && <>
         <Card className="hero-card">
-          <div className="card-kicker"><span>三 / 四柱摘要 <TermHelp term="四柱" /></span></div>
+          <div className="card-kicker"><span><TermHelp term="四柱" label="三 / 四柱摘要" /></span></div>
           <h2 className="hero-title">{PILLAR_KEYS.map((key) => pillarSummary(result.pillars[key])).join(' · ')}</h2>
           <div className="chip-row">
             {result.luck
@@ -253,6 +277,10 @@ export default function BaziPage() {
           <Card><span className="summary-label">当前大运</span><h3>{currentCycle?.ganZhi ?? '待确定'}</h3><p className="helper">{currentCycle ? `${currentCycle.startYear}—${currentCycle.endYear}` : '需要明确出生时间'}</p></Card>
           <Card><span className="summary-label">今日流日</span><h3>{currentFlow.ok ? periodText(currentFlow.day) : '无法生成'}</h3><p className="helper">{currentDayAnalysis ? `${currentDayAnalysis.stemTenGod} · ${currentDayAnalysis.stemElement}${currentDayAnalysis.branchElement}` : currentFlow.ok ? `${periodText(currentFlow.year)}流年 · ${periodText(currentFlow.month)}流月` : currentFlow.error.message}</p></Card>
         </div>
+        <Card>
+          <SectionHeading title="基础排盘" side={<button type="button" className="text-button" onClick={() => setTab('chart')}>查看完整排盘</button>} />
+          <PillarTable pillars={result.pillars} fields={CORE_FIELDS} />
+        </Card>
         <Card>
           <SectionHeading title="五行分布" side={<span className="helper">天干与地支计数</span>} />
           <div className="element-counts">{ELEMENTS.map((element) => <div key={element}><b>{result.fiveElementCounts[element]}</b><span>{element}</span></div>)}</div>
@@ -272,18 +300,19 @@ export default function BaziPage() {
 
       {tab === 'chart' && <>
         <Card>
-          <div className="card-kicker"><span>四柱排盘 <TermHelp term="四柱" /></span></div>
+          <div className="card-kicker"><span><TermHelp term="四柱" label="四柱排盘" /></span></div>
           <PillarTable pillars={result.pillars} fields={CORE_FIELDS} />
         </Card>
         <Card>
           <SectionHeading title="五行分布" side={<span className="helper">天干与地支计数</span>} />
           <div className="element-counts">{ELEMENTS.map((element) => <div key={element}><b>{result.fiveElementCounts[element]}</b><span>{element}</span></div>)}</div>
         </Card>
-        <details className="result-disclosure"><summary>查看藏干、十神、纳音等详细字段</summary><Card><PillarTable pillars={result.pillars} fields={DETAIL_FIELDS} /></Card></details>
+        <Card><SectionHeading title="藏干、十神与纳音" /><PillarTable pillars={result.pillars} fields={DETAIL_FIELDS} /></Card>
         {natalAnalysis && <NatalFacts analysis={natalAnalysis} />}
       </>}
 
       {tab === 'fortune' && <>
+        {result.pillars.day.status === 'available' && <FortuneBoard natal={result.pillars.day} periods={fortuneBoardPeriods} />}
         <Segmented value={fortuneTab} options={fortuneOptions} onChange={setFortuneTab} label="运势层级" scrollable />
         {!result.luck && fortuneTab !== 'liuri' && <ConfidenceNote>出生时间未知或位于换柱交界，无法可靠生成大运、流年和完整流月时间轴；流日仍可按所选日期查看。</ConfidenceNote>}
 

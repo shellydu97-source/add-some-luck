@@ -9,10 +9,10 @@ export default function WelcomePage() {
     <main className="welcome-content">
       <div className="welcome-mark" aria-hidden="true">运</div>
       <h1>加点好运</h1>
-      <p>建立人物档案查看命盘，或直接进行塔罗与六爻起卦。</p>
+      <p>建立人物档案查看命盘，或直接进行塔罗、六爻与梅花易数占卜。</p>
       <div className="welcome-actions">
         <Link className="button" to="/profiles/new?onboarding=1">建立我的命盘</Link>
-        <Link className="button secondary" to="/divination">暂不建档，先去起卦</Link>
+        <Link className="button secondary" to="/divination">暂不建档，先去占卜</Link>
       </div>
     </main>
   </div>

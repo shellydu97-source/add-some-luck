@@ -94,19 +94,19 @@ export default function MeihuaResultPage() {
     <Card>
       <SectionHeading title="卦象结构" />
       <div className="meihua-sequence">
-        <div><span>本卦 <TermHelp term="本卦" /></span><b>{result.original.name}</b><small>{result.original.upper.symbol}{result.original.lower.symbol}</small></div>
+        <div><span><TermHelp term="本卦" /></span><b>{result.original.name}</b><small>{result.original.upper.symbol}{result.original.lower.symbol}</small></div>
         <i>→</i>
-        <div><span>互卦 <TermHelp term="互卦" /></span><b>{result.mutual.name}</b><small>{result.mutual.upper.symbol}{result.mutual.lower.symbol}</small></div>
+        <div><span><TermHelp term="互卦" /></span><b>{result.mutual.name}</b><small>{result.mutual.upper.symbol}{result.mutual.lower.symbol}</small></div>
         <i>→</i>
-        <div><span>变卦 <TermHelp term="变卦" /></span><b>{result.changed.name}</b><small>{result.changed.upper.symbol}{result.changed.lower.symbol}</small></div>
+        <div><span><TermHelp term="变卦" /></span><b>{result.changed.name}</b><small>{result.changed.upper.symbol}{result.changed.lower.symbol}</small></div>
       </div>
       <div className="meihua-secondary-sequence">
-        <div><span>错卦 <TermHelp term="错卦" /></span><b>{result.opposite.name}</b><small>{result.opposite.upper.symbol}{result.opposite.lower.symbol}</small></div>
-        <div><span>综卦 <TermHelp term="综卦" /></span><b>{result.reversed.name}</b><small>{result.reversed.upper.symbol}{result.reversed.lower.symbol}</small></div>
+        <div><span><TermHelp term="错卦" /></span><b>{result.opposite.name}</b><small>{result.opposite.upper.symbol}{result.opposite.lower.symbol}</small></div>
+        <div><span><TermHelp term="综卦" /></span><b>{result.reversed.name}</b><small>{result.reversed.upper.symbol}{result.reversed.lower.symbol}</small></div>
       </div>
       <dl className="reading-summary-list">
-        <div><dt>体卦 · 主方 <TermHelp term="体卦" /></dt><dd>{result.bodyTrigram.symbol} {result.bodyTrigram.name} · {result.bodyTrigram.element}</dd></div>
-        <div><dt>用卦 · 所问之事 <TermHelp term="用卦" /></dt><dd>{result.useTrigram.symbol} {result.useTrigram.name} · {result.useTrigram.element}</dd></div>
+        <div><dt><TermHelp term="体卦" label="体卦 · 主方" /></dt><dd>{result.bodyTrigram.symbol} {result.bodyTrigram.name} · {result.bodyTrigram.element}</dd></div>
+        <div><dt><TermHelp term="用卦" label="用卦 · 所问之事" /></dt><dd>{result.useTrigram.symbol} {result.useTrigram.name} · {result.useTrigram.element}</dd></div>
         <div><dt>体用关系</dt><dd>{result.bodyUseRelation.label}</dd></div>
       </dl>
     </Card>
@@ -136,6 +136,6 @@ export default function MeihuaResultPage() {
       </ul>
     </Card></details>
 
-    <div className="button-row"><LinkButton to="/divination" secondary>返回起卦</LinkButton><Button onClick={() => navigate(`/records/${ensureRecord()}`)}>{activeDraft.state.recordId ? '查看已保存记录' : '保存到记录'}</Button></div>
+    <div className="button-row"><LinkButton to="/divination" secondary>返回占卜</LinkButton><Button onClick={() => navigate(`/records/${ensureRecord()}`)}>{activeDraft.state.recordId ? '查看已保存记录' : '保存到记录'}</Button></div>
   </>
 }

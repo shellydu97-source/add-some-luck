@@ -27,8 +27,8 @@ export function Segmented<T extends string>({ value, options, onChange, label, s
   ))}</div>
 }
 
-export function Button({ children, className = '', ...props }: ButtonHTMLAttributes<HTMLButtonElement>) {
-  return <button className={`button ${className}`} {...props}>{children}</button>
+export function Button({ children, className = '', danger = false, ...props }: ButtonHTMLAttributes<HTMLButtonElement> & { danger?: boolean }) {
+  return <button className={`button ${danger ? 'danger ' : ''}${className}`} {...props}>{children}</button>
 }
 
 export function LinkButton({ to, children, secondary = false }: { to: string; children: ReactNode; secondary?: boolean }) {
