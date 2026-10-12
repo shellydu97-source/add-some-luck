@@ -119,7 +119,9 @@ async function handleApi(request, response, url) {
 
 function serveStatic(response, url) {
   if (!fs.existsSync(dist)) return json(response, 503, { error: '尚未构建前端，请先运行 pnpm build' })
-  const pathname = decodeURIComponent(url.pathname)
+  let pathname
+  try { pathname = decodeURIComponent(url.pathname) }
+  catch { return json(response, 400, { error: '请求路径编码无效' }) }
   const relative = pathname === '/' ? 'index.html' : pathname.replace(/^\/+/, '')
   const target = path.resolve(dist, relative)
   const safeTarget = target.startsWith(`${dist}${path.sep}`) || target === path.join(dist, 'index.html')
@@ -137,13 +139,26 @@ function serveStatic(response, url) {
 }
 
 const server = http.createServer(async (request, response) => {
-  const url = new URL(request.url || '/', `http://${request.headers.host || '127.0.0.1'}`)
-  const handled = await handleApi(request, response, url)
-  if (handled !== false) return
-  if (apiOnly || url.pathname.startsWith('/api/')) return json(response, 404, { error: '未找到该接口' })
-  if (request.method !== 'GET' && request.method !== 'HEAD') return json(response, 405, { error: '不支持的请求方式' })
-  serveStatic(response, url)
+  try {
+    let url
+    try { url = new URL(request.url || '/', `http://${request.headers.host || '127.0.0.1'}`) }
+    catch { return json(response, 400, { error: '请求地址无效' }) }
+    // Validate paths before routing, including API-only deployments.
+    try { decodeURIComponent(url.pathname) }
+    catch { return json(response, 400, { error: '请求路径编码无效' }) }
+    const handled = await handleApi(request, response, url)
+    if (handled !== false) return
+    if (apiOnly || url.pathname.startsWith('/api/')) return json(response, 404, { error: '未找到该接口' })
+    if (request.method !== 'GET' && request.method !== 'HEAD') return json(response, 405, { error: '不支持的请求方式' })
+    serveStatic(response, url)
+  } catch (error) {
+    console.error('[server] 请求处理失败', error)
+    if (!response.headersSent) json(response, 500, { error: '服务器暂时不可用' })
+    else response.end()
+  }
 })
+
+process.on('unhandledRejection', (error) => console.error('[server] 未处理的异步错误', error))
 
 function listen(port, attempts = 0) {
   server.once('error', (error) => {
