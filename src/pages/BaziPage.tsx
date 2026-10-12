@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Navigate, useParams } from 'react-router-dom'
+import { Navigate, useParams, useSearchParams } from 'react-router-dom'
 import AiReadingPanel from '../components/AiReadingPanel'
 import ChartHeader from '../components/ChartHeader'
 import DatePicker from '../components/DatePicker'
@@ -193,13 +193,14 @@ export default function BaziPage() {
   const { profileId } = useParams()
   const profiles = useAppStore((state) => state.profiles)
   const profile = profiles.find((item) => item.id === profileId)
-  const [tab, setTab] = useState<Tab>('overview')
-  const [fortuneTab, setFortuneTab] = useState<FortuneTab>('dayun')
+  const [params] = useSearchParams()
+  const [tab, setTab] = useState<Tab>(params.get('tab') === 'fortune' ? 'fortune' : 'overview')
+  const [fortuneTab, setFortuneTab] = useState<FortuneTab>(params.get('flow') === 'day' ? 'liuri' : 'dayun')
   const [selectedCycleIndex, setSelectedCycleIndex] = useState<number>()
   const [selectedYear, setSelectedYear] = useState<number>()
   const [selectedMonthIndex, setSelectedMonthIndex] = useState<number>()
   const [today] = useState(todayInShanghai)
-  const [selectedFlowDate, setSelectedFlowDate] = useState(today)
+  const [selectedFlowDate, setSelectedFlowDate] = useState(params.get('date') ?? today)
   const [aiRecordSession, setAiRecordSession] = useState<{ profileId: string; recordId: string }>()
   const result = useMemo(() => profile ? calculateBazi(profile) : undefined, [profile])
   const natalAnalysis = useMemo(() => result?.ok ? analyzeBaziNatal(result) : undefined, [result])
