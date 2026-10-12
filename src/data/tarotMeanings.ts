@@ -1,3 +1,4 @@
+import { minorMeanings } from './tarotMinorMeanings'
 import type { TarotCard } from '../models/types'
 import { tarotCards } from './tarotCards'
 
@@ -35,40 +36,11 @@ const majorMeanings: TarotMeaning[] = [
   { uprightKeywords: ['完成', '整合', '新周期'], reversedKeywords: ['未收尾', '缺口', '接近完成'], uprightMeaning: '一个周期走向完成，经验被整合后可以进入下一阶段。', reversedMeaning: '已经接近完成，但仍有具体收尾事项需要处理。' },
 ]
 
-const suitThemes = {
-  wands: { uprightKeywords: ['行动', '动力', '创造'], reversedKeywords: ['分散', '受阻', '急躁'], upright: '行动、动力与创造', reversed: '动力分散或行动受阻' },
-  cups: { uprightKeywords: ['感受', '关系', '交流'], reversedKeywords: ['失衡', '压抑', '沟通不畅'], upright: '感受、关系与情绪交流', reversed: '情绪失衡或沟通不畅' },
-  swords: { uprightKeywords: ['思考', '沟通', '判断'], reversedKeywords: ['混乱', '冲突', '内耗'], upright: '思考、沟通与判断', reversed: '思路混乱或冲突内耗' },
-  pentacles: { uprightKeywords: ['资源', '现实', '积累'], reversedKeywords: ['失衡', '迟缓', '不稳定'], upright: '资源、现实条件与稳定积累', reversed: '资源配置失衡或进展迟缓' },
-} as const
-
-const rankPhases: Record<string, { uprightKeywords: string[]; reversedKeywords: string[]; upright: string; reversed: string }> = {
-  ace: { uprightKeywords: ['起点', '机会'], reversedKeywords: ['延后', '未成熟'], upright: '出现新的起点和可能性', reversed: '起点尚未成熟或机会被延后' },
-  two: { uprightKeywords: ['平衡', '选择'], reversedKeywords: ['摇摆', '不协调'], upright: '需要比较、平衡或建立配合', reversed: '两端难以协调，选择暂不稳定' },
-  three: { uprightKeywords: ['协作', '初步成果'], reversedKeywords: ['配合不顺', '尚未成形'], upright: '开始协作、扩展并看见初步成果', reversed: '协作不顺或成果尚未成形' },
-  four: { uprightKeywords: ['稳定', '巩固'], reversedKeywords: ['松动', '不安'], upright: '进入稳定、停驻或巩固阶段', reversed: '稳定感不足，原有安排需要松动' },
-  five: { uprightKeywords: ['挑战', '摩擦'], reversedKeywords: ['缓和', '余波'], upright: '出现摩擦、缺口或现实挑战', reversed: '冲突有缓和空间，但问题仍需处理' },
-  six: { uprightKeywords: ['过渡', '调整'], reversedKeywords: ['停滞', '旧题牵制'], upright: '从前一阶段过渡并获得调整机会', reversed: '过渡不顺，旧问题仍在牵制' },
-  seven: { uprightKeywords: ['评估', '坚持'], reversedKeywords: ['失去耐心', '策略有误'], upright: '需要评估、坚持并保护已有进展', reversed: '耐心下降或策略需要重新检查' },
-  eight: { uprightKeywords: ['加速', '练习'], reversedKeywords: ['受阻', '重复消耗'], upright: '节奏加快，进入持续行动或练习', reversed: '进度受阻，重复劳动需要调整' },
-  nine: { uprightKeywords: ['接近成果', '边界'], reversedKeywords: ['疲惫', '防线松动'], upright: '接近阶段成果，同时保持必要边界', reversed: '压力累积，恢复与边界不足' },
-  ten: { uprightKeywords: ['完成周期', '承担'], reversedKeywords: ['过载', '未收尾'], upright: '一个周期达到高点并承担相应结果', reversed: '负担过重或收尾尚未完成' },
-  page: { uprightKeywords: ['学习', '消息'], reversedKeywords: ['经验不足', '消息待核'], upright: '以学习者姿态接触新的信息', reversed: '经验不足，消息需要进一步核实' },
-  knight: { uprightKeywords: ['推进', '投入'], reversedKeywords: ['冒进', '反复'], upright: '带着明确动力向目标推进', reversed: '推进过急或方向反复' },
-  queen: { uprightKeywords: ['成熟', '内在稳定'], reversedKeywords: ['耗竭', '照顾失衡'], upright: '以内在稳定和成熟方式管理主题', reversed: '内在资源不足或照顾失衡' },
-  king: { uprightKeywords: ['责任', '经验'], reversedKeywords: ['僵化', '权责失衡'], upright: '以责任、经验和整体视角处理主题', reversed: '权责失衡或判断过于僵化' },
-}
-
 function meaningFor(card: TarotCard): TarotMeaning {
   if (card.arcana === 'major') return majorMeanings[card.order]!
-  const theme = suitThemes[card.suit ?? 'wands']
-  const phase = rankPhases[card.rank ?? 'ace']!
-  return {
-    uprightKeywords: [...theme.uprightKeywords, ...phase.uprightKeywords],
-    reversedKeywords: [...theme.reversedKeywords, ...phase.reversedKeywords],
-    uprightMeaning: `${theme.upright}：${phase.upright}。`,
-    reversedMeaning: `${theme.reversed}：${phase.reversed}。`,
-  }
+  const meaning = minorMeanings[`${card.suit}-${card.rank}`]
+  if (!meaning) throw new Error(`Missing tarot meaning: ${card.id}`)
+  return meaning
 }
 
 export const tarotKnowledgeCards: TarotKnowledgeCard[] = tarotCards.map((card) => ({ ...card, ...meaningFor(card) }))

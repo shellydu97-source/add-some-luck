@@ -107,7 +107,8 @@ function analysePatterns(cards: TarotReadingCard[]) {
   const reversed = cards.filter((card) => card.orientation === 'reversed')
   const repeatedSuit = repeatedEntries(cards.map((card) => card.suit ?? ''))
   const repeatedRank = repeatedEntries(cards.filter((card) => card.arcana === 'minor').map((card) => card.rank ?? ''))
-  const repeatedKeywords = repeatedEntries(cards.flatMap((card) => card.keywords))
+  const repeatedKeywords = repeatedEntries(cards.flatMap((card) => [...new Set(card.keywords)]))
+    .filter(([keyword]) => new Set(cards.filter((card) => card.keywords.includes(keyword)).map((card) => card.arcana === 'major' ? 'major' : card.suit)).size > 1)
   const elements = new Set(cards.filter((card) => card.arcana === 'minor').map((card) => card.element))
 
   if (majors.length >= 2) patterns.push(`${majors.length} 张大阿卡纳同时出现，说明这组牌更强调阶段性选择和核心态度，而不只是执行细节。`)
