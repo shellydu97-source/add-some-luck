@@ -27,7 +27,7 @@ export function shanghaiHasDaylightSaving(wall: Date) {
 function localText(date: Date) { return date.toISOString().slice(0, 16).replace('T', ' ') }
 export function correctBirthTime(input: BaziBirthInput): BirthTimeCorrection {
   const wall = birthLocal(input)
-  const originalLocal = localText(wall)
+  const originalLocal = `${input.rawBirthDate.replaceAll('/', '-')} ${input.rawBirthTime || '时间未知'}`
   const known = !!input.rawBirthTime && input.timeAccuracy !== 'unknown'
   const requiresDaylightSavingChoice = known && shanghaiHasDaylightSaving(wall)
   const daylightSavingMinutes = requiresDaylightSavingChoice && input.daylightSavingStatus === 'applied' ? -60 : 0
