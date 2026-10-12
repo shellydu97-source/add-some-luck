@@ -17,7 +17,7 @@ describe('V1 / V1.1 本地数据迁移', () => {
       activeProfileId: 'profile-self',
       liuyaoDraft: { question: '测试', category: '其他', timeRange: '', seed: 'fixed', casts: [] },
     })
-    expect(migrated.schemaVersion).toBe('1.2')
+    expect(migrated.schemaVersion).toBe('1.3')
     expect(migrated.profiles.map((profile) => profile.id)).toEqual(seedProfiles.map((profile) => profile.id))
     expect(migrated.records.map((record) => record.id)).toEqual(seedRecords.map((record) => record.id))
     expect(migrated.drafts).toHaveLength(1)

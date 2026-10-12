@@ -127,6 +127,7 @@ export interface AiConversationMessage {
 }
 
 export interface RecordSnapshot {
+  metaUpdatedAt?: string
   id: string
   type: RecordType
   profileId: string
@@ -261,8 +262,15 @@ export interface MeihuaDraft extends DraftBase {
 
 export type DivinationDraft = LiuyaoDraft | MeihuaDraft | TarotDraft
 
+export interface Tombstones {
+  profiles: Record<string, string>
+  records: Record<string, string>
+  drafts: Record<string, string>
+}
+
 export interface AppDataState {
-  schemaVersion: '1.2'
+  tombstones: Tombstones
+  schemaVersion: '1.3'
   lastPrimaryRoute: PrimaryNav
   reduceMotion: boolean
   activeProfileId: string

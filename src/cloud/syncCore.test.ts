@@ -4,7 +4,7 @@ import { decideInitialSync, hashAppData, mergeAppData } from './syncCore'
 
 function data(overrides: Partial<AppDataState> = {}): AppDataState {
   return {
-    schemaVersion: '1.2', lastPrimaryRoute: 'charts', reduceMotion: false,
+    schemaVersion: '1.3', tombstones: { profiles: {}, records: {}, drafts: {} }, lastPrimaryRoute: 'charts', reduceMotion: false,
     activeProfileId: '', profiles: [], records: [], drafts: [], ...overrides,
   }
 }
@@ -63,7 +63,7 @@ describe('云端同步决策', () => {
 
   it('散列不受对象字段顺序影响', () => {
     const left = data()
-    const right = { records: [], profiles: [], drafts: [], activeProfileId: '', reduceMotion: false, lastPrimaryRoute: 'charts', schemaVersion: '1.2' } as AppDataState
+    const right = { tombstones: { profiles: {}, records: {}, drafts: {} }, records: [], profiles: [], drafts: [], activeProfileId: '', reduceMotion: false, lastPrimaryRoute: 'charts', schemaVersion: '1.3' } as AppDataState
     expect(hashAppData(left)).toBe(hashAppData(right))
   })
 })
@@ -102,5 +102,61 @@ describe('自动合并', () => {
     expect(merged.records[0].rawResult).toEqual(baseRecord.rawResult)
     expect(merged.records[0].aiMessages?.map((message) => message.id).sort()).toEqual(['local-message', 'remote-message'])
     expect(merged.records[0].notes).toBe('云端备注')
+  })
+})
+
+import { createSyncBaseline, findSyncConflicts, pickSyncData, pruneTombstones } from './syncCore'
+import { migrateToV13 } from '../storage/migrations'
+import { seedRecords } from '../mocks/records'
+import { createEmptyAppData } from '../storage/appData'
+import { parseImport, serializeExport } from '../storage/dataTransfer'
+
+const NOW = '2026-10-12T04:00:00.000Z'
+function record(id: string) { return { ...seedRecords[0], id, createdAt: '2026-10-01T04:00:00.000Z', metaUpdatedAt: '2026-10-01T04:00:00.000Z' } }
+describe('1.3 安全合并', () => {
+  it('删除标记阻止人物、记录和草稿复活', () => {
+    const remote = data({ records: [record('r')], profiles: [{ id: 'p', createdAt: '2026-10-01', updatedAt: '2026-10-01' } as AppDataState['profiles'][number]], drafts: [{ id: 'd', createdAt: '2026-10-01', updatedAt: '2026-10-01' } as AppDataState['drafts'][number]] })
+    const local = data({ tombstones: { profiles: { p: NOW }, records: { r: NOW }, drafts: { d: NOW } } })
+    const merged = mergeAppData(local, remote)
+    expect(merged.profiles).toEqual([]); expect(merged.records).toEqual([]); expect(merged.drafts).toEqual([])
+    expect(merged.tombstones).toEqual(local.tombstones)
+  })
+  it('不同记录可自动合并，同一记录同一验证字段两端修改会冲突', () => {
+    const base = data({ records: [record('a'), record('b')] }), baseline = createSyncBaseline(base)
+    const local = structuredClone(base), remote = structuredClone(base)
+    local.records[0].notes = '本机'; local.records[0].metaUpdatedAt = NOW
+    remote.records[1].notes = '云端'; remote.records[1].metaUpdatedAt = NOW
+    expect(findSyncConflicts(local, remote, baseline)).toEqual([])
+    const merged = mergeAppData(local, remote, baseline)
+    expect(merged.records.find((r) => r.id === 'a')?.notes).toBe('本机')
+    expect(merged.records.find((r) => r.id === 'b')?.notes).toBe('云端')
+    remote.records[0].notes = '云端同一字段'
+    expect(findSyncConflicts(local, remote, baseline)).toEqual(['records:a:notes'])
+    expect(merged.records[0].rawResult).toEqual(base.records[0].rawResult)
+  })
+  it('同一记录分别修改不同字段时两边均保留', () => {
+    const base = data({ records: [record('a')] }), baseline = createSyncBaseline(base)
+    const local = structuredClone(base), remote = structuredClone(base)
+    local.records[0].notes = '本机备注'; local.records[0].metaUpdatedAt = NOW
+    remote.records[0].verificationResult = '已发生'; remote.records[0].metaUpdatedAt = '2026-10-12T05:00:00.000Z'
+    expect(findSyncConflicts(local, remote, baseline)).toEqual([])
+    expect(mergeAppData(local, remote, baseline).records[0]).toMatchObject({ notes: '本机备注', verificationResult: '已发生' })
+  })
+  it('清理超过180天的删除标记，保留新标记', () => {
+    expect(pruneTombstones({ profiles: { old: '2026-01-01T00:00:00Z', new: NOW }, records: {}, drafts: {} }, Date.parse(NOW))).toEqual({ profiles: { new: NOW }, records: {}, drafts: {} })
+  })
+  it('导航、动态效果和当前人物不参与同步散列或上传', () => {
+    const base = data(), changed = { ...base, activeProfileId: 'another', reduceMotion: true, lastPrimaryRoute: 'records' as const }
+    expect(hashAppData(base)).toBe(hashAppData(changed))
+    expect(pickSyncData(changed)).not.toHaveProperty('lastPrimaryRoute')
+    expect(pickSyncData(changed)).not.toHaveProperty('reduceMotion')
+    expect(pickSyncData(changed)).not.toHaveProperty('activeProfileId')
+  })
+  it('1.2 备份迁移并完整保留原始结果、旧牌义及六爻来源', () => {
+    const migrated = migrateToV13({ ...createEmptyAppData(), schemaVersion: '1.2', tombstones: undefined, records: [record('a')] })
+    expect(migrated.schemaVersion).toBe('1.3')
+    expect(migrated.tombstones).toEqual({ profiles: {}, records: {}, drafts: {} })
+    expect(migrated.records[0].rawResult).toEqual(record('a').rawResult)
+    expect(parseImport(serializeExport(migrated))).toEqual(migrated)
   })
 })

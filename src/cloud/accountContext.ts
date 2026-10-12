@@ -11,6 +11,8 @@ export interface CloudAccountValue {
   syncStatus: CloudSyncStatus
   syncMessage: string
   lastSyncedAt?: string
+  conflictSummary?: { local: { profiles: number; records: number; updatedAt: string }; cloud: { profiles: number; records: number; updatedAt: string } }
+  clearLocalData: (deleteCloud?: boolean) => Promise<void>
   hasConflict: boolean
   passwordRecovery: boolean
   signUp: (email: string, password: string) => Promise<'signed-in' | 'check-email'>

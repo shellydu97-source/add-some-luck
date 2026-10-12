@@ -2,13 +2,13 @@ import type { AppDataState } from '../models/types'
 import { migrateToV12 } from './migrations'
 
 export interface ExportEnvelope {
-  schemaVersion: '1.2'
+  schemaVersion: '1.3'
   exportedAt: string
   state: AppDataState
 }
 
 export function createExportEnvelope(state: AppDataState): ExportEnvelope {
-  return { schemaVersion: '1.2', exportedAt: new Date().toISOString(), state: structuredClone(state) }
+  return { schemaVersion: '1.3', exportedAt: new Date().toISOString(), state: structuredClone(state) }
 }
 
 export function serializeExport(state: AppDataState) {

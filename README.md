@@ -1,6 +1,6 @@
 # 加点好运
 
-移动优先的个人命盘、起卦与复盘应用。人物、草稿和记录默认保存在各自浏览器中；配置 Supabase 后可选择注册账号并跨设备同步。数据结构保持 `schemaVersion 1.2`。
+移动优先的个人命盘、起卦与复盘应用。人物、草稿和记录默认保存在各自浏览器中；配置 Supabase 后可选择注册账号并跨设备同步。数据结构保持 `schemaVersion 1.3`。
 
 ## 已有能力
 
@@ -55,7 +55,7 @@ DEEPSEEK_MODEL=deepseek-v4-flash
 ## 配置 Supabase 账号与同步
 
 1. 在 Supabase 创建项目。
-2. 打开项目的 SQL Editor，先执行 `supabase/migrations/2026071701_user_app_data.sql`，再执行 `supabase/migrations/2026101201_ai_usage.sql`。**先执行 SQL，再部署服务端和前端**。
+2. 打开项目的 SQL Editor，先执行 `supabase/migrations/2026071701_user_app_data.sql`，再依次执行 `supabase/migrations/2026101201_ai_usage.sql`、`supabase/migrations/2026101202_sync_version.sql`。**先执行 SQL，再部署服务端和前端**。
 3. 在 Auth 的 Email Provider 中启用邮箱注册和 Confirm email，并配置自定义 SMTP。注册和找回密码都使用中文 6 位验证码。
 4. 在 Auth 的 URL Configuration 中，把正式网址设为 Site URL，并把 `/account` 加入 Redirect URLs。
 5. 将 Project URL 和 Publishable key 写入 `.env.local`：
@@ -108,3 +108,5 @@ VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
 主导航为“命盘、起卦、记录”。`/fortune/*` 和 `/today` 重定向到 `/charts`。
 
 提高 AI 限额时，也需由项目管理员在 SQL Editor 更新 `public.ai_quota_limits` 的上限；RPC 会取环境变量与数据库上限的较小值，防止用户直接调用 RPC 提高额度。数据库不可用时 AI 接口拒绝生成，不退回匿名模式。
+
+同步只上传人物、记录、草稿和删除标记；导航、降低动态效果和当前人物留在本机。上传通过 `save_user_app_data` 做版本校验；冲突时可合并、保留本机或保留云端。删除标记保留 180 天，超过 180 天未同步的设备应先导出备份并重新拉取云端数据。清空默认只作用本机并退出登录；登录时导入默认合并，完全替换需要二次确认。会话过期保留本机未同步数据，主动退出时另存账号恢复备份。

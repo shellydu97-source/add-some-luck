@@ -90,6 +90,7 @@ function migrateRecord(value: unknown, now: string): RecordSnapshot {
         timeAccuracy: mapAccuracy(oldSnapshot.timeAccuracy), normalizationStatus: 'unprocessed' as const,
       }
   return {
+    metaUpdatedAt: typeof item.metaUpdatedAt === 'string' ? item.metaUpdatedAt : undefined,
     id: string(item.id, makeId('record')),
     type: ['bazi', 'astrology', 'liuyao', 'meihua', 'tarot'].includes(string(item.type)) ? item.type as RecordSnapshot['type'] : 'tarot',
     profileId: string(item.profileId, 'guest'), profileNameSnapshot: name, profileSnapshot,
@@ -146,7 +147,7 @@ function migrateLegacyDrafts(state: Record<string, unknown>, now: string, active
   return drafts
 }
 
-export function migrateToV12(persisted: unknown): AppDataState {
+export function migrateToV13(persisted: unknown): AppDataState {
   const state = object(persisted)
   const now = new Date().toISOString()
   const profiles = (Array.isArray(state.profiles) ? state.profiles : []).map((item) => migrateProfile(item, now))
@@ -157,9 +158,12 @@ export function migrateToV12(persisted: unknown): AppDataState {
   const drafts = Array.isArray(state.drafts) ? state.drafts.map(migrateCurrentDraft) : migrateLegacyDrafts(state, now, activeProfileId)
   const requestedRoute = string(state.lastPrimaryRoute, string(state.lastPrimaryNav, 'charts'))
   const migrated: AppDataState = {
-    schemaVersion: '1.2', lastPrimaryRoute: primaryRoutes.includes(requestedRoute as typeof primaryRoutes[number]) ? requestedRoute as AppDataState['lastPrimaryRoute'] : 'charts',
+    schemaVersion: '1.3', tombstones: state.tombstones as AppDataState['tombstones'] ?? { profiles: {}, records: {}, drafts: {} }, lastPrimaryRoute: primaryRoutes.includes(requestedRoute as typeof primaryRoutes[number]) ? requestedRoute as AppDataState['lastPrimaryRoute'] : 'charts',
     reduceMotion: state.reduceMotion === true, activeProfileId, profiles, records, drafts,
   }
   appDataSchema.parse(migrated)
   return migrated
 }
+
+// Compatibility export for existing consumers; all versions now migrate to 1.3.
+export const migrateToV12 = migrateToV13

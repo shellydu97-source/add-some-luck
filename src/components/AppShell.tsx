@@ -1,4 +1,6 @@
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
+import SyncConflictPanel from './SyncConflictPanel'
+import { useCloudAccount } from '../cloud/accountContext'
 import { useEffect } from 'react'
 import { useAppStore } from '../storage/store'
 import type { PrimaryNav } from '../models/types'
@@ -19,6 +21,7 @@ function NavIcon({ name }: { name: string }) {
 
 export default function AppShell() {
   const location = useLocation()
+  const account = useCloudAccount()
   const notice = useAppStore((state) => state.notice)
   const setNotice = useAppStore((state) => state.setNotice)
   const setLastPrimaryRoute = useAppStore((state) => state.setLastPrimaryRoute)
@@ -45,7 +48,7 @@ export default function AppShell() {
   return (
     <div className={`app-shell ${reduceMotion ? 'reduce-motion' : ''}`}>
       {storageRecovery && <div className="storage-warning" role="alert"><p>{storageRecovery.message}</p><NavLink to="/settings">处理数据</NavLink><button onClick={dismissRecovery}>稍后处理</button></div>}
-      <main className="page-container"><Outlet /></main>
+      <main className="page-container">{location.pathname !== '/account' && <SyncConflictPanel />}{!account.session && account.syncMessage && <p className="storage-warning" role="alert">{account.syncMessage} <NavLink to="/account">重新登录</NavLink></p>}<Outlet /></main>
       <nav className="bottom-nav" aria-label="一级导航">
         {navItems.map((item) => (
           <NavLink key={item.to} to={item.to} className={({ isActive }) => {

@@ -19,6 +19,7 @@ const profileSchema = z.object({
 }).passthrough()
 
 const recordSchema = z.object({
+  metaUpdatedAt: z.string().datetime().optional(),
   id: z.string().min(1), type: z.enum(['bazi', 'astrology', 'liuyao', 'meihua', 'tarot']), profileId: z.string(),
   profileNameSnapshot: z.string(), createdAt: z.string(), rawResult: z.record(z.string(), z.unknown()),
   calculationVersion: z.string(), ruleVersion: z.string(), interpretation: z.object({
@@ -36,7 +37,8 @@ const draftSchema = z.object({
 }).passthrough()
 
 export const appDataSchema = z.object({
-  schemaVersion: z.literal('1.2'),
+  schemaVersion: z.literal('1.3'),
+  tombstones: z.object({ profiles: z.record(z.string(), z.string().datetime()), records: z.record(z.string(), z.string().datetime()), drafts: z.record(z.string(), z.string().datetime()) }),
   lastPrimaryRoute: z.enum(['charts', 'fortune', 'divination', 'records']),
   reduceMotion: z.boolean(), activeProfileId: z.string(),
   profiles: z.array(profileSchema), records: z.array(recordSchema), drafts: z.array(draftSchema),

@@ -1,3 +1,4 @@
+import SyncConflictPanel from '../components/SyncConflictPanel'
 import { useEffect, useState, type FormEvent, type ReactNode } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useCloudAccount } from '../cloud/accountContext'
@@ -218,7 +219,8 @@ export default function AccountPage() {
       {account.syncStatus === 'error' && <Button className="secondary" disabled={busy} onClick={() => void runAccountAction(account.syncNow)}>重新同步</Button>}
       {error && <p className="field-error account-feedback">{error}</p>}
     </Card>
-    <Card><SectionHeading title="数据说明" /><p className="helper">登录后以云端数据为准。当前设备会保留一份安全缓存，断网时仍可使用；恢复网络或重新打开页面后会自动同步，不需要手动操作。</p></Card>
+    <SyncConflictPanel />
+    <Card><SectionHeading title="数据说明" /><p className="helper">本机与云端按版本同步，冲突时由你选择。当前设备会保留一份安全缓存，断网时仍可使用；恢复网络或重新打开页面后会自动同步，不需要手动操作。</p></Card>
     <Button className="secondary" disabled={busy} onClick={() => void runAccountAction(async () => { await account.signOut(); clearGuestAccess(); navigate('/account?onboarding=1', { replace: true }) })}>退出登录</Button>
   </AccountFrame>
 

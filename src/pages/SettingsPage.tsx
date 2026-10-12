@@ -1,3 +1,4 @@
+import { mergeAppData } from '../cloud/syncCore'
 import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import TopBar from '../components/TopBar'
@@ -13,6 +14,8 @@ export default function SettingsPage() {
   const inputRef = useRef<HTMLInputElement>(null)
   const store = useAppStore()
   const account = useCloudAccount()
+  const [clearChoice, setClearChoice] = useState(false)
+  const [replaceImport, setReplaceImport] = useState(false)
   const [error, setError] = useState('')
   const data: AppDataState = pickAppData(store)
 
@@ -25,8 +28,19 @@ export default function SettingsPage() {
     if (!file) return
     try {
       const next = parseImport(await file.text())
-      if (!window.confirm('导入会替换当前人物、记录和草稿，确定继续吗？')) return
-      store.replaceAllData(next)
+      if (account.session && !replaceImport) {
+        if (!window.confirm('将备份与当前数据合并，并同步到这个账号，继续吗？')) return
+        store.replaceAllData(mergeAppData(pickAppData(useAppStore.getState()), next))
+      } else {
+        if (!window.confirm('导入会替换当前人物、记录和草稿，确定继续吗？')) return
+        if (account.session && !window.confirm('完全替换也会同步到云端并影响其他设备，请再次确认。')) return
+        const current = pickAppData(useAppStore.getState())
+        const now = new Date().toISOString()
+        // Replacements carry tombstones, so old cloud items cannot reappear.
+        const tombstones = structuredClone(next.tombstones)
+        for (const kind of ['profiles', 'records', 'drafts'] as const) for (const item of current[kind]) if (!next[kind].some((n) => n.id === item.id)) tombstones[kind][item.id] = now
+        store.replaceAllData({ ...next, tombstones })
+      }
       setError('')
       navigate('/charts')
     } catch (cause) {
@@ -37,10 +51,18 @@ export default function SettingsPage() {
   }
 
   function clearData() {
+    if (account.session) { setClearChoice(true); return }
     if (!window.confirm('清空后人物、记录和草稿都将删除。继续吗？')) return
     if (!window.confirm('请再次确认：确定清空当前浏览器中的全部数据吗？')) return
     store.clearAllData()
     navigate('/welcome', { replace: true })
+  }
+
+  async function clearAccount(deleteCloud: boolean) {
+    if (!window.confirm(deleteCloud ? '确认删除本机和云端数据？这会影响其他设备。' : '确认只清空本机并退出登录？')) return
+    if (deleteCloud && !window.confirm('请再次确认：删除云端保存的人物、记录和草稿。')) return
+    try { await account.clearLocalData(deleteCloud); navigate('/welcome', { replace: true }) }
+    catch (cause) { setError(cause instanceof Error ? cause.message : '清空失败，数据仍保留。') }
   }
 
   return <>
@@ -57,11 +79,13 @@ export default function SettingsPage() {
       <div className="settings-actions">
         <Button className="secondary" onClick={exportData}>导出全部数据</Button>
         <Button className="secondary" onClick={() => inputRef.current?.click()}>导入备份文件</Button>
+        {account.session && <label className="toggle-setting"><span>用备份完全替换（会同步到云端）</span><input type="checkbox" checked={replaceImport} onChange={(event) => setReplaceImport(event.target.checked)} /></label>}
         <input ref={inputRef} className="sr-only" type="file" accept="application/json,.json" onChange={(event) => void importData(event.target.files?.[0])} />
       </div>
       {error && <p className="field-error settings-error">{error}</p>}
     </Card>
     <Card><SectionHeading title="显示偏好" /><label className="toggle-setting"><span><b>降低动态效果</b><small>仪式抽牌改为手动切换候选牌，其他动画尽量关闭。</small></span><input type="checkbox" checked={store.reduceMotion} onChange={(event) => store.setReduceMotion(event.target.checked)} /></label></Card>
+    {clearChoice && <Card><h2>选择清空范围</h2><p className="helper">只清空本机会退出登录，云端数据保留。</p><Button className="secondary" onClick={() => void clearAccount(false)}>只清空本机并退出登录</Button><Button className="danger" onClick={() => void clearAccount(true)}>同时删除云端数据</Button><Button className="secondary" onClick={() => setClearChoice(false)}>取消</Button></Card>}
     <Button className="danger" onClick={clearData}>清空全部本地数据</Button>
   </>
 }
