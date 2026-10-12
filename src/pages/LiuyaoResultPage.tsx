@@ -41,6 +41,7 @@ export default function LiuyaoResultPage() {
     querentGender,
     timeRange: activeDraft.state.timeRange,
     lockedAt: activeDraft.state.lockedAt,
+    castCompletedAt: activeDraft.state.castCompletedAt,
     coinTosses: activeDraft.state.casts,
     coinConventionVersion: activeDraft.state.coinConventionVersion ?? LIUYAO_COIN_CONVENTION_VERSION,
     original: result.original,

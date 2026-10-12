@@ -70,8 +70,8 @@ function mergeTombstones(local: Tombstones, remote: Tombstones): Tombstones {
   for (const kind of ['profiles', 'records', 'drafts'] as const) for (const [id, date] of [...Object.entries(local[kind]), ...Object.entries(remote[kind])]) if (!result[kind][id] || date > result[kind][id]) result[kind][id] = date
   return result
 }
-function union<T extends { id: string }>(local: T[] = [], remote: T[] = []) {
-  return [...new Map([...remote, ...local].map((x) => [x.id, x])).values()]
+function union<T extends { id: string; createdAt?: string }>(local: T[] = [], remote: T[] = []) {
+  return [...new Map([...remote, ...local].map((x) => [x.id, x])).values()].sort((a, b) => (a.createdAt ?? '').localeCompare(b.createdAt ?? '') || a.id.localeCompare(b.id))
 }
 function mergeRecord(local: RecordSnapshot, remote: RecordSnapshot, baseline?: Record<string, string>): RecordSnapshot {
   // The local original snapshot is never overwritten by mutable cloud fields.
@@ -93,11 +93,11 @@ export function mergeAppData(local: AppDataState, remote: AppDataState, baseline
     for (const item of left) { const old = items.get(item.id); if (!old || item.updatedAt >= old.updatedAt) items.set(item.id, item) }
     return [...items.values()]
   }
-  let profiles = latest(local.profiles, remote.profiles).filter((x) => alive('profiles', x)).sort((a, b) => a.createdAt.localeCompare(b.createdAt))
+  let profiles = latest(local.profiles, remote.profiles).filter((x) => alive('profiles', x)).sort((a, b) => a.createdAt.localeCompare(b.createdAt) || a.id.localeCompare(b.id))
   // Exactly one default survives a merge; normalize only this mutable flag.
   const defaultId = profiles.find((x) => x.isDefault)?.id ?? profiles[0]?.id
   profiles = profiles.map((x): Profile => ({ ...x, isDefault: x.id === defaultId }))
   const records = new Map(remote.records.map((x) => [x.id, x]))
   for (const item of local.records) { const old = records.get(item.id); records.set(item.id, old ? mergeRecord(item, old, baseline?.records[item.id]) : item) }
-  return { ...local, schemaVersion: '1.3', tombstones: pruneTombstones(tombstones), profiles, records: [...records.values()].filter((x) => alive('records', x)).sort((a, b) => b.createdAt.localeCompare(a.createdAt)), drafts: latest(local.drafts, remote.drafts).filter((x) => alive('drafts', x)).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)), activeProfileId: profiles.some((x) => x.id === local.activeProfileId) ? local.activeProfileId : defaultId ?? '' }
+  return { ...local, schemaVersion: '1.3', tombstones: pruneTombstones(tombstones), profiles, records: [...records.values()].filter((x) => alive('records', x)).sort((a, b) => b.createdAt.localeCompare(a.createdAt) || a.id.localeCompare(b.id)), drafts: latest(local.drafts, remote.drafts).filter((x) => alive('drafts', x)).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt) || a.id.localeCompare(b.id)), activeProfileId: profiles.some((x) => x.id === local.activeProfileId) ? local.activeProfileId : defaultId ?? '' }
 }

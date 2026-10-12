@@ -1,3 +1,6 @@
+import { contextSchemas } from './ai-request.mjs'
+import { calculateBazi } from '../src/calculation/bazi/lunarTypescriptAdapter'
+import { analyzeBaziNatal } from '../src/calculation/bazi/analysis'
 import { describe, expect, it, vi } from 'vitest'
 import { handleAiChat, aiHealth, nodeClientIp } from './ai-handler.mjs'
 import { validateAiRequest } from './ai-core.mjs'
@@ -53,6 +56,12 @@ describe('shared AI boundary', () => {
     const d = deps(), anonymous = { DEEPSEEK_API_KEY: 'test', AI_ALLOW_ANONYMOUS: 'true', AI_PER_IP_HOURLY_LIMIT: '1' }
     expect((await handleAiChat(req(), anonymous, d)).status).toBe(200)
     expect((await handleAiChat(req(), anonymous, d)).status).toBe(429)
+  })
+  it('accepts actual Bazi output including facts', () => {
+    const result = calculateBazi({ calendarType: 'solar', rawBirthDate: '1990/01/01', rawBirthTime: '12:00', lunarLeapMonth: false, timeAccuracy: 'exact_minute', gender: 'male' })
+    expect(result.ok).toBe(true)
+    contextSchemas.bazi.parse({ result, analysis: analyzeBaziNatal(result) })
+    expect(() => validateAiRequest({ module: 'bazi', context: { result, analysis: analyzeBaziNatal(result) } })).not.toThrow()
   })
   it('accepts the actual Liuyao and Meihua calculation shape', () => {
     const casts = createCastFromValues([7, 7, 7, 7, 7, 7])

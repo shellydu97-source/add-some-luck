@@ -58,7 +58,8 @@ function readingToConversationContent(reading: AiReading) {
 export default function AiReadingPanel({ module, question = '', context, recordId, ensureRecord, allowQuestionInput = false, title = '结合问题解读' }: AiReadingPanelProps) {
   const account = useCloudAccount()
   const [requiresLogin, setRequiresLogin] = useState(false)
-  const loginRequired = requiresLogin && !account.session
+  const [authExpired, setAuthExpired] = useState(false)
+  const loginRequired = (requiresLogin && !account.session) || authExpired
   const [sessionRecordId, setSessionRecordId] = useState(recordId)
   const effectiveRecordId = recordId ?? sessionRecordId
   const storedRecord = useAppStore((state) => state.records.find((item) => item.id === effectiveRecordId))
@@ -111,7 +112,7 @@ export default function AiReadingPanel({ module, question = '', context, recordI
       setSessionReading(response.reading)
       setNotice('解读已生成并保存到记录。')
     } catch (caught) {
-      if (caught instanceof AiRequestError && caught.status === 401) setRequiresLogin(true)
+      if (caught instanceof AiRequestError && caught.status === 401) { setRequiresLogin(true); setAuthExpired(true) }
       setError(caught instanceof Error ? caught.message : '智能解读暂时不可用')
     } finally {
       setLoading(false)
@@ -120,7 +121,7 @@ export default function AiReadingPanel({ module, question = '', context, recordI
 
   async function askFollowUp(content = followUp) {
     const trimmed = content.trim()
-    if (!trimmed || loading) return
+    if (!trimmed || loading || loginRequired) return
     setLoading(true)
     setError('')
     try {
@@ -137,7 +138,7 @@ export default function AiReadingPanel({ module, question = '', context, recordI
       appendMessages(id, newMessages)
       setFollowUp('')
     } catch (caught) {
-      if (caught instanceof AiRequestError && caught.status === 401) setRequiresLogin(true)
+      if (caught instanceof AiRequestError && caught.status === 401) { setRequiresLogin(true); setAuthExpired(true) }
       setError(caught instanceof Error ? caught.message : '追问暂时无法回答')
     } finally {
       setLoading(false)
@@ -156,8 +157,9 @@ export default function AiReadingPanel({ module, question = '', context, recordI
         : <Button onClick={generateReading} disabled={loading || serviceAvailable !== true}>{loading ? '正在整理结果…' : askedQuestion.trim() ? '结合问题生成解读' : '生成基础解读'}</Button>}
     </>}
     {reading && <>
+      {loginRequired && <p className="ai-unavailable">登录后可以继续智能解读。<Link to="/account">去登录</Link></p>}
       <ReadingContent reading={reading} />
-      {!!reading.suggestedQuestions.length && <div className="ai-suggestions"><span>可以继续问</span>{reading.suggestedQuestions.map((item, index) => <button type="button" key={`${item}-${index}`} onClick={() => askFollowUp(item)} disabled={loading}>{item}</button>)}</div>}
+      {!!reading.suggestedQuestions.length && <div className="ai-suggestions"><span>可以继续问</span>{reading.suggestedQuestions.map((item, index) => <button type="button" key={`${item}-${index}`} onClick={() => askFollowUp(item)} disabled={loading || loginRequired}>{item}</button>)}</div>}
       {!!messages.length && <div className="chat-list ai-chat-list">{messages.map((message) => <div className={`chat-bubble ${message.role}`} key={message.id}><b>{message.role === 'user' ? '你' : '智能解读'}</b>{message.reading ? <ReadingContent reading={message.reading} expanded /> : <p>{message.content}</p>}</div>)}</div>}
       <div className="follow-up-input"><textarea rows={2} value={followUp} onChange={(event) => setFollowUp(event.target.value)} placeholder="继续问，我会结合刚才的结果回答" /><Button onClick={() => askFollowUp()} disabled={loading || loginRequired || !followUp.trim()}>{loading ? '回答中' : '发送'}</Button></div>
     </>}
