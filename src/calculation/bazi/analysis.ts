@@ -1,3 +1,4 @@
+import { getSolarTermDateTime } from './lunarTypescriptAdapter'
 import {
   BRANCH_ELEMENTS,
   STEM_META,
@@ -17,7 +18,7 @@ import type {
   TwelveStage,
 } from './types'
 
-export const BAZI_ANALYSIS_RULE_VERSION = 'bazi-facts-day-master-relations-shensha-1.0.0'
+export const BAZI_ANALYSIS_RULE_VERSION = 'bazi-facts-weighted-year-day-shensha-1.1.0'
 
 export interface BaziRelationFact {
   kind: '天干五合' | '地支六合' | '地支六冲' | '地支相害' | '地支相破' | '地支三合' | '地支三会' | '地支相刑'
@@ -48,6 +49,8 @@ export interface BaziNatalAnalysis {
   ruleVersion: typeof BAZI_ANALYSIS_RULE_VERSION
   dayStem?: HeavenlyStem
   dayBranch?: EarthlyBranch
+  weightedTenGodCounts: Partial<Record<TenGod, number>>
+  weightedElementCounts: Record<FiveElement, number>
   tenGodCounts: Partial<Record<TenGod, number>>
   relations: BaziRelationFact[]
   shenSha: BaziShenShaHit[]
@@ -192,7 +195,7 @@ function groupRelations(sources: Array<{ label: string; branch: EarthlyBranch }>
   return relations
 }
 
-function shenShaForBranch(dayStem: HeavenlyStem, dayBranch: EarthlyBranch, targetBranch: EarthlyBranch, target: string) {
+function shenShaForBranch(dayStem: HeavenlyStem, dayBranch: EarthlyBranch, targetBranch: EarthlyBranch, target: string, yearBranch?: EarthlyBranch) {
   const hits: BaziShenShaHit[] = []
   if (TIAN_YI[dayStem].includes(targetBranch)) hits.push({ name: '天乙贵人', target, basis: `按日干${dayStem}查，见${targetBranch}` })
   if (WEN_CHANG[dayStem] === targetBranch) hits.push({ name: '文昌贵人', target, basis: `按日干${dayStem}查，见${targetBranch}` })
@@ -203,27 +206,52 @@ function shenShaForBranch(dayStem: HeavenlyStem, dayBranch: EarthlyBranch, targe
       if (branch === targetBranch) hits.push({ name, target, basis: `按日支${dayBranch}所在三合组查，见${targetBranch}` })
     }
   }
+  if (yearBranch) {
+    const yearGroup = DAY_BRANCH_GROUPS.find((item) => item.sources.includes(yearBranch))
+    if (yearGroup) for (const [name, branch] of Object.entries(yearGroup.targets) as Array<[BaziShenShaHit['name'], EarthlyBranch]>) {
+      if (branch === targetBranch) hits.push({ name, target, basis: `按年支${yearBranch}所在三合组查，见${targetBranch}` })
+    }
+  }
   return hits
 }
+
+export function activeBaziYear(instant = new Date()) {
+  const year = Number(new Intl.DateTimeFormat('en', { timeZone:'Asia/Shanghai',year:'numeric' }).format(instant))
+  const boundary = getSolarTermDateTime(year,'立春')
+  return boundary && instant.getTime() < new Date(boundary.replace(' ','T') + '+08:00').getTime() ? year - 1 : year
+}
+
+export const DISTRIBUTION_WEIGHTS = { stem: 1, hidden: [1, 0.5, 0.3], month: 1.5 } as const
 
 export function analyzeBaziNatal(result: BaziCalculationSuccess): BaziNatalAnalysis {
   const day = dayPillar(result)
   const tenGodCounts: Partial<Record<TenGod, number>> = {}
+  const weightedTenGodCounts: Partial<Record<TenGod, number>> = {}
+  const weightedElementCounts: Record<FiveElement, number> = { 木: 0, 火: 0, 土: 0, 金: 0, 水: 0 }
   const sources = availablePillars(result).map(([key, pillar]) => ({
-    label: PILLAR_LABELS[key], stem: pillar.gan, branch: pillar.zhi, pillar,
+    key, label: PILLAR_LABELS[key], stem: pillar.gan, branch: pillar.zhi, pillar,
   }))
-  for (const { pillar } of sources) {
+  for (const { key, pillar } of sources) {
+    weightedElementCounts[pillar.fiveElements.stem] += DISTRIBUTION_WEIGHTS.stem
+    const stemGod = day ? getTenGod(day.gan,pillar.gan) : undefined
+    if (key !== 'day' && stemGod) weightedTenGodCounts[stemGod] = (weightedTenGodCounts[stemGod] ?? 0) + DISTRIBUTION_WEIGHTS.stem
+    pillar.hiddenStems.forEach((stem, i) => {
+      const weight = DISTRIBUTION_WEIGHTS.hidden[i] * (key === 'month' ? DISTRIBUTION_WEIGHTS.month : 1)
+      weightedElementCounts[STEM_META[stem].element] += weight
+      const god = pillar.hiddenTenGods[i]
+      weightedTenGodCounts[god] = (weightedTenGodCounts[god] ?? 0) + weight
+    })
     if (pillar.stemTenGod !== '日主') tenGodCounts[pillar.stemTenGod] = (tenGodCounts[pillar.stemTenGod] ?? 0) + 1
     for (const god of pillar.hiddenTenGods) tenGodCounts[god] = (tenGodCounts[god] ?? 0) + 1
   }
   const shenSha = day
-    ? sources.flatMap((source) => shenShaForBranch(day.gan, day.zhi, source.branch, source.label))
+    ? sources.flatMap((source) => shenShaForBranch(day.gan, day.zhi, source.branch, source.label, result.pillars.year.status === 'available' ? result.pillars.year.zhi : undefined))
     : []
   return {
     ruleVersion: BAZI_ANALYSIS_RULE_VERSION,
     dayStem: day?.gan,
     dayBranch: day?.zhi,
-    tenGodCounts,
+    tenGodCounts, weightedTenGodCounts, weightedElementCounts,
     relations: uniqueRelations([...pairRelations(sources), ...groupRelations(sources)]),
     shenSha,
   }
@@ -251,6 +279,6 @@ export function analyzeBaziFlow(result: BaziCalculationSuccess, ganZhi: string, 
     naYin: getNaYin(ganZhi) ?? '未知',
     twelveStage: getTwelveStage(day.gan, branch),
     relations,
-    shenSha: shenShaForBranch(day.gan, day.zhi, branch, label),
+    shenSha: shenShaForBranch(day.gan, day.zhi, branch, label, result.pillars.year.status === 'available' ? result.pillars.year.zhi : undefined),
   }
 }

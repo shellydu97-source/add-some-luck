@@ -8,8 +8,10 @@ import { Button, Card, ConfidenceNote, LinkButton, Segmented, SectionHeading } f
 import {
   analyzeBaziFlow,
   analyzeBaziNatal,
+  activeBaziYear,
   calculateBazi,
   correctBirthTime,
+  getSolarTermDateTime,
   calculateBaziFlowDate,
   calculateBaziLuckYearDetails,
   type BaziFlowAnalysis,
@@ -122,10 +124,11 @@ function NatalFacts({ analysis, compact = false }: { analysis: BaziNatalAnalysis
     <Card>
       <SectionHeading title="十神结构" side={<span className="helper">显干与藏干出现次数</span>} />
       <div className="bazi-fact-chips">{tenGods.map((item) => <span className="chip" key={item.name}><b><TermHelp term={item.name} /></b> × {item.count}</span>)}</div>
+      <details className="inline-facts"><summary>加权分布（参考口径）</summary><p>五行：{Object.entries(analysis.weightedElementCounts).map(([k,v]) => `${k} ${v.toFixed(2)}`).join(' · ')}</p><p>十神：{Object.entries(analysis.weightedTenGodCounts).map(([k,v]) => `${k} ${v?.toFixed(2)}`).join(' · ')}</p><p className="helper">显干 1.0；藏干本气 1.0、中气 0.5、余气 0.3；月支藏干额外 ×1.5。十神不计日主显干，五行计入；此口径不作为旺衰结论。</p></details>
       <p className="fact-boundary">这里展示十神在原局中的客观出现位置与次数，不直接等同于旺衰、格局或吉凶。</p>
     </Card>
     <Card>
-      <SectionHeading title="常用神煞" side={<span className="helper">按日干、日支查表</span>} />
+      <SectionHeading title="常用神煞" side={<span className="helper">按日干、年支、日支查表</span>} />
       {shenSha.length ? <div className="bazi-fact-list">{shenSha.slice(0, compact ? 8 : undefined).map((item, index) => <div key={`${item.name}-${item.target}-${index}`}><b><TermHelp term={item.name} /></b><span>{item.target}</span><small>{item.basis}</small></div>)}</div> : <p className="helper">当前命盘没有出现这些常用神煞。</p>}
       {compact && shenSha.length > 8 && <p className="helper">完整位置可在“排盘”页查看。</p>}
     </Card>
@@ -202,7 +205,9 @@ export default function BaziPage() {
   const natalAnalysis = useMemo(() => result?.ok ? analyzeBaziNatal(result) : undefined, [result])
   const currentFlow = useMemo(() => calculateBaziFlowDate(today), [today])
   const selectedFlow = useMemo(() => calculateBaziFlowDate(selectedFlowDate), [selectedFlowDate])
-  const currentYear = Number(today.slice(0, 4))
+  const calendarYear = Number(today.slice(0, 4))
+  const lichun = getSolarTermDateTime(calendarYear, '立春')
+  const currentYear = activeBaziYear()
   const currentCycle = result?.ok && result.luck ? activeCycleAt(result.luck.cycles, today) : undefined
   const activeCycle = result?.ok && result.luck
     ? result.luck.cycles.find((item) => item.index === selectedCycleIndex) ?? currentCycle ?? result.luck.cycles[0]
@@ -264,7 +269,7 @@ export default function BaziPage() {
     {result.ok && <>
       {correctBirthTime(profile).requiresDaylightSavingChoice && profile.daylightSavingStatus === 'unknown' && <Card><p>出生时间处于夏令时区间，请确认当时记录的是夏令时还是标准时间。</p><LinkButton to={`/profiles/${profile.id}/edit`} secondary>确认出生时间</LinkButton></Card>}
       {result.birthTimeCorrection?.notes.length ? <ConfidenceNote>排盘使用时间 {result.birthTimeCorrection.correctedLocal}（{result.birthTimeCorrection.notes.join('；')}）</ConfidenceNote> : null}
-      <details className="professional-details"><summary>时间规则说明</summary><p>年柱按立春精确时刻、月柱按节交接；{profile.dayBoundaryRule === 'zi-23' ? '23:00 起日柱与时柱按次日子时计算' : '晚子时日柱不换（sect 2）'}。</p></details>
+      <details className="professional-details"><summary>时间规则说明</summary><p>年柱按立春精确时刻、月柱按节交接；{profile.dayBoundaryRule === 'zi-23' ? '23:00 起日柱与时柱按次日子时计算' : '晚子时日柱不换（sect 2）'}。流年以立春为界，{calendarYear} 年交接时刻：{lichun}。岁数为虚岁。</p></details>
       {tab === 'overview' && <>
         <Card className="hero-card">
           <div className="card-kicker"><span><TermHelp term="四柱" label="三 / 四柱摘要" /></span></div>
@@ -286,7 +291,7 @@ export default function BaziPage() {
           <PillarTable pillars={result.pillars} fields={CORE_FIELDS} />
         </Card>
         <Card>
-          <SectionHeading title="五行分布" side={<span className="helper">天干与地支计数</span>} />
+          <SectionHeading title="五行分布" side={<span className="helper">出现次数（天干与地支）</span>} />
           <div className="element-counts">{ELEMENTS.map((element) => <div key={element}><b>{result.fiveElementCounts[element]}</b><span>{element}</span></div>)}</div>
         </Card>
         {natalAnalysis && <NatalFacts analysis={natalAnalysis} compact />}
@@ -308,7 +313,7 @@ export default function BaziPage() {
           <PillarTable pillars={result.pillars} fields={CORE_FIELDS} />
         </Card>
         <Card>
-          <SectionHeading title="五行分布" side={<span className="helper">天干与地支计数</span>} />
+          <SectionHeading title="五行分布" side={<span className="helper">出现次数（天干与地支）</span>} />
           <div className="element-counts">{ELEMENTS.map((element) => <div key={element}><b>{result.fiveElementCounts[element]}</b><span>{element}</span></div>)}</div>
         </Card>
         <Card><SectionHeading title="藏干、十神与纳音" /><PillarTable pillars={result.pillars} fields={DETAIL_FIELDS} /></Card>
@@ -331,17 +336,17 @@ export default function BaziPage() {
           </Card>
           <Card>
             <SectionHeading title="大运时间轴" side={<span className="helper">点击切换</span>} />
-            <div className="timeline">{result.luck.cycles.map((cycle) => <button type="button" onClick={() => selectCycle(cycle)} className={`timeline-item ${activeCycle?.index === cycle.index ? 'active' : ''}`} key={cycle.index}><b>{cycle.ganZhi}</b><span>{cycle.startYear}—{cycle.endYear}</span><span>{cycle.startAge}—{cycle.endAge} 岁</span></button>)}</div>
+            <div className="timeline">{result.luck.cycles.map((cycle) => <button type="button" onClick={() => selectCycle(cycle)} className={`timeline-item ${activeCycle?.index === cycle.index ? 'active' : ''}`} key={cycle.index}><b>{cycle.ganZhi}</b><span>{cycle.startYear}—{cycle.endYear}</span><span>{cycle.startAge}—{cycle.endAge} 岁（虚岁）</span></button>)}</div>
           </Card>
-          {activeCycle && <><Card className="selected-fortune-card"><span>当前选择</span><h2>{activeCycle.ganZhi}大运</h2><p>{activeCycle.startSolarDateTime.slice(0, 16)} 起 · {activeCycle.startAge}—{activeCycle.endAge} 岁</p><Button className="compact-button" onClick={() => setFortuneTab('liunian')}>查看这步大运的流年</Button></Card><FlowFacts analysis={analyzeBaziFlow(result, activeCycle.ganZhi, '所选大运')} label="所选大运" /></>}
+          {activeCycle && <><Card className="selected-fortune-card"><span>当前选择</span><h2>{activeCycle.ganZhi}大运</h2><p>{activeCycle.startSolarDateTime.slice(0, 16)} 起 · {activeCycle.startAge}—{activeCycle.endAge} 岁（虚岁）</p><Button className="compact-button" onClick={() => setFortuneTab('liunian')}>查看这步大运的流年</Button></Card><FlowFacts analysis={analyzeBaziFlow(result, activeCycle.ganZhi, '所选大运')} label="所选大运" /></>}
         </>}
 
         {fortuneTab === 'liunian' && result.luck && activeCycle && <>
           <Card>
             <SectionHeading title={`${activeCycle.ganZhi}大运的流年`} side={<span className="helper">{activeCycle.startYear}—{activeCycle.endYear}</span>} />
-            <div className="year-list">{activeCycle.annual.map((year) => <button type="button" className={activeAnnual?.year === year.year ? 'active' : ''} onClick={() => selectAnnual(year)} key={year.year}><b>{year.year} · {year.ganZhi}</b><span>{year.age} 岁 · {year.xun} · 空亡 {year.xunKong}</span></button>)}</div>
+            <div className="year-list">{activeCycle.annual.map((year) => <button type="button" className={activeAnnual?.year === year.year ? 'active' : ''} onClick={() => selectAnnual(year)} key={year.year}><b>{year.year} · {year.ganZhi}</b><span>{year.age} 岁（虚岁） · {year.xun} · 空亡 {year.xunKong}</span></button>)}</div>
           </Card>
-          {activeAnnual && <><Card className="selected-fortune-card"><span>当前选择</span><h2>{activeAnnual.year} · {activeAnnual.ganZhi}流年</h2><p>{activeAnnual.age} 岁 · {activeAnnual.xun} · 空亡 {activeAnnual.xunKong}</p><Button className="compact-button" onClick={() => setFortuneTab('liuyue')}>查看这一年的流月</Button></Card><FlowFacts analysis={analyzeBaziFlow(result, activeAnnual.ganZhi, '所选流年')} label="所选流年" /></>}
+          {activeAnnual && <><Card className="selected-fortune-card"><span>当前选择</span><h2>{activeAnnual.year} · {activeAnnual.ganZhi}流年</h2><p>{activeAnnual.age} 岁（虚岁） · {activeAnnual.xun} · 空亡 {activeAnnual.xunKong}</p><Button className="compact-button" onClick={() => setFortuneTab('liuyue')}>查看这一年的流月</Button></Card><FlowFacts analysis={analyzeBaziFlow(result, activeAnnual.ganZhi, '所选流年')} label="所选流年" /></>}
         </>}
 
         {fortuneTab === 'liuyue' && result.luck && <>
