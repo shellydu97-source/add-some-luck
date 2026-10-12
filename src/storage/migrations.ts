@@ -116,7 +116,7 @@ function migrateCurrentDraft(value: unknown): DivinationDraft {
   const draft = value as DivinationDraft
   if (draft?.type !== 'liuyao') return draft
   const casts = Array.isArray(draft.state?.casts) ? draft.state.casts.map((cast) => ({
-    coins: [legacyCoin(cast.coins?.[0]), legacyCoin(cast.coins?.[1]), legacyCoin(cast.coins?.[2])] as ['yang' | 'yin', 'yang' | 'yin', 'yang' | 'yin'],
+    ...cast, coins: [legacyCoin(cast.coins?.[0]), legacyCoin(cast.coins?.[1]), legacyCoin(cast.coins?.[2])] as ['yang' | 'yin', 'yang' | 'yin', 'yang' | 'yin'],
   })) : []
   return { ...draft, state: { ...draft.state, casts } }
 }

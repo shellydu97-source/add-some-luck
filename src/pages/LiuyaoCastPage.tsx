@@ -29,13 +29,13 @@ export default function LiuyaoCastPage() {
   function update(method: LiuyaoMethod) {
     if (activeDraft.state.method === method) return
     if (activeDraft.state.casts.length && !window.confirm('切换起爻方式会清空已经完成的爻，确定继续吗？')) return
-    upsertDraft({ ...activeDraft, state: { ...activeDraft.state, method, coinConventionVersion: LIUYAO_COIN_CONVENTION_VERSION, casts: [], editingIndex: undefined, locked: false, lockedAt: undefined } })
+    upsertDraft({ ...activeDraft, state: { ...activeDraft.state, method, coinConventionVersion: LIUYAO_COIN_CONVENTION_VERSION, casts: [], castCompletedAt: undefined, editingIndex: undefined, locked: false, lockedAt: undefined } })
   }
 
   function append(toss: CoinToss, method: LiuyaoMethod) {
     if (activeDraft.state.casts.length >= 6) return
-    const casts = [...activeDraft.state.casts, toss]
-    upsertDraft({ ...activeDraft, state: { ...activeDraft.state, method, coinConventionVersion: LIUYAO_COIN_CONVENTION_VERSION, casts } })
+    const casts = [...activeDraft.state.casts, { ...toss, method }]
+    upsertDraft({ ...activeDraft, state: { ...activeDraft.state, method, coinConventionVersion: LIUYAO_COIN_CONVENTION_VERSION, casts, castCompletedAt: casts.length === 6 ? new Date().toISOString() : undefined } })
     if (casts.length === 6) navigate('/divination/liuyao/confirm')
   }
 

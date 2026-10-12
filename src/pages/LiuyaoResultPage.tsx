@@ -28,7 +28,7 @@ export default function LiuyaoResultPage() {
   const draft = getDraft(store, 'liuyao')
   if (!draft || draft.state.casts.length !== 6 || !draft.state.locked || !draft.state.lockedAt) return <><TopBar title="六爻结果" back /><EmptyState title="原始六爻尚未锁定" action={<LinkButton to="/divination/liuyao/confirm">前往确认</LinkButton>}>确认六次原始结果后即可查看卦象。</EmptyState></>
   const activeDraft = draft
-  const lockedAt = draft.state.lockedAt
+  const lockedAt = draft.state.castCompletedAt ?? draft.state.lockedAt
   const profile = activeDraft.profileId === GUEST_PROFILE_ID ? undefined : store.profiles.find((item) => item.id === activeDraft.profileId)
   const subjectLabel = profile?.name ?? activeDraft.temporarySubject?.name?.trim() ?? '临时测算'
   const querentGender = activeDraft.state.querentGender

@@ -181,6 +181,7 @@ export interface FortunePeriod {
 
 export type CoinSide = 'yang' | 'yin'
 export interface CoinToss {
+  method?: LiuyaoMethod
   coins: [CoinSide, CoinSide, CoinSide]
 }
 
@@ -191,6 +192,7 @@ export interface LiuyaoDraftState {
   coinConventionVersion?: 'character-2-back-3-v1' | 'fixed-coin-art-yin-2-yang-3-v2'
   timeRange: string
   casts: CoinToss[]
+  castCompletedAt?: string
   editingIndex?: number
   locked: boolean
   lockedAt?: string
