@@ -73,14 +73,14 @@ export async function handleAiChat(request, env, deps = {}) {
       const authorization = request.headers.get('authorization')
       if (!/^Bearer \S+$/i.test(authorization ?? '')) throw new AiError(401, '登录后可以使用智能解读')
       authHeaders = { Authorization: authorization, apikey: c.supabaseKey, 'Content-Type': 'application/json' }
-      const user = await fetcher(`${c.supabaseUrl}/auth/v1/user`, { headers: authHeaders })
+      const user = await fetcher(`${c.supabaseUrl}/auth/v1/user`, { headers: authHeaders, signal: AbortSignal.timeout(10_000) })
       if (!user.ok || !(await user.json().catch(() => ({}))).id) throw new AiError(401, '登录已过期，请重新登录')
     } else if (!c.anonymous) throw new AiError(503, '智能解读需要登录后使用')
     if (!c.apiKey) throw new AiError(503, '智能解读尚未配置，请稍后再试')
     const input = validateAiRequest(await parseBody(request))
     consumeMemory(c, deps.clientIp || 'unknown', (deps.now ?? Date.now)(), deps.counters ?? counters, !configured)
     if (configured) {
-      const quota = await fetcher(`${c.supabaseUrl}/rest/v1/rpc/consume_ai_quota`, { method: 'POST', headers: authHeaders, body: JSON.stringify({ p_daily_limit: c.userDailyLimit, p_global_daily_limit: c.dailyLimit }) })
+      const quota = await fetcher(`${c.supabaseUrl}/rest/v1/rpc/consume_ai_quota`, { method: 'POST', headers: authHeaders, signal: AbortSignal.timeout(10_000), body: JSON.stringify({ p_daily_limit: c.userDailyLimit, p_global_daily_limit: c.dailyLimit }) })
       if (quota.status === 401) throw new AiError(401, '登录已过期，请重新登录')
       if (!quota.ok) throw new AiError(503, '智能解读限额服务暂不可用')
       if (await quota.json() !== true) throw new AiError(429, '今天的智能解读额度已用完，请明天再试')

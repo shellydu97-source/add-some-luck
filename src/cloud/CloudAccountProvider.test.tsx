@@ -1,5 +1,6 @@
+import SyncConflictPanel from '../components/SyncConflictPanel'
 import { useEffect } from 'react'
-import { act, cleanup, render, waitFor } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Session } from '@supabase/supabase-js'
 import { CloudAccountProvider } from './CloudAccountProvider'
@@ -39,12 +40,21 @@ beforeEach(() => {
     return { data: row.version + 1, error: null }
   })
 })
-afterEach(cleanup)
+afterEach(() => { cleanup(); vi.restoreAllMocks() })
 async function mount() {
-  render(<CloudAccountProvider><Probe /></CloudAccountProvider>)
+  render(<CloudAccountProvider><Probe /><SyncConflictPanel /></CloudAccountProvider>)
   await waitFor(() => expect(account.syncStatus).toBe('synced'))
 }
 describe('账号数据保护流程', () => {
+  it.each([true, false])('首次登录由用户选择是否导入访客数据：%s', async (accept) => {
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(accept)
+    useAppStore.setState({ records: [{ ...seedRecords[0], id: 'guest-record' }] })
+    await mount()
+    expect(confirm).toHaveBeenCalledWith(expect.stringContaining('把本机'))
+    expect(useAppStore.getState().records.map((r) => r.id).sort()).toEqual(accept ? ['guest-record', 'r'] : ['r'])
+    expect(backend.rpc).toHaveBeenCalledTimes(accept ? 1 : 0)
+    expect(JSON.parse(localStorage.getItem('add-luck-guest-data-v1')!).records[0].id).toBe('guest-record')
+  })
   it('切换导航不会上传，清空本机不会删除或改写云端', async () => {
     await mount()
     const row = structuredClone(backend.row)
@@ -72,7 +82,9 @@ describe('账号数据保护流程', () => {
     await act(async () => { await account.syncNow() })
     expect(account.hasConflict).toBe(true)
     expect(backend.rpc).not.toHaveBeenCalled()
-    await act(async () => { await account.keepCloudData() })
+    expect(screen.getByRole('heading', { name: '选择如何保留两边数据' })).toBeVisible()
+    fireEvent.click(screen.getByRole('button', { name: '保留云端' }))
+    await waitFor(() => expect(account.hasConflict).toBe(false))
     expect(useAppStore.getState().records[0].notes).toBe('云端备注')
     expect(account.hasConflict).toBe(false)
     expect(JSON.parse(localStorage.getItem('add-luck-cloud-sync-meta-v1')!).lastSyncedVersion).toBe(2)

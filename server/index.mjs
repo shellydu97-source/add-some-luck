@@ -59,12 +59,20 @@ function serveStatic(response, url) {
   const file = safeTarget && fs.existsSync(safeTarget) && fs.statSync(safeTarget).isFile()
     ? safeTarget
     : path.join(dist, 'index.html')
-  response.writeHead(200, {
-    'Content-Type': mimeTypes[path.extname(file)] || 'application/octet-stream',
-    'X-Content-Type-Options': 'nosniff',
-    'Referrer-Policy': 'same-origin',
+  const stream = fs.createReadStream(file)
+  stream.on('error', (error) => {
+    console.error('[server] 静态文件读取失败', error)
+    if (!response.headersSent) json(response, 500, { error: '文件暂时无法读取' })
+    else response.end()
   })
-  fs.createReadStream(file).pipe(response)
+  stream.once('open', () => {
+    response.writeHead(200, {
+      'Content-Type': mimeTypes[path.extname(file)] || 'application/octet-stream',
+      'X-Content-Type-Options': 'nosniff',
+      'Referrer-Policy': 'same-origin',
+    })
+    stream.pipe(response)
+  })
 }
 
 const server = http.createServer(async (request, response) => {
