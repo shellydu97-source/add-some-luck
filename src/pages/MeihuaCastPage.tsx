@@ -120,7 +120,7 @@ export default function MeihuaCastPage() {
 
     {method === 'time' && <Card className="casting-stage"><div className="method-mark large-method-mark">今</div><h2>以点击按钮的此刻起卦</h2><p className="helper center">结果锁定后，刷新或返回页面都不会改变起卦时间与卦象。</p></Card>}
 
-    {method === 'specified_time' && <Card><label className="field"><span>选择时间</span><input type="datetime-local" value={specifiedLocalDateTime} onChange={(event) => { setSpecifiedLocalDateTime(event.target.value); setError(''); persistState({ method, specifiedLocalDateTime: event.target.value }) }} /></label><p className="helper">适合按某件事情实际发生或出现念头的时间起卦。</p></Card>}
+    {method === 'specified_time' && <Card><label className="field"><span>选择时间</span><input type="datetime-local" value={specifiedLocalDateTime} onInput={(event) => { setSpecifiedLocalDateTime(event.currentTarget.value); setError(''); persistState({ method, specifiedLocalDateTime: event.currentTarget.value }) }} /></label><p className="helper">适合按某件事情实际发生或出现念头的时间起卦。</p></Card>}
 
     {(method === 'numbers' || method === 'three_numbers') && <Card>
       <div className={`number-entry-grid${method === 'three_numbers' ? ' three' : ''}`}>

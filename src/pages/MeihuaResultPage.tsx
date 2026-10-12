@@ -1,3 +1,4 @@
+import { judgeMeihua } from '../calculation/meihua/judgement'
 import { useNavigate } from 'react-router-dom'
 import {
   calculateMeihuaByNumbers, calculateMeihuaByObjectCount, calculateMeihuaBySoundCount,
@@ -69,7 +70,8 @@ export default function MeihuaResultPage() {
   const profile = activeDraft.profileId === GUEST_PROFILE_ID ? undefined : store.profiles.find((item) => item.id === activeDraft.profileId)
   const subjectLabel = profile?.name ?? activeDraft.temporarySubject?.name?.trim() ?? '临时测算'
   const interpretation = createMeihuaBasicInterpretation(result)
-  const rawResult = { lockedAt, ...resultContext(result), engineVersion: result.engineVersion, adapterVersion: result.adapterVersion, ruleVersion: result.ruleVersion }
+  const judgement = judgeMeihua(result, lockedAt)
+  const rawResult = { judgement, lockedAt, ...resultContext(result), engineVersion: result.engineVersion, adapterVersion: result.adapterVersion, ruleVersion: result.ruleVersion }
 
   function ensureRecord() {
     const existing = activeDraft.state.recordId && store.records.find((record) => record.id === activeDraft.state.recordId)
@@ -91,7 +93,8 @@ export default function MeihuaResultPage() {
       <div className="chip-row"><span className="chip">第 {result.movingLine} 爻动</span><span className="chip">{result.bodyUseRelation.label}</span></div>
     </Card>
 
-    <Card>
+    <Card className="interpretation-card"><SectionHeading title={judgement.tendency} /><ul className="plain-list">{judgement.reasons.map(r => <li key={r}>{r}</li>)}</ul><p>{judgement.advice}</p><p className="helper">{judgement.uncertainty}</p></Card>
+    <details className="result-disclosure"><summary>查看卦象结构</summary><Card>
       <SectionHeading title="卦象结构" />
       <div className="meihua-sequence">
         <div><span><TermHelp term="本卦" /></span><b>{result.original.name}</b><small>{result.original.upper.symbol}{result.original.lower.symbol}</small></div>
@@ -111,7 +114,8 @@ export default function MeihuaResultPage() {
       </dl>
     </Card>
 
-    <Card className="interpretation-card summary-reading local-answer-card">
+    </details>
+    <details className="result-disclosure"><summary>查看卦辞与动爻</summary><Card className="interpretation-card summary-reading local-answer-card">
       <SectionHeading title="基础答案" />
       <p className="reading-intro">{result.bodyUseRelation.summary}</p>
       <div className="reading-sections">
@@ -121,9 +125,11 @@ export default function MeihuaResultPage() {
       <p className="fact-boundary">以上答案来自固定卦象、动爻和体用关系，不需要调用智能解读。点击卦名可以继续查看卦辞和六爻原文。</p>
     </Card>
 
+    </details>
     <AiReadingPanel key={activeDraft.id} module="meihua" question={activeDraft.question} context={{ lockedAt, ...resultContext(result) }} recordId={activeDraft.state.recordId} ensureRecord={ensureRecord} title="结合卦象回答你的问题" />
 
     <details className="result-disclosure"><summary>查看起卦依据</summary><Card>
+      <p className="helper">子时按当天计算；时间起卦年数取农历年支序数。卦气按节令月建，互卦与变用卦分别对固定体卦判断生克。</p>
       <ul className="compact-list">
         <li><span>起卦时间</span><b>{formatDate(lockedAt, true)}</b></li>
         {result.calendar && <><li><span>农历</span><b>{result.calendar.lunarYear}年{result.calendar.isLeapMonth ? '闰' : ''}{result.calendar.lunarMonth}月{result.calendar.lunarDay}日</b></li><li><span>年支 / 时支</span><b>{result.calendar.yearBranch} / {result.calendar.hourBranch}</b></li></>}
