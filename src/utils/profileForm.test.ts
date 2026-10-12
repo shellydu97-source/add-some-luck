@@ -56,7 +56,7 @@ describe('简化人物表单数据合并', () => {
     })
     expect(input).toMatchObject({
       birthLocation: confirmedShanghai, countryCode: 'CN', city: '上海市', latitude: 31.22222,
-      longitude: 121.45806, timezone: 'Asia/Shanghai', daylightSavingStatus: 'not_applied',
+      longitude: 121.45806, timezone: 'Asia/Shanghai', daylightSavingStatus: 'unknown',
     })
   })
 

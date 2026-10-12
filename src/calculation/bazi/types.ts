@@ -1,4 +1,4 @@
-import type { CalendarType, Gender, SystemChoice, TimeAccuracy } from '../../models/types'
+import type { CalendarType, Gender, SystemChoice, TimeAccuracy, ConfirmedBirthLocation, DaylightSavingStatus } from '../../models/types'
 
 export type HeavenlyStem = '甲' | '乙' | '丙' | '丁' | '戊' | '己' | '庚' | '辛' | '壬' | '癸'
 export type EarthlyBranch = '子' | '丑' | '寅' | '卯' | '辰' | '巳' | '午' | '未' | '申' | '酉' | '戌' | '亥'
@@ -9,6 +9,9 @@ export type TwelveStage = '长生' | '沐浴' | '冠带' | '临官' | '帝旺' |
 export type PillarKey = 'year' | 'month' | 'day' | 'time'
 
 export interface BaziBirthInput {
+  daylightSavingStatus?: DaylightSavingStatus
+  birthLocation?: ConfirmedBirthLocation
+  dayBoundaryRule?: 'system_default' | 'zi-23'
   calendarType: CalendarType
   rawBirthDate: string
   lunarLeapMonth: boolean
@@ -35,8 +38,8 @@ export interface NormalizedBaziInput {
   localTime?: { hour: number; minute: number; second: 0; precision: 'minute' }
   timeKnown: boolean
   timezone: 'Asia/Shanghai'
-  trueSolarTime: false
-  dayRollover: 'eight-char-sect-2'
+  trueSolarTime: boolean
+  dayRollover: 'eight-char-sect-2' | 'zi-23'
   yearBoundary: 'exact-lichun'
   monthBoundary: 'exact-jie'
   luckStartMethod: 'yun-sect-1'
@@ -147,6 +150,8 @@ export interface BaziLuckResult {
 }
 
 export interface BaziCalculationSuccess {
+  birthTimeCorrection?: import('./birthTimeCorrection').BirthTimeCorrection
+  dayBoundaryRule?: 'system_default' | 'zi-23'
   ok: true
   engine: 'lunar-typescript'
   engineVersion: string

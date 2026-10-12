@@ -3,6 +3,9 @@ import type { CalendarType, ConfirmedBirthLocation, Gender, Profile } from '../m
 export type ProfileInput = Omit<Profile, 'id' | 'createdAt' | 'updatedAt'>
 
 export interface SimpleProfileFields {
+  daylightSavingStatus?: Profile['daylightSavingStatus']
+  useTrueSolarTime?: Profile['useTrueSolarTime']
+  dayBoundaryRule?: Profile['dayBoundaryRule']
   name: string
   gender: Gender
   calendarType: CalendarType
@@ -54,6 +57,9 @@ function profileInputFromExisting(profile: Profile): ProfileInput {
 export function getSimpleProfileFields(profile?: Profile): SimpleProfileFields {
   const source = profile ?? NEW_PROFILE_DEFAULTS
   return {
+    daylightSavingStatus: source.daylightSavingStatus,
+    useTrueSolarTime: source.useTrueSolarTime,
+    dayBoundaryRule: source.dayBoundaryRule,
     name: source.name,
     gender: source.gender,
     calendarType: source.calendarType,
@@ -81,6 +87,9 @@ export function buildProfileInput(fields: SimpleProfileFields, existing?: Profil
 
   return {
     ...base,
+    daylightSavingStatus: fields.daylightSavingStatus ?? base.daylightSavingStatus,
+    useTrueSolarTime: fields.useTrueSolarTime ?? base.useTrueSolarTime,
+    dayBoundaryRule: fields.dayBoundaryRule ?? base.dayBoundaryRule,
     name: fields.name.trim(),
     gender: fields.gender,
     calendarType: fields.calendarType,
@@ -100,7 +109,7 @@ export function buildProfileInput(fields: SimpleProfileFields, existing?: Profil
       latitude: confirmedLocation.latitude,
       longitude: confirmedLocation.longitude,
       timezone: confirmedLocation.ianaTimeZone,
-      daylightSavingStatus: 'not_applied' as const,
+
     } : {}),
   }
 }

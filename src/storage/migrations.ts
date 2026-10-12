@@ -73,7 +73,7 @@ function migrateProfile(value: unknown, now: string): Profile {
     daylightSavingStatus: ['applied', 'not_applied'].includes(string(item.daylightSavingStatus)) ? item.daylightSavingStatus as Profile['daylightSavingStatus'] : 'unknown',
     timeAccuracy: mapAccuracy(item.timeAccuracy),
     useTrueSolarTime: ['on', 'off'].includes(string(item.useTrueSolarTime)) ? item.useTrueSolarTime as 'on' | 'off' : 'system_default',
-    dayBoundaryRule: 'system_default', houseSystem: 'system_default', unknownTimePolicy: 'time_independent_only',
+    dayBoundaryRule: item.dayBoundaryRule === 'zi-23' ? 'zi-23' : 'system_default', houseSystem: 'system_default', unknownTimePolicy: 'time_independent_only',
     isDefault: item.isDefault === true, createdAt, updatedAt: string(item.updatedAt, createdAt),
   }
 }

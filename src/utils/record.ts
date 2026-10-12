@@ -38,7 +38,7 @@ export function createRecord(input: {
     },
     subjectType: isTemporary ? 'temporary' : 'profile',
     question, category, createdAt: new Date().toISOString(), rawResult: clone(input.rawResult),
-    calculationVersion: `${input.type}-calculation-1.0.0`, ruleVersion: ruleVersions[input.type], interpretationVersion: 'basic-meaning-1.0.0',
+    calculationVersion: `${input.type}-calculation-1.0.0`, ruleVersion: input.type === 'bazi' && typeof (input.rawResult.result as { ruleVersion?: string })?.ruleVersion === 'string' ? (input.rawResult.result as { ruleVersion: string }).ruleVersion : ruleVersions[input.type], interpretationVersion: 'basic-meaning-1.0.0',
     interpretation: clone(input.interpretation), followUpMessages: [], aiInterpretations: [], aiMessages: [],
     verificationStatus: 'pending', verificationResult: '',
     verificationNote: '', verificationDate: '', mood: '', expectation: '', notes: '',

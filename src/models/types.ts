@@ -43,7 +43,7 @@ export interface Profile {
   daylightSavingStatus: DaylightSavingStatus
   timeAccuracy: TimeAccuracy
   useTrueSolarTime: SystemChoice
-  dayBoundaryRule: 'system_default'
+  dayBoundaryRule: 'system_default' | 'zi-23'
   houseSystem: 'system_default'
   unknownTimePolicy: 'time_independent_only'
   isDefault: boolean

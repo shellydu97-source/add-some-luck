@@ -9,6 +9,7 @@ import {
   analyzeBaziFlow,
   analyzeBaziNatal,
   calculateBazi,
+  correctBirthTime,
   calculateBaziFlowDate,
   calculateBaziLuckYearDetails,
   type BaziFlowAnalysis,
@@ -261,6 +262,9 @@ export default function BaziPage() {
     </Card>}
 
     {result.ok && <>
+      {correctBirthTime(profile).requiresDaylightSavingChoice && profile.daylightSavingStatus === 'unknown' && <Card><p>出生时间处于夏令时区间，请确认当时记录的是夏令时还是标准时间。</p><LinkButton to={`/profiles/${profile.id}/edit`} secondary>确认出生时间</LinkButton></Card>}
+      {result.birthTimeCorrection?.notes.length ? <ConfidenceNote>排盘使用时间 {result.birthTimeCorrection.correctedLocal}（{result.birthTimeCorrection.notes.join('；')}）</ConfidenceNote> : null}
+      <details className="professional-details"><summary>时间规则说明</summary><p>年柱按立春精确时刻、月柱按节交接；{profile.dayBoundaryRule === 'zi-23' ? '23:00 起日柱与时柱按次日子时计算' : '晚子时日柱不换（sect 2）'}。</p></details>
       {tab === 'overview' && <>
         <Card className="hero-card">
           <div className="card-kicker"><span><TermHelp term="四柱" label="三 / 四柱摘要" /></span></div>

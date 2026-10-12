@@ -13,7 +13,7 @@ const profileSchema = z.object({
   birthPlaceText: z.string(), birthLocation: confirmedBirthLocationSchema.optional(),
   daylightSavingStatus: z.enum(['unknown', 'applied', 'not_applied']),
   timeAccuracy: z.enum(['exact_minute', 'known_shichen', 'approximate_period', 'unknown']),
-  useTrueSolarTime: z.enum(['system_default', 'on', 'off']), dayBoundaryRule: z.literal('system_default'),
+  useTrueSolarTime: z.enum(['system_default', 'on', 'off']), dayBoundaryRule: z.enum(['system_default', 'zi-23']),
   houseSystem: z.literal('system_default'), unknownTimePolicy: z.literal('time_independent_only'),
   isDefault: z.boolean(), createdAt: z.string(), updatedAt: z.string(),
 }).passthrough()
