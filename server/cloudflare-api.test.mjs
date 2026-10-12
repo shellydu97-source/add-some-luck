@@ -6,11 +6,11 @@ describe('Cloudflare Pages AI functions', () => {
   it('只报告服务是否可用，不返回服务端密钥', async () => {
     const response = healthHandler({
       request: new Request('https://example.pages.dev/api/ai/health'),
-      env: { DEEPSEEK_API_KEY: 'test-secret' },
+      env: { DEEPSEEK_API_KEY: 'test-secret', SUPABASE_URL: 'https://test.supabase.co', SUPABASE_PUBLISHABLE_KEY: 'test-public' },
     })
     const payload = await response.json()
     expect(response.status).toBe(200)
-    expect(payload).toEqual({ available: true, provider: 'deepseek' })
+    expect(payload).toEqual({ available: true, requiresLogin: true, provider: 'deepseek' })
     expect(JSON.stringify(payload)).not.toContain('test-secret')
   })
 

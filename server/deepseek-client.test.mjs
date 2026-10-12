@@ -1,5 +1,4 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { validateAiRequest } from './ai-core.mjs'
 import { requestDeepSeek } from './deepseek-client.mjs'
 
 const config = {
@@ -31,10 +30,11 @@ describe('DeepSeek thinking response', () => {
   it('uses one deep-thinking request and returns it without a forced rewrite', async () => {
     const fetchMock = vi.fn().mockResolvedValue(providerResponse())
     vi.stubGlobal('fetch', fetchMock)
-    const request = validateAiRequest({
+    const request = ({
       module: 'liuyao',
       action: 'interpret',
       question: '这份工作要不要继续',
+      messages: [],
       context: { originalHexagram: '水天需' },
     })
 
@@ -69,10 +69,11 @@ describe('DeepSeek thinking response', () => {
       suggestedQuestions: [],
     })
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(providerResponse(structured)))
-    const request = validateAiRequest({
+    const request = ({
       module: 'bazi',
       action: 'interpret',
       question: '事业如何',
+      messages: [],
       context: { pillars: ['甲子'] },
     })
     const result = await requestDeepSeek(request, config)
@@ -83,10 +84,11 @@ describe('DeepSeek thinking response', () => {
   it('ends an overlong initial answer at a natural sentence boundary', async () => {
     const longAnswer = `核心结论：可以考虑调整，但不要冲动行动。${'这是用于验证首轮长度控制的完整说明。'.repeat(80)}`
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(providerResponse(longAnswer)))
-    const request = validateAiRequest({
+    const request = ({
       module: 'liuyao',
       action: 'interpret',
       question: '是否适合换工作',
+      messages: [],
       context: { originalHexagram: '山地剥' },
     })
     const result = await requestDeepSeek(request, config)
@@ -97,11 +99,12 @@ describe('DeepSeek thinking response', () => {
   it('does not truncate a detailed follow-up answer', async () => {
     const longAnswer = `详细依据如下。${'这是用户明确追问后需要保留的分析内容。'.repeat(80)}`
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(providerResponse(longAnswer)))
-    const request = validateAiRequest({
+    const request = ({
       module: 'liuyao',
       action: 'followup',
       question: '是否适合换工作',
       followUpQuestion: '请把动爻依据详细说说',
+      messages: [],
       context: { originalHexagram: '山地剥' },
     })
     const result = await requestDeepSeek(request, config)

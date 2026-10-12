@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
-import { getAiServiceStatus, requestAiReading } from '../ai/client'
+import { Link } from 'react-router-dom'
+import { useCloudAccount } from '../cloud/accountContext'
+import { AiRequestError, getAiServiceStatus, requestAiReading } from '../ai/client'
 import type { AiConversationMessage, AiInterpretationSnapshot, AiModule, AiReading } from '../models/types'
 import { useAppStore } from '../storage/store'
 import { makeId } from '../utils/id'
@@ -54,6 +56,9 @@ function readingToConversationContent(reading: AiReading) {
 }
 
 export default function AiReadingPanel({ module, question = '', context, recordId, ensureRecord, allowQuestionInput = false, title = '结合问题解读' }: AiReadingPanelProps) {
+  const account = useCloudAccount()
+  const [requiresLogin, setRequiresLogin] = useState(false)
+  const loginRequired = requiresLogin && !account.session
   const [sessionRecordId, setSessionRecordId] = useState(recordId)
   const effectiveRecordId = recordId ?? sessionRecordId
   const storedRecord = useAppStore((state) => state.records.find((item) => item.id === effectiveRecordId))
@@ -70,7 +75,7 @@ export default function AiReadingPanel({ module, question = '', context, recordI
 
   useEffect(() => {
     const controller = new AbortController()
-    getAiServiceStatus(controller.signal).then(setServiceAvailable).catch(() => setServiceAvailable(false))
+    getAiServiceStatus(controller.signal).then((status) => { setServiceAvailable(status.available); setRequiresLogin(status.requiresLogin) }).catch(() => setServiceAvailable(false))
     return () => controller.abort()
   }, [])
 
@@ -106,6 +111,7 @@ export default function AiReadingPanel({ module, question = '', context, recordI
       setSessionReading(response.reading)
       setNotice('解读已生成并保存到记录。')
     } catch (caught) {
+      if (caught instanceof AiRequestError && caught.status === 401) setRequiresLogin(true)
       setError(caught instanceof Error ? caught.message : '智能解读暂时不可用')
     } finally {
       setLoading(false)
@@ -131,6 +137,7 @@ export default function AiReadingPanel({ module, question = '', context, recordI
       appendMessages(id, newMessages)
       setFollowUp('')
     } catch (caught) {
+      if (caught instanceof AiRequestError && caught.status === 401) setRequiresLogin(true)
       setError(caught instanceof Error ? caught.message : '追问暂时无法回答')
     } finally {
       setLoading(false)
@@ -142,7 +149,9 @@ export default function AiReadingPanel({ module, question = '', context, recordI
     {!reading && <>
       <p className="helper">会根据本次已经确定的{resultLabels[module]}回答，不会改变原始结果。</p>
       {(allowQuestionInput || !question.trim()) && <label className="field ai-question-field"><span>你最想了解什么</span><textarea rows={3} value={askedQuestion} onChange={(event) => setAskedQuestion(event.target.value)} placeholder="例如：这件事我现在最该留意什么？" /></label>}
-      {serviceAvailable === false
+      {loginRequired
+        ? <p className="ai-unavailable">登录后可以使用智能解读。<Link to="/account">去登录</Link></p>
+        : serviceAvailable === false
         ? <p className="ai-unavailable">智能解读暂未开启，基础结果仍可正常查看和保存。</p>
         : <Button onClick={generateReading} disabled={loading || serviceAvailable !== true}>{loading ? '正在整理结果…' : askedQuestion.trim() ? '结合问题生成解读' : '生成基础解读'}</Button>}
     </>}
@@ -150,7 +159,7 @@ export default function AiReadingPanel({ module, question = '', context, recordI
       <ReadingContent reading={reading} />
       {!!reading.suggestedQuestions.length && <div className="ai-suggestions"><span>可以继续问</span>{reading.suggestedQuestions.map((item, index) => <button type="button" key={`${item}-${index}`} onClick={() => askFollowUp(item)} disabled={loading}>{item}</button>)}</div>}
       {!!messages.length && <div className="chat-list ai-chat-list">{messages.map((message) => <div className={`chat-bubble ${message.role}`} key={message.id}><b>{message.role === 'user' ? '你' : '智能解读'}</b>{message.reading ? <ReadingContent reading={message.reading} expanded /> : <p>{message.content}</p>}</div>)}</div>}
-      <div className="follow-up-input"><textarea rows={2} value={followUp} onChange={(event) => setFollowUp(event.target.value)} placeholder="继续问，我会结合刚才的结果回答" /><Button onClick={() => askFollowUp()} disabled={loading || !followUp.trim()}>{loading ? '回答中' : '发送'}</Button></div>
+      <div className="follow-up-input"><textarea rows={2} value={followUp} onChange={(event) => setFollowUp(event.target.value)} placeholder="继续问，我会结合刚才的结果回答" /><Button onClick={() => askFollowUp()} disabled={loading || loginRequired || !followUp.trim()}>{loading ? '回答中' : '发送'}</Button></div>
     </>}
     {error && <p className="field-error ai-error">{error}</p>}
   </Card>

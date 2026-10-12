@@ -3,9 +3,9 @@ import http from 'node:http'
 import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
-import { PROMPT_VERSION, validateAiRequest } from './ai-core.mjs'
+import { aiHealth, handleAiChat, nodeClientIp } from './ai-handler.mjs'
+import { Readable } from 'node:stream'
 import { readConfig } from './config.mjs'
-import { requestDeepSeek } from './deepseek-client.mjs'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const dist = path.join(root, 'dist')
@@ -13,7 +13,6 @@ const config = readConfig(root)
 const apiOnly = process.argv.includes('--api-only')
 const portArgument = process.argv.find((item) => item.startsWith('--port='))?.split('=')[1]
 const requestedPort = Number(portArgument || config.port)
-const counters = new Map()
 
 const mimeTypes = {
   '.css': 'text/css; charset=utf-8',
@@ -36,85 +35,15 @@ function json(response, status, body) {
   response.end(JSON.stringify(body))
 }
 
-function clientIp(request) {
-  const forwarded = request.headers['x-forwarded-for']
-  return (Array.isArray(forwarded) ? forwarded[0] : forwarded?.split(',')[0])?.trim()
-    || request.socket.remoteAddress
-    || 'unknown'
-}
-
-function consumeRateLimit(request) {
-  const now = new Date()
-  const dayKey = `day:${now.toISOString().slice(0, 10)}`
-  const hourKey = `ip:${clientIp(request)}:${now.toISOString().slice(0, 13)}`
-  const daily = counters.get(dayKey) ?? 0
-  const hourly = counters.get(hourKey) ?? 0
-  if (daily >= config.dailyLimit || hourly >= config.perIpHourlyLimit) return false
-  counters.set(dayKey, daily + 1)
-  counters.set(hourKey, hourly + 1)
-  if (counters.size > 2000) {
-    for (const key of counters.keys()) {
-      if (key !== dayKey && key !== hourKey) counters.delete(key)
-      if (counters.size < 1000) break
-    }
-  }
-  return true
-}
-
-function isAllowedOrigin(request) {
-  const origin = request.headers.origin
-  if (!origin) return true
-  try {
-    const originHost = new URL(origin).hostname
-    const requestHost = (request.headers.host || '').split(':')[0]
-    return originHost === requestHost || (['127.0.0.1', 'localhost'].includes(originHost) && ['127.0.0.1', 'localhost'].includes(requestHost))
-  } catch {
-    return false
-  }
-}
-
-function readJsonBody(request) {
-  return new Promise((resolve, reject) => {
-    const chunks = []
-    let size = 0
-    request.on('data', (chunk) => {
-      size += chunk.length
-      if (size > 160_000) {
-        reject(new Error('请求内容过大'))
-        request.destroy()
-      } else chunks.push(chunk)
-    })
-    request.on('end', () => {
-      try { resolve(JSON.parse(Buffer.concat(chunks).toString('utf8'))) }
-      catch { reject(new Error('请求内容不是有效 JSON')) }
-    })
-    request.on('error', reject)
-  })
-}
-
 async function handleApi(request, response, url) {
-  if (request.method === 'GET' && url.pathname === '/api/ai/health') {
-    return json(response, 200, { available: Boolean(config.apiKey), provider: 'deepseek' })
-  }
-  if (request.method !== 'POST' || url.pathname !== '/api/ai/chat') return false
-  if (!isAllowedOrigin(request)) return json(response, 403, { error: '请求来源不被允许' })
-  if (!config.apiKey) return json(response, 503, { error: '智能解读尚未配置，请稍后再试' })
-  if (!consumeRateLimit(request)) return json(response, 429, { error: '今天的智能解读使用较多，请稍后再试' })
-  try {
-    const input = validateAiRequest(await readJsonBody(request))
-    const result = await requestDeepSeek(input, config)
-    return json(response, 200, {
-      ...result,
-      meta: { provider: 'deepseek', model: config.model, promptVersion: PROMPT_VERSION },
-    })
-  } catch (error) {
-    const message = error?.name === 'AbortError'
-      ? '智能解读响应超时，请稍后重试'
-      : error instanceof Error ? error.message : '智能解读暂时不可用'
-    const status = message.includes('请求') || message.includes('缺少') || message.includes('请输入') || message.includes('不支持') ? 400 : 502
-    console.error('[ai]', message)
-    return json(response, status, { error: message })
-  }
+  if (request.method === 'GET' && url.pathname === '/api/ai/health') return json(response, 200, aiHealth(process.env))
+  if (url.pathname !== '/api/ai/chat') return false
+  const headers = new Headers()
+  for (const [key, value] of Object.entries(request.headers)) if (value) headers.set(key, Array.isArray(value) ? value.join(',') : value)
+  const standard = new Request(url, { method: request.method, headers, ...(request.method !== 'GET' && request.method !== 'HEAD' ? { body: Readable.toWeb(request), duplex: 'half' } : {}) })
+  const result = await handleAiChat(standard, process.env, { clientIp: nodeClientIp(request, process.env) })
+  response.writeHead(result.status, Object.fromEntries(result.headers))
+  response.end(await result.text())
 }
 
 function serveStatic(response, url) {

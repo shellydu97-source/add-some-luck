@@ -20,36 +20,7 @@ function stringArray(value, maxItems = 10, maxLength = 700) {
     : []
 }
 
-export function validateAiRequest(input) {
-  if (!input || typeof input !== 'object') throw new Error('请求内容无效')
-  const module = text(input.module, 20)
-  if (!AI_MODULES.includes(module)) throw new Error('不支持的解读类型')
-  const action = input.action === 'followup' ? 'followup' : 'interpret'
-  if (!input.context || typeof input.context !== 'object' || Array.isArray(input.context)) {
-    throw new Error('缺少排盘或牌面数据')
-  }
-  const serializedContext = JSON.stringify(input.context)
-  if (serializedContext.length > 100_000) throw new Error('排盘数据过大')
-
-  const messages = Array.isArray(input.messages)
-    ? input.messages.slice(-14).map((item) => ({
-        role: item?.role === 'assistant' ? 'assistant' : 'user',
-        content: text(item?.content, 6000),
-      })).filter((item) => item.content)
-    : []
-
-  const followUpQuestion = text(input.followUpQuestion, 1500)
-  if (action === 'followup' && !followUpQuestion) throw new Error('请输入追问内容')
-
-  return {
-    module,
-    action,
-    question: text(input.question, 1500),
-    followUpQuestion,
-    context: input.context,
-    messages,
-  }
-}
+export { validateStructuredAiRequest as validateAiRequest } from './ai-request.mjs'
 
 export function buildDeepSeekGenerationOptions() {
   return {

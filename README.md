@@ -50,12 +50,12 @@ DEEPSEEK_MODEL=deepseek-v4-flash
 
 不要把真实密钥写进 `src`、提交到 Git，或放进浏览器环境变量。浏览器只请求项目自己的 `/api/ai/chat`，密钥由 `server/index.mjs` 在服务端读取。
 
-项目默认保留轻量的全局每日请求上限和单 IP 小时上限；不需要账号、邀请码或朋友名单。朋友打开同一网址时，每个人的档案和记录仍保存在自己的浏览器中。
+线上服务端必须配置 `SUPABASE_URL` 和 `SUPABASE_PUBLISHABLE_KEY`，智能解读仅登录后可用；默认每账号每天 30 次（`AI_USER_DAILY_LIMIT`）、全站每天 1000 次（`AI_DAILY_REQUEST_LIMIT`），数据库原子计数。单 IP 每小时 60 次（`AI_PER_IP_HOURLY_LIMIT`）为进程内附加保护。仅本地开发且未配置 Supabase 时，可设置 `AI_ALLOW_ANONYMOUS=true` 使用匿名内存限流。Node 默认忽略 X-Forwarded-For，只有可信反向代理场景才设 `TRUST_PROXY=true`。朋友打开同一网址时，每个人的档案和记录仍保存在自己的浏览器中。
 
 ## 配置 Supabase 账号与同步
 
 1. 在 Supabase 创建项目。
-2. 打开项目的 SQL Editor，执行 `supabase/migrations/2026071701_user_app_data.sql`。
+2. 打开项目的 SQL Editor，先执行 `supabase/migrations/2026071701_user_app_data.sql`，再执行 `supabase/migrations/2026101201_ai_usage.sql`。**先执行 SQL，再部署服务端和前端**。
 3. 在 Auth 的 Email Provider 中启用邮箱注册和 Confirm email，并配置自定义 SMTP。注册和找回密码都使用中文 6 位验证码。
 4. 在 Auth 的 URL Configuration 中，把正式网址设为 Site URL，并把 `/account` 加入 Redirect URLs。
 5. 将 Project URL 和 Publishable key 写入 `.env.local`：
@@ -106,3 +106,5 @@ VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
 | 账号与同步 | `/account` |
 
 主导航为“命盘、起卦、记录”。`/fortune/*` 和 `/today` 重定向到 `/charts`。
+
+提高 AI 限额时，也需由项目管理员在 SQL Editor 更新 `public.ai_quota_limits` 的上限；RPC 会取环境变量与数据库上限的较小值，防止用户直接调用 RPC 提高额度。数据库不可用时 AI 接口拒绝生成，不退回匿名模式。

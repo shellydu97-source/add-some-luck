@@ -1,0 +1,38 @@
+import { z } from 'zod'
+import { AiError } from './ai-errors.mjs'
+
+const text = z.string().max(2000)
+const strings = z.array(text).max(100)
+const element = z.enum(['木', '火', '土', '金', '水'])
+const trigram = z.object({ key: text, name: text, symbol: text, bits: text, element })
+const hexagram = z.object({ number: z.number().int().min(1).max(64), name: text, upper: text, lower: text, palace: text.optional(), palaceName: text.optional(), palaceElement: element.optional(), palaceSequence: z.number().optional(), palaceStage: text.optional(), specialTypes: strings.optional(), shiLine: z.number().optional(), yingLine: z.number().optional(), judgment: text, lineTexts: z.array(text).length(6), basicMeaning: text.optional() })
+const environment = z.object({ isVoid: z.boolean(), isMonthBuild: z.boolean(), isMonthBreak: z.boolean(), isMonthCombine: z.boolean(), isDaySame: z.boolean(), isDayClash: z.boolean(), isDayCombine: z.boolean() })
+const spirit = z.object({ relation: text, naJia: text, stem: text, branch: text, element })
+const line = spirit.extend({ index: z.number().int().min(1).max(6), coins: z.array(z.enum(['yang', 'yin'])).length(3), value: z.union([z.literal(6), z.literal(7), z.literal(8), z.literal(9)]), label: text, yinYang: text, moving: z.boolean(), changedYinYang: text, spirit: text, shiYing: text.optional(), hiddenSpirit: spirit.optional(), environment, changedNaJia: text, changedStem: text, changedBranch: text, changedElement: element, changedRelation: text, changedShiYing: text.optional(), changedEnvironment: environment })
+const calendar = z.object({ localDateTime: text, monthBranch: text, dayGanZhi: text, dayStem: text, dayBranch: text, xunKong: text })
+const availablePillar = z.object({ status: z.literal('available'), ganZhi: text, gan: text, zhi: text, hiddenStems: strings, stemTenGod: text, hiddenTenGods: strings, fiveElements: z.object({ stem: element, branch: element }), naYin: text, twelveStage: text, selfStage: text, xun: text, xunKong: text })
+const pillar = z.union([availablePillar, z.object({ status: z.literal('ambiguous'), candidates: strings, reason: text }), z.object({ status: z.literal('unavailable'), reason: text })])
+const annual = z.object({ year: z.number(), age: z.number(), ganZhi: text, xun: text, xunKong: text })
+const date = z.object({ year: z.number(), month: z.number(), day: z.number(), isLeapMonth: z.boolean().optional() })
+const baziResult = z.object({ ok: z.literal(true), engine: text, engineVersion: text, adapterVersion: text, ruleVersion: text, calculatedAt: text, normalizedInput: z.object({ sourceCalendar: text, sourceDate: date, solarDate: date, lunarDate: date, localTime: z.object({ hour: z.number(), minute: z.number(), second: z.number(), precision: text }).optional(), timeKnown: z.boolean(), timezone: text, trueSolarTime: z.boolean(), dayRollover: text, yearBoundary: text, monthBoundary: text, luckStartMethod: text }), pillars: z.object({ year: pillar, month: pillar, day: pillar, time: pillar }), fiveElementCounts: z.object({ 木: z.number(), 火: z.number(), 土: z.number(), 金: z.number(), 水: z.number() }), luck: z.object({ direction: text, directionLabel: text, startOffset: z.object({ years: z.number(), months: z.number(), days: z.number(), hours: z.number() }), startSolarDateTime: text, cycles: z.array(z.object({ index: z.number(), ganZhi: text, startYear: z.number(), endYear: z.number(), startAge: z.number(), endAge: z.number(), startSolarDateTime: text, xun: text, xunKong: text, annual: z.array(annual).max(100) })).max(12) }).optional(), warnings: strings })
+
+const meihuaHexagram = z.object({ number: z.number().int().min(1).max(64), name: text, upper: trigram, lower: trigram, judgment: text, lineTexts: z.array(text).length(6) })
+const meihuaSource = z.object({ upperTotal: z.number(), lowerTotal: z.number(), movingTotal: z.number(), firstNumber: z.number().optional(), secondNumber: z.number().optional(), thirdNumber: z.number().optional(), specifiedLocalDateTime: text.optional(), sourceText: text.optional(), normalizedText: text.optional(), characterCount: z.number().optional(), observedCount: z.number().optional() })
+const natalAnalysis = z.object({ ruleVersion: text, dayStem: text.optional(), dayBranch: text.optional(), tenGodCounts: z.record(z.enum(['比肩','劫财','食神','伤官','偏财','正财','七杀','正官','偏印','正印']), z.number()), relations: z.array(z.object({ kind: text, text, evidence: strings })), shenSha: z.array(z.object({ name: text, target: text, basis: text })) })
+export const contextSchemas = {
+  tarot: z.object({ spread: z.enum(['single', 'three', 'dual-path']), drawnAt: text, cards: z.array(z.object({ id: text, nameZh: text, nameEn: text, orientation: z.enum(['upright', 'reversed']), position: text, arcana: z.enum(['major', 'minor']), suit: text.optional(), rank: text.optional(), element: text, keywords: strings, basicMeaning: text })).min(1).max(5) }),
+  liuyao: z.object({ castAt: text, method: z.enum(['digital', 'manual']).optional(), querentGender: z.enum(['male', 'female']).optional(), coinTosses: z.array(z.object({ coins: z.array(z.enum(['yang', 'yin'])).length(3), method: z.enum(['digital', 'manual']).optional() })).length(6), original: hexagram, changed: hexagram, movingLines: z.array(z.number().int().min(1).max(6)).max(6), lines: z.array(line).length(6), calendar, lowerTrigram: trigram, upperTrigram: trigram, changedLowerTrigram: trigram, changedUpperTrigram: trigram, guaShen: z.object({ branch: text, startBranch: text, shiLine: z.number(), shiYinYang: text, presentAtLines: z.array(z.number()) }), shiShen: z.object({ holdingBranch: text, lineIndex: z.number(), branch: text }), shenSha: z.array(z.object({ name: text, branch: text, presentAtLines: z.array(z.number()) })).max(20) }),
+  meihua: z.object({ lockedAt: text, method: text, sourceNumbers: meihuaSource, calendar: z.object({ localDateTime: text, ianaTimeZone: text, lunarYear: text, lunarMonth: z.number(), lunarDay: z.number(), isLeapMonth: z.boolean(), yearBranch: text, hourBranch: text, yearNumber: z.number(), monthNumber: z.number(), dayNumber: z.number(), hourNumber: z.number() }).optional(), original: meihuaHexagram, mutual: meihuaHexagram, changed: meihuaHexagram, opposite: meihuaHexagram.optional(), reversed: meihuaHexagram.optional(), movingLine: z.number().int().min(1).max(6), movingLineText: text, bodyTrigram: trigram, useTrigram: trigram, bodyPosition: text, usePosition: text, bodyUseRelation: z.object({ label: text, bodyElement: element, useElement: element, summary: text }) }),
+  bazi: z.object({ result: baziResult, analysis: natalAnalysis.optional() }),
+}
+
+export function validateStructuredAiRequest(input) {
+  if (!input || typeof input !== 'object') throw new AiError(400, '请求内容无效')
+  const schema = contextSchemas[input.module]
+  if (!schema) throw new AiError(400, '不支持的解读类型')
+  if (!input.context) throw new AiError(400, '缺少排盘或牌面数据')
+  const parsed = z.object({ module: z.enum(['tarot', 'liuyao', 'meihua', 'bazi']), action: z.enum(['interpret', 'followup']).default('interpret'), question: text.default(''), followUpQuestion: text.optional(), context: schema, messages: z.array(z.object({ role: z.enum(['user', 'assistant']), content: text.min(1) })).max(12).default([]) }).safeParse(input)
+  if (!parsed.success) throw new AiError(400, '请求中的排盘数据或对话结构不符')
+  if (parsed.data.action === 'followup' && !parsed.data.followUpQuestion?.trim()) throw new AiError(400, '请输入追问内容')
+  return parsed.data
+}
