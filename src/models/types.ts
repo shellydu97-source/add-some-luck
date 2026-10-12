@@ -127,6 +127,7 @@ export interface AiConversationMessage {
 }
 
 export interface RecordSnapshot {
+  liuyaoUseGodOverride?: import('../calculation/liuyao/judgement').UseGod
   metaUpdatedAt?: string
   id: string
   type: RecordType
@@ -188,6 +189,7 @@ export interface CoinToss {
 
 export type LiuyaoMethod = 'digital' | 'manual'
 export interface LiuyaoDraftState {
+  useGodOverride?: import('../calculation/liuyao/judgement').UseGod
   method?: LiuyaoMethod
   querentGender?: Gender
   coinConventionVersion?: 'character-2-back-3-v1' | 'fixed-coin-art-yin-2-yang-3-v2'

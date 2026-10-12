@@ -1,3 +1,4 @@
+import { judgeLiuyao, USE_GOD_OPTIONS, type UseGod } from '../calculation/liuyao/judgement'
 import { useNavigate } from 'react-router-dom'
 import {
   calculateLiuyao,
@@ -35,8 +36,12 @@ export default function LiuyaoResultPage() {
   const result = calculateLiuyao(activeDraft.state.casts, lockedAt)
   const shiLine = result.lines.find((line) => line.shiYing === '世')
   const yingLine = result.lines.find((line) => line.shiYing === '应')
+  const savedRecord = store.records.find(r => r.id === activeDraft.state.recordId)
+  const override = savedRecord?.liuyaoUseGodOverride ?? activeDraft.state.useGodOverride
+  const judgement = judgeLiuyao(result, activeDraft.category, override, querentGender)
   const localInterpretation = createLiuyaoDetailedInterpretation(result)
   const rawResult = {
+    judgement,
     method: activeDraft.state.method,
     querentGender,
     timeRange: activeDraft.state.timeRange,
@@ -64,8 +69,8 @@ export default function LiuyaoResultPage() {
 
   function recordInterpretation(): Interpretation {
     return {
-      headline: '六爻详细解读',
-      conclusion: localInterpretation.overview.overallState,
+      headline: judgement.tendency,
+      conclusion: judgement.reasons.join('；'),
       evidence: [...new Set([
         ...localInterpretation.overview.evidence,
         ...localInterpretation.movingLines.flatMap((line) => line.evidence),
@@ -82,6 +87,7 @@ export default function LiuyaoResultPage() {
     const existing = activeDraft.state.recordId && store.records.find((record) => record.id === activeDraft.state.recordId)
     if (existing) return existing.id
     const created = createRecord({ profile, temporarySubject: activeDraft.temporarySubject, type: 'liuyao', question: activeDraft.question, category: activeDraft.category, rawResult, interpretation: recordInterpretation() })
+    if (override) created.liuyaoUseGodOverride = override
     store.createRecordSnapshot(created)
     store.upsertDraft({ ...activeDraft, state: { ...activeDraft.state, recordId: created.id } })
     return created.id
@@ -113,7 +119,20 @@ export default function LiuyaoResultPage() {
       </> : <p className="no-moving-note">无动爻，变卦同本卦</p>}
     </Card>
 
-    <Card className="liuyao-key-card">
+    <Card className="interpretation-card summary-reading"><SectionHeading title={judgement.tendency} /><ul className="plain-list">{judgement.reasons.map(reason => <li key={reason}>{reason}</li>)}</ul>
+      <label className="field"><span>用神（可改选）</span><select value={judgement.useGod.relation} onChange={e => { const value = e.target.value as UseGod; if (savedRecord) store.setLiuyaoUseGodOverride(savedRecord.id,value); store.upsertDraft({ ...activeDraft, state:{ ...activeDraft.state, useGodOverride:value } }) }}>{USE_GOD_OPTIONS.map(g => <option key={g}>{g}</option>)}</select></label><p>{judgement.advice}</p><p className="helper">{judgement.uncertainty}</p>
+      <details><summary>查看用神与动变依据</summary><p>来源：{judgement.useGod.source === 'hidden' ? '伏神' : '卦中现爻'}；{judgement.auxiliaryFlags.join('、') || '无特殊辅助标记'}</p><p>原神：{judgement.originGod?.element}，{judgement.originGod?.lines.map(l => `第${l.index}爻 ${l.state.season} ${l.state.dayRelation} ${l.state.flags.join('、')}`).join('；') || '卦中不现'}</p><p>忌神：{judgement.avoidGod?.element}，{judgement.avoidGod?.lines.map(l => `第${l.index}爻 ${l.state.season} ${l.state.dayRelation} ${l.state.flags.join('、')}`).join('；') || '卦中不现'}</p><ul>{judgement.movingEffects.map(e => <li key={e}>{e}</li>)}</ul><p>按《增删卜易》《卜筮正宗》通行口径；权重是参考模型，不能代替具体事情的现实条件。</p></details>
+    </Card>
+
+    <AiReadingPanel key={activeDraft.id} module="liuyao" question={activeDraft.question} context={{
+      castAt: lockedAt, method: activeDraft.state.method, querentGender, coinTosses: activeDraft.state.casts,
+      original: result.original, changed: result.changed, movingLines: result.movingLines,
+      lines: result.lines, calendar: result.calendar, lowerTrigram: result.lowerTrigram, upperTrigram: result.upperTrigram,
+      changedLowerTrigram: result.changedLowerTrigram, changedUpperTrigram: result.changedUpperTrigram,
+      guaShen: result.guaShen, shiShen: result.shiShen, shenSha: result.shenSha,
+    }} recordId={activeDraft.state.recordId} ensureRecord={ensureRecord} title="结合卦象回答你的问题" />
+
+    <details className="result-disclosure"><summary>查看基础排盘</summary>    <Card className="liuyao-key-card">
       <SectionHeading title="排盘要点" />
       <div className="liuyao-key-grid">
         <div><span>起卦时间</span><b>{formatDate(lockedAt, true)}</b></div>
@@ -137,20 +156,7 @@ export default function LiuyaoResultPage() {
       <p className="helper liuyao-key-note">点击月建、日辰、旬空、世爻或应爻，可查看对应含义；完整纳甲与日月关系可在下方展开。</p>
     </Card>
 
-    <Card className="interpretation-card summary-reading">
-      <SectionHeading title="基础提示" />
-      <p className="reading-intro">{localInterpretation.overview.overallState}</p>
-      <dl className="reading-summary-list"><div><dt>值得留意</dt><dd>{localInterpretation.summary.changes}</dd></div><div><dt>现实建议</dt><dd>{localInterpretation.summary.advice}</dd></div></dl>
-    </Card>
-
-    <AiReadingPanel key={activeDraft.id} module="liuyao" question={activeDraft.question} context={{
-      castAt: lockedAt, method: activeDraft.state.method, querentGender, coinTosses: activeDraft.state.casts,
-      original: result.original, changed: result.changed, movingLines: result.movingLines,
-      lines: result.lines, calendar: result.calendar, lowerTrigram: result.lowerTrigram, upperTrigram: result.upperTrigram,
-      changedLowerTrigram: result.changedLowerTrigram, changedUpperTrigram: result.changedUpperTrigram,
-      guaShen: result.guaShen, shiShen: result.shiShen, shenSha: result.shenSha,
-    }} recordId={activeDraft.state.recordId} ensureRecord={ensureRecord} title="结合卦象回答你的问题" />
-
+</details>
     <details className="result-disclosure"><summary>查看卦象、动爻与变化依据</summary><Card className="interpretation-card">
       <div className="reading-sections">
         <section className="reading-section"><h3>本卦核心主题</h3><p>{localInterpretation.overview.coreTheme}</p></section>

@@ -22,16 +22,21 @@ export default function LiuyaoQuestionPage() {
   const resumedProfileExists = store.profiles.some((item) => item.id === resumed?.profileId)
   const initialSubjectId = resumed ? (resumedProfileExists ? resumed.profileId : TEMPORARY_SUBJECT_ID) : (profile?.id ?? TEMPORARY_SUBJECT_ID)
   const [question, setQuestion] = useState(entryState?.question ?? resumed?.question ?? '')
-  const [category, setCategory] = useState(resumed?.category ?? categoryOptions[0])
+  const [category, setCategory] = useState(resumed?.category ?? '')
   const [timeRange, setTimeRange] = useState(resumed?.state.timeRange ?? '')
   const [subjectId, setSubjectId] = useState(initialSubjectId)
   const [temporaryName, setTemporaryName] = useState(resumed?.temporarySubject?.name ?? '')
   const [temporaryGender, setTemporaryGender] = useState<Gender | undefined>(resumed?.temporarySubject?.gender ?? resumed?.state.querentGender)
+  const [error, setError] = useState('')
   const [duplicate, setDuplicate] = useState<DivinationRecord>()
 
   function submit(force = false) {
     const normalizedQuestion = question.trim()
     const selectedProfile = store.profiles.find((item) => item.id === subjectId)
+    if (!normalizedQuestion) { setError('请填写本次问题'); return }
+    if (!category) { setError('请选择问题分类'); return }
+    if (category === '感情' && !(selectedProfile?.gender ?? temporaryGender)) { setError('感情占问请确认占问者性别，以便建议用神'); return }
+    setError('')
     const recordProfileId = selectedProfile?.id ?? GUEST_PROFILE_ID
     if (!force && normalizedQuestion) {
       const found = store.findDuplicate(recordProfileId, 'liuyao', normalizedQuestion)
@@ -55,14 +60,15 @@ export default function LiuyaoQuestionPage() {
   }
 
   return <>
-    <TopBar title="六爻占问" eyebrow="第 1 步 · 问题选填" back />
-    <ConfidenceNote>写清楚一件最关心的事，后续解读会更贴近你的问题；留空也可以起卦。</ConfidenceNote>
+    <TopBar title="六爻占问" eyebrow="第 1 步 · 明确问题" back />
+    <ConfidenceNote>一事一占；想清楚再起卦；同一件事短期内不要反复占。</ConfidenceNote>
     <Card>
       <DivinationSubjectField profiles={store.profiles} subjectId={subjectId} temporaryName={temporaryName} temporaryGender={temporaryGender} includeGender onSubjectChange={setSubjectId} onTemporaryNameChange={setTemporaryName} onTemporaryGenderChange={setTemporaryGender} />
-      <label className="field"><span>问题（选填）</span><textarea rows={4} maxLength={120} value={question} onChange={(event) => { setQuestion(event.target.value); setDuplicate(undefined) }} placeholder="可以留空；例如：这次出行是否能按计划进行？" /></label>
-      <label className="field"><span>问题分类</span><select value={category} onChange={(event) => setCategory(event.target.value)}>{categoryOptions.map((item) => <option key={item}>{item}</option>)}</select></label>
+      <label className="field"><span>问题 *</span><textarea rows={4} maxLength={120} value={question} onChange={(event) => { setQuestion(event.target.value); setDuplicate(undefined) }} placeholder="例如：这次出行是否能按计划进行？" /></label>
+      <label className="field"><span>问题分类</span><select value={category} onChange={(event) => setCategory(event.target.value)}><option value="">请选择分类</option>{categoryOptions.map((item) => <option key={item}>{item}</option>)}</select></label>
       <label className="field"><span>观察时间范围（选填）</span><input value={timeRange} onChange={(event) => setTimeRange(event.target.value)} placeholder="例如：未来两周" /></label>
     </Card>
+    {error && <p className="field-error">{error}</p>}
     {duplicate && <Card className="duplicate-card"><h3>最近问过同样的问题</h3><p className="helper">可以先看看上次的变化，也可以重新占问。</p><div className="button-row"><Link className="button secondary" to={`/records/${duplicate.id}`}>查看旧记录</Link><Button onClick={() => submit(true)}>重新占问</Button></div></Card>}
     {!duplicate && <Button onClick={() => submit()}>下一步：选择起爻方式</Button>}
   </>

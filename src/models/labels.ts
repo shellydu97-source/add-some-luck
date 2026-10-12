@@ -17,4 +17,4 @@ export const verificationLabels: Record<VerificationStatus, string> = {
   opposite: '结果相反', unknown: '暂时无法判断',
 }
 
-export const categoryOptions = ['感情', '工作 / 学习', '财运', '健康', '出行', '其他']
+export const categoryOptions = ['感情', '工作 / 事业', '学业 / 考试', '财运', '健康', '出行', '其他']

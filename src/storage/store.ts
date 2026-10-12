@@ -35,6 +35,7 @@ interface AppState extends AppDataState {
   appendRecordAiInterpretation: (id: string, interpretation: AiInterpretationSnapshot) => void
   appendRecordAiMessages: (id: string, messages: AiConversationMessage[]) => void
   updateRecordVerification: (id: string, patch: VerificationPatch) => void
+  setLiuyaoUseGodOverride: (id: string, useGod: RecordSnapshot['liuyaoUseGodOverride']) => void
   findDuplicate: (profileId: string, type: 'liuyao' | 'meihua' | 'tarot', question: string) => RecordSnapshot | undefined
   upsertDraft: (draft: DivinationDraft) => void
   deleteDraft: (id: string) => void
@@ -132,6 +133,7 @@ export const useAppStore = create<AppState>()(persist((set, get) => ({
       ? { ...item, aiMessages: [...(item.aiMessages ?? []), ...clone(messages)] }
       : item),
   })),
+  setLiuyaoUseGodOverride: (id, useGod) => set((state) => ({ records: state.records.map(r => r.id === id ? { ...r, liuyaoUseGodOverride: useGod, metaUpdatedAt: new Date().toISOString() } : r) })),
   updateRecordVerification: (id, patch) => set((state) => ({
     records: state.records.map((item) => item.id === id ? { ...item, ...clone(patch), metaUpdatedAt: new Date().toISOString() } : item), notice: '验证与备注已保存。',
   })),

@@ -19,6 +19,7 @@ const profileSchema = z.object({
 }).passthrough()
 
 const recordSchema = z.object({
+  liuyaoUseGodOverride: z.enum(['父母','兄弟','子孙','妻财','官鬼','世爻','应爻']).optional(),
   metaUpdatedAt: z.string().datetime().optional(),
   id: z.string().min(1), type: z.enum(['bazi', 'astrology', 'liuyao', 'meihua', 'tarot']), profileId: z.string(),
   profileNameSnapshot: z.string(), createdAt: z.string(), rawResult: z.record(z.string(), z.unknown()),
