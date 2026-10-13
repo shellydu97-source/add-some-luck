@@ -207,6 +207,9 @@ export function CloudAccountProvider({ children }: { children: ReactNode }) {
         await pushLocal(activeClient, userId)
       }
     }
+    const loadedStore = useAppStore.getState()
+    const defaultId = loadedStore.profiles.find(p => p.isDefault)?.id ?? loadedStore.profiles[0]?.id
+    if (defaultId) loadedStore.setActiveProfile(defaultId)
     setSyncReadyUserId(userId)
   }, [applyData, applyRemote, commitSynced, pushLocal, showConflict])
 
@@ -382,6 +385,26 @@ export function CloudAccountProvider({ children }: { children: ReactNode }) {
     setSyncMessage('')
   }, [accountUserId, client])
 
+  const deleteAccount = useCallback(async () => {
+    if (!client || !accountUserId) throw new Error('请先登录')
+    paused.current = true
+    if (syncing.current) await new Promise<void>(resolve => idleWaiters.current.push(resolve))
+    try {
+      const { data, error } = await client.functions.invoke('delete-account', { body: { confirmation: 'DELETE_MY_ACCOUNT' } })
+      if (error || !data?.deleted) throw new Error('注销未成功，请稍后重试；本机数据仍保留。')
+    } catch (error) { paused.current = false; throw error }
+    await client.auth.signOut({ scope: 'local' })
+    setSession(null)
+    applyingRemote.current = true
+    useAppStore.getState().restoreCloudData(readGuestData())
+    applyingRemote.current = false
+    window.localStorage.removeItem(CLOUD_META_KEY)
+    window.localStorage.removeItem(`add-luck-account-backup-${accountUserId}`)
+    writeActiveDataOwner(GUEST_OWNER)
+    setSyncReadyUserId('')
+    setSyncMessage('账号已注销，已回到访客状态。')
+  }, [accountUserId, client])
+
   const syncNow = useCallback(async () => {
     if (!client || !accountUserId) return
     try { await reconcileAccountData(client, accountUserId) }
@@ -428,13 +451,14 @@ export function CloudAccountProvider({ children }: { children: ReactNode }) {
     verifyPasswordResetCode,
     updatePassword,
     signOut,
+    deleteAccount,
     clearLocalData,
     conflictSummary: conflictRemote ? { local: { profiles: getLocalData().profiles.length, records: getLocalData().records.length, updatedAt: latestChange(getLocalData()) }, cloud: { profiles: conflictRemote.payload.profiles.length, records: conflictRemote.payload.records.length, updatedAt: conflictRemote.updatedAt } } : undefined,
     syncNow,
     keepCloudData,
     keepLocalData,
     mergeBoth,
-  }), [authLoading, clearLocalData, cloudDataReady, conflictRemote, keepCloudData, keepLocalData, lastSyncedAt, mergeBoth, passwordRecovery, resendSignUpCode, sendPasswordReset, session, signIn, signOut, signUp, syncMessage, syncNow, syncStatus, updatePassword, verifyPasswordResetCode, verifySignUpCode])
+  }), [authLoading, deleteAccount, clearLocalData, cloudDataReady, conflictRemote, keepCloudData, keepLocalData, lastSyncedAt, mergeBoth, passwordRecovery, resendSignUpCode, sendPasswordReset, session, signIn, signOut, signUp, syncMessage, syncNow, syncStatus, updatePassword, verifyPasswordResetCode, verifySignUpCode])
 
   return <CloudAccountContext.Provider value={value}>{children}</CloudAccountContext.Provider>
 }

@@ -22,6 +22,7 @@ export interface CloudAccountValue {
   sendPasswordReset: (email: string) => Promise<void>
   verifyPasswordResetCode: (email: string, token: string) => Promise<void>
   updatePassword: (password: string) => Promise<void>
+  deleteAccount: () => Promise<void>
   signOut: () => Promise<void>
   syncNow: () => Promise<void>
   keepCloudData: () => Promise<void>

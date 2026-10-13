@@ -7,6 +7,7 @@ import { featureFlags } from '../config/features'
 import { useAppStore } from '../storage/store'
 import { resolveStartupPath } from './startup'
 
+const LegalPage = lazy(() => import('../pages/LegalPage'))
 const SettingsPage = lazy(() => import('../pages/SettingsPage'))
 const AccountPage = lazy(() => import('../pages/AccountPage'))
 const ProfilesPage = lazy(() => import('../pages/ProfilesPage'))
@@ -50,6 +51,8 @@ function AstrologyRoute() {
 
 export default function App() {
   return <><StartupSplash /><Suspense fallback={<div className="route-loading">正在打开页面…</div>}><Routes>
+    <Route path="privacy" element={<LegalPage />} />
+    <Route path="terms" element={<LegalPage />} />
     <Route path="account" element={<AccountPage />} />
     <Route element={<AccountGate />}>
       <Route index element={<StartupRoute />} />

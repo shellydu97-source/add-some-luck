@@ -10,7 +10,7 @@ import { createEmptyAppData } from '../storage/appData'
 import { seedRecords } from '../mocks/records'
 import { hashAppData, pickSyncData } from './syncCore'
 
-const backend = vi.hoisted(() => ({ row: undefined as unknown, authChange: undefined as unknown, session: undefined as unknown, rpc: vi.fn(), delete: vi.fn() }))
+const backend = vi.hoisted(() => ({ row: undefined as unknown, authChange: undefined as unknown, session: undefined as unknown, rpc: vi.fn(), delete: vi.fn(), invoke: vi.fn() }))
 vi.mock('./supabaseClient', () => ({
   isCloudAccountConfigured: true,
   getSupabaseClient: async () => ({
@@ -21,6 +21,7 @@ vi.mock('./supabaseClient', () => ({
     },
     from: () => ({ select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: structuredClone(backend.row), error: null }) }) }), delete: () => ({ eq: backend.delete }) }),
     rpc: backend.rpc,
+    functions: { invoke: backend.invoke },
   }),
 }))
 let account: CloudAccountValue
@@ -31,6 +32,7 @@ beforeEach(() => {
   backend.session = { user: { id: 'u', email: 'test@example.com' }, access_token: 'test' } as Session
   const payload = { ...createEmptyAppData(), records: [{ ...seedRecords[0], id: 'r' }] }
   backend.row = { payload: pickSyncData(payload), data_hash: hashAppData(payload), updated_at: '2026-10-12T04:00:00Z', version: 1 }
+  backend.invoke.mockReset().mockResolvedValue({data:{deleted:true},error:null})
   backend.rpc.mockReset()
   backend.delete.mockReset().mockResolvedValue({ error: null })
   backend.rpc.mockImplementation(async (_name, args) => {
@@ -89,4 +91,17 @@ describe('账号数据保护流程', () => {
     expect(account.hasConflict).toBe(false)
     expect(JSON.parse(localStorage.getItem('add-luck-cloud-sync-meta-v1')!).lastSyncedVersion).toBe(2)
   })
+})
+
+it('模拟注销成功回到访客并清理该账号备份，删除失败保留数据',async()=>{
+ await mount()
+ backend.invoke.mockResolvedValueOnce({data:null,error:new Error('offline')})
+ const before=structuredClone(useAppStore.getState().records)
+ await act(async()=>{await expect(account.deleteAccount()).rejects.toThrow()})
+ expect(account.session?.user.id).toBe('u');expect(useAppStore.getState().records).toEqual(before)
+ localStorage.setItem('add-luck-account-backup-u','private backup')
+ await act(async()=>{await account.deleteAccount()})
+ expect(account.session).toBeNull();expect(localStorage.getItem('add-luck-account-backup-u')).toBeNull()
+ expect(backend.invoke).toHaveBeenCalledWith('delete-account',{body:{confirmation:'DELETE_MY_ACCOUNT'}})
+ expect(useAppStore.getState().records).toHaveLength(0)
 })

@@ -86,6 +86,7 @@ export default function SettingsPage() {
     </Card>
     <Card><SectionHeading title="显示偏好" /><label className="toggle-setting"><span><b>降低动态效果</b><small>仪式抽牌改为手动切换候选牌，其他动画尽量关闭。</small></span><input type="checkbox" checked={store.reduceMotion} onChange={(event) => store.setReduceMotion(event.target.checked)} /></label></Card>
     {clearChoice && <Card><h2>选择清空范围</h2><p className="helper">只清空本机会退出登录，云端数据保留。</p><Button className="secondary" onClick={() => void clearAccount(false)}>只清空本机并退出登录</Button><Button className="danger" onClick={() => void clearAccount(true)}>同时删除云端数据</Button><Button className="secondary" onClick={() => setClearChoice(false)}>取消</Button></Card>}
+    <Card><SectionHeading title="隐私与使用" /><div className="button-row"><LinkButton to="/privacy" secondary>隐私说明</LinkButton><LinkButton to="/terms" secondary>使用须知</LinkButton></div></Card>
     <Button className="danger" onClick={clearData}>清空全部本地数据</Button>
   </>
 }

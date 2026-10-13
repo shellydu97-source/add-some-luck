@@ -1,6 +1,6 @@
 import SyncConflictPanel from '../components/SyncConflictPanel'
 import { useEffect, useState, type FormEvent, type ReactNode } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useCloudAccount } from '../cloud/accountContext'
 import { allowGuestAccess, clearGuestAccess } from '../cloud/guestAccess'
 import TopBar from '../components/TopBar'
@@ -60,6 +60,7 @@ function AccountFrame({ onboarding, title, children }: { onboarding: boolean; ti
         ? <header className="account-intro"><div className="welcome-mark" aria-hidden="true">运</div><h1>加点好运</h1><p>登录后，人物档案和记录可以在不同设备上继续使用。</p></header>
         : <TopBar title={title} back />}
       {children}
+      <p className="helper"><Link to="/privacy">隐私说明</Link> · <Link to="/terms">使用须知</Link></p>
     </main>
   </div>
 }
@@ -221,6 +222,7 @@ export default function AccountPage() {
     </Card>
     <SyncConflictPanel />
     <Card><SectionHeading title="数据说明" /><p className="helper">本机与云端按版本同步，冲突时由你选择。当前设备会保留一份安全缓存，断网时仍可使用；恢复网络或重新打开页面后会自动同步，不需要手动操作。</p></Card>
+    <Button className="danger" disabled={busy} onClick={() => { if (!window.confirm('注销将永久删除账号、云端人物、记录、草稿和用量数据。请先导出备份，继续吗？')) return; if (!window.confirm('再次确认：永久注销当前账号？此操作无法恢复。')) return; void runAccountAction(async () => { await account.deleteAccount(); allowGuestAccess(); navigate('/welcome', { replace: true }) }) }}>注销账号</Button>
     <Button className="secondary" disabled={busy} onClick={() => void runAccountAction(async () => { await account.signOut(); clearGuestAccess(); navigate('/account?onboarding=1', { replace: true }) })}>退出登录</Button>
   </AccountFrame>
 
