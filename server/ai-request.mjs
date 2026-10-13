@@ -1,3 +1,4 @@
+import { compactSchemas } from './ai-compact-schema.mjs'
 import { z } from 'zod'
 import { AiError } from './ai-errors.mjs'
 
@@ -28,11 +29,13 @@ export const contextSchemas = {
 
 export function validateStructuredAiRequest(input) {
   if (!input || typeof input !== 'object') throw new AiError(400, '请求内容无效')
-  const schema = contextSchemas[input.module]
+  const schema = input.context?.contextVersion === '3' ? compactSchemas[input.module] : contextSchemas[input.module]
   if (!schema) throw new AiError(400, '不支持的解读类型')
   if (!input.context) throw new AiError(400, '缺少排盘或牌面数据')
   const parsed = z.object({ module: z.enum(['tarot', 'liuyao', 'meihua', 'bazi']), action: z.enum(['interpret', 'followup']).default('interpret'), question: text.default(''), stream: z.boolean().default(false), category: text.optional(), timeRange: text.optional(), useGod: z.enum(['父母','兄弟','子孙','妻财','官鬼','世爻','应爻']).optional(), followUpQuestion: text.optional(), context: schema, messages: z.array(z.object({ role: z.enum(['user', 'assistant']), content: text.min(1) })).max(12).default([]) }).safeParse(input)
   if (!parsed.success) throw new AiError(400, '请求中的排盘数据或对话结构不符')
   if (parsed.data.action === 'followup' && !parsed.data.followUpQuestion?.trim()) throw new AiError(400, '请输入追问内容')
+  const maxContextBytes = input.module === 'bazi' ? 12 * 1024 : 8 * 1024
+  if(input.context?.contextVersion === '3' && new TextEncoder().encode(JSON.stringify(parsed.data.context)).length >= maxContextBytes) throw new AiError(400,'排盘上下文过大，请缩小范围')
   return parsed.data
 }

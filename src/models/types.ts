@@ -127,6 +127,7 @@ export interface AiConversationMessage {
 }
 
 export interface RecordSnapshot {
+  questionAddedLater?: string
   liuyaoUseGodOverride?: import('../calculation/liuyao/judgement').UseGod
   metaUpdatedAt?: string
   id: string
