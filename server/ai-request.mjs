@@ -31,7 +31,7 @@ export function validateStructuredAiRequest(input) {
   const schema = contextSchemas[input.module]
   if (!schema) throw new AiError(400, '不支持的解读类型')
   if (!input.context) throw new AiError(400, '缺少排盘或牌面数据')
-  const parsed = z.object({ module: z.enum(['tarot', 'liuyao', 'meihua', 'bazi']), action: z.enum(['interpret', 'followup']).default('interpret'), question: text.default(''), followUpQuestion: text.optional(), context: schema, messages: z.array(z.object({ role: z.enum(['user', 'assistant']), content: text.min(1) })).max(12).default([]) }).safeParse(input)
+  const parsed = z.object({ module: z.enum(['tarot', 'liuyao', 'meihua', 'bazi']), action: z.enum(['interpret', 'followup']).default('interpret'), question: text.default(''), stream: z.boolean().default(false), category: text.optional(), timeRange: text.optional(), useGod: z.enum(['父母','兄弟','子孙','妻财','官鬼','世爻','应爻']).optional(), followUpQuestion: text.optional(), context: schema, messages: z.array(z.object({ role: z.enum(['user', 'assistant']), content: text.min(1) })).max(12).default([]) }).safeParse(input)
   if (!parsed.success) throw new AiError(400, '请求中的排盘数据或对话结构不符')
   if (parsed.data.action === 'followup' && !parsed.data.followUpQuestion?.trim()) throw new AiError(400, '请输入追问内容')
   return parsed.data

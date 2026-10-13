@@ -27,7 +27,7 @@ afterEach(() => {
 })
 
 describe('DeepSeek thinking response', () => {
-  it('uses one deep-thinking request and returns it without a forced rewrite', async () => {
+  it('uses low-effort JSON request with text fallback', async () => {
     const fetchMock = vi.fn().mockResolvedValue(providerResponse())
     vi.stubGlobal('fetch', fetchMock)
     const request = ({
@@ -43,14 +43,14 @@ describe('DeepSeek thinking response', () => {
     expect(fetchMock).toHaveBeenCalledTimes(1)
     const body = JSON.parse(fetchMock.mock.calls[0][1].body)
     expect(body.thinking).toEqual({ type: 'enabled' })
-    expect(body.reasoning_effort).toBe('high')
+    expect(body.reasoning_effort).toBe('low')
     expect(body).not.toHaveProperty('temperature')
-    expect(body).not.toHaveProperty('response_format')
+    expect(body.response_format).toEqual({type:'json_object'})
     expect(result.reading.directAnswer).toContain('我会这样分析')
     expect(result.reading.directAnswer).toContain('本卦为水天需')
     expect(result.reading.directAnswer).not.toContain('**')
     expect(result.reading.directAnswer).not.toContain('###')
-    expect(result.reading.sections).toEqual([])
+    expect(result.reading.sections).toBeUndefined()
     expect(result.usage).toMatchObject({
       promptTokens: 100,
       completionTokens: 200,
@@ -81,7 +81,7 @@ describe('DeepSeek thinking response', () => {
     expect(result.reading.summary).toBe('简要结论。')
   })
 
-  it('ends an overlong initial answer at a natural sentence boundary', async () => {
+  it('does not hard-truncate the initial answer', async () => {
     const longAnswer = `核心结论：可以考虑调整，但不要冲动行动。${'这是用于验证首轮长度控制的完整说明。'.repeat(80)}`
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(providerResponse(longAnswer)))
     const request = ({
@@ -92,7 +92,7 @@ describe('DeepSeek thinking response', () => {
       context: { originalHexagram: '山地剥' },
     })
     const result = await requestDeepSeek(request, config)
-    expect(result.reading.directAnswer.length).toBeLessThanOrEqual(600)
+    expect(result.reading.directAnswer).toBe(longAnswer)
     expect(result.reading.directAnswer.endsWith('。')).toBe(true)
   })
 

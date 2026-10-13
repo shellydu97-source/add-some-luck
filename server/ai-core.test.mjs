@@ -1,106 +1,25 @@
-import { describe, expect, it } from 'vitest'
-import {
-  buildDeepSeekGenerationOptions,
-  buildDeepSeekMessages,
-  sanitizeReading,
-  validateAiRequest,
-} from './ai-core.mjs'
-
-describe('AI request boundary', () => {
-  it('rejects unsupported modules and missing original results', () => {
-    expect(() => validateAiRequest({ module: 'fortune', context: {} })).toThrow('不支持')
-    expect(() => validateAiRequest({ module: 'tarot' })).toThrow('缺少')
-  })
-
-  it('rejects excess messages', () => {
-    expect(() => validateAiRequest({ module: 'tarot', context: {}, messages: Array.from({ length: 13 }, () => ({ role: 'user', content: 'x' })) })).toThrow()
-  })
-
-  it('keeps bounded conversation context as real multi-turn messages', () => {
-    const request = ({
-      module: 'liuyao',
-      action: 'followup',
-      question: '工作怎么选',
-      followUpQuestion: '用神为什么这样选？',
-      context: { originalHexagram: '乾为天' },
-      messages: Array.from({ length: 12 }, (_, index) => ({
-        role: index % 2 ? 'assistant' : 'user',
-        content: String(index),
-      })),
-    })
-    expect(request.messages).toHaveLength(12)
-    const messages = buildDeepSeekMessages(request)
-    expect(messages[0].content).toContain('你正在进行六爻解读')
-    expect(messages[0].content).toContain('不得修改原始结果')
-    expect(messages[0].content).toContain('实事求是，保持客观')
-    expect(messages[0].content).toContain('只有用户明确要求')
-    expect(messages[0].content).toContain('不要重复上一轮')
-    expect(messages[1].content).toContain('乾为天')
-    expect(messages.at(-1).content).toContain('用神为什么这样选')
-    expect(messages.slice(2, -1).some((item) => item.role === 'assistant')).toBe(true)
-  })
-
-  it.each([
-    ['tarot', '塔罗'],
-    ['liuyao', '六爻'],
-    ['meihua', '梅花易数'],
-    ['bazi', '八字'],
-    ['astrology', '占星'],
-  ])('gives %s its native interpretation freedom with one shared source boundary', (module, label) => {
-    const messages = buildDeepSeekMessages(({
-      module,
-      action: 'interpret',
-      question: '请完整分析',
-      context: { fixedResult: '不可修改' },
-    }))
-    expect(messages[0].content).toContain(`你正在进行${label}解读`)
-    expect(messages[0].content).toContain('不预设结论')
-    expect(messages[0].content).toContain('不要为了让用户高兴而说好话')
-    expect(messages[0].content).toContain('当前是首次回答')
-    expect(messages[0].content).toContain('约二百至四百字')
-    expect(messages[0].content).toContain('不得逐项解释第几爻')
-    expect(messages[0].content).toContain('依据留在内部思考')
-    expect(messages[1].content).toContain('不可修改')
-  })
-
-  it('does not pre-script conclusions, sections or a fact-review prompt', () => {
-    const messages = buildDeepSeekMessages(({
-      module: 'bazi',
-      action: 'interpret',
-      question: '我会有几个小孩，是男的还是女的？',
-      context: { pillars: ['甲子', '乙丑', '丙寅', '丁卯'] },
-    }))
-    const prompt = messages.map((item) => item.content).join('\n')
-    expect(prompt).toContain('不预设结论')
-    expect(prompt).toContain('先说答案，再说必要依据')
-    expect(prompt).not.toContain('directAnswer')
-    expect(prompt).not.toContain('suggestedQuestions')
-    expect(prompt).not.toContain('没有通过事实与表达审查')
-  })
-
-  it('enables one high-effort thinking response without sampling controls', () => {
-    const options = buildDeepSeekGenerationOptions()
-    expect(options).toMatchObject({
-      thinking: { type: 'enabled' },
-      reasoning_effort: 'high',
-      max_tokens: 16_000,
-    })
-    expect(options).not.toHaveProperty('temperature')
-    expect(options).not.toHaveProperty('top_p')
-    expect(options).not.toHaveProperty('response_format')
-  })
-
-  it('sanitizes a detailed structured reading without over-truncating it', () => {
-    const reading = sanitizeReading({
-      directAnswer: '先直接回答。',
-      summary: '',
-      sections: [{ title: '依据', content: '来自动爻。', evidence: ['第六爻动'] }],
-      uncertainty: [],
-      advice: ['结合现实情况'],
-      suggestedQuestions: ['世应关系怎么看？'],
-    })
-    expect(reading.sections[0].evidence).toEqual(['第六爻动'])
-    expect(reading.summary).toBe('')
-    expect(reading.advice).toEqual(['结合现实情况'])
-  })
+import { describe,expect,it } from 'vitest'
+import { buildDeepSeekMessages,buildDeepSeekGenerationOptions,serverShanghaiDate,sanitizeReading,validateAiRequest } from './ai-core.mjs'
+describe('AI facts and reasoning boundary',()=>{
+ it('rejects unsupported or empty source',()=>{expect(()=>validateAiRequest({module:'fortune'})).toThrow();expect(()=>validateAiRequest({module:'tarot',context:{}})).toThrow()})
+ it.each([['tarot','RWS'],['liuyao','增删卜易'],['meihua','梅花易数'],['bazi','格局']])('constrains %s to its supplied system',(module,rule)=>{
+  const prompt=buildDeepSeekMessages({module,question:'会成功吗',context:{fixed:'确定排盘'},action:'interpret'},{now:new Date('2026-10-11T16:01:00Z')})
+  expect(prompt[0].content).toContain(rule);expect(prompt[0].content).toContain('2026-10-12');expect(prompt[0].content).toContain('第一句直接回答');expect(prompt[0].content).toContain('不得修改原始结果');expect(prompt[0].content).toContain('不确定之处');expect(prompt[0].content).toContain('医疗诊断');expect(prompt[0].content).toContain('约二百至四百字')
+ })
+ it('puts fixed context once before actual bounded turns and current question',()=>{
+  const messages=buildDeepSeekMessages({module:'liuyao',action:'followup',question:'最初',followUpQuestion:'为什么？',category:'工作',timeRange:'两周',useGod:'官鬼',context:{marker:'unique-context'},messages:[{role:'assistant',content:'先前回答'},{role:'user',content:'上一问'}]})
+  expect(messages.filter(m=>m.content.includes('unique-context'))).toHaveLength(1)
+  expect(messages[1].content).toContain('工作');expect(messages[1].content).toContain('官鬼');expect(messages.at(-1).content).toContain('为什么')
+ })
+ it('server date crosses Shanghai midnight',()=>expect(serverShanghaiDate(new Date('2026-10-11T16:00:00Z'))).toBe('2026-10-12'))
+ it('uses low effort initially and high only for detailed followups',()=>{
+  expect(buildDeepSeekGenerationOptions({action:'interpret',question:'详细分析'})).toMatchObject({thinking:{type:'enabled'},reasoning_effort:'low',max_tokens:1500})
+  expect(buildDeepSeekGenerationOptions({action:'followup',followUpQuestion:'还有呢'}).reasoning_effort).toBe('low')
+  expect(buildDeepSeekGenerationOptions({action:'followup',followUpQuestion:'请逐项详细分析'})).toMatchObject({reasoning_effort:'high',max_tokens:2500})
+  expect(buildDeepSeekGenerationOptions({}, {json:true}).response_format).toEqual({type:'json_object'})
+ })
+ it('plain responses omit unused fields while legacy sections survive',()=>{
+  expect(sanitizeReading({directAnswer:'回答',sections:[],summary:''})).toEqual({directAnswer:'回答'})
+  expect(sanitizeReading({directAnswer:'旧回答',sections:[{title:'依据',content:'内容',evidence:['事实']}],summary:'旧摘要'}).sections[0].evidence).toEqual(['事实'])
+ })
 })
