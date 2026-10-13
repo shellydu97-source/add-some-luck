@@ -118,3 +118,21 @@ VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
 八字专业信息区分出现次数和加权分布，并说明虚岁和立春精确时刻交接；年支、日支神煞来源分别标记。六爻问题与分类必填，学业／考试取父母；感情按确认的性别建议用神，可在结果与新记录详情改选。判断只读冻结排盘，原始判断快照不随改选改变；改选字段参与版本同步与冲突检测。梅花增加体、互、变与月令卦气判断。今日页面展示个人流日结构并链接完整分析。
 
 新增规则版本、参考权重、五个手推案例与验收口径见 `docs/PHASE_2_RULES.md`。本阶段不新增依赖、服务端环境变量或 SQL；仍需按第一阶段顺序配置数据库后才能上线。当前只在本地分支完成，未推送、未部署。
+
+## 第三阶段：智能解读质量与交互
+
+四模块分别约束解释口径，引用固定排盘与本地 judgement，第一句回答问题，区分事实、规则推断、不确定性和现实建议。上海当前日期由服务端注入。首答 low、1500 tokens；普通追问 low、2500 tokens；详细追问 high。600 字截断已移除。默认模型仍为 deepseek-v4-flash，官方文档确认此兼容名现在映射到 deepseek-flash；可用 DEEPSEEK_MODEL 显式配置。
+
+网页优先使用 SSE 纯文本，支持停止生成；仅显示 answer content，不显示 reasoning_content。鉴权、校验和原子额度检查仍在生成前完成。非流式接口启用 JSON 模式并用 Zod 校验 basis 等字段，失败回退文本；旧记录的 summary/sections 继续兼容展示。
+
+首次发送前需要用户同意 DeepSeek 隐私说明。同意只保存在本机；未保存结果的 AI 回答留在草稿，只有手动保存时创建记录并带入完整解读。停止、断流或离开页面不会把部分回答当作完成结果保存。原问题为空时，后来补充的问题写 questionAddedLater，不修改原问题或排盘快照。记录摘要使用 directAnswer 第一句。
+
+上下文使用 src/ai/context.ts：八字不超过 12KB，其他模块不超过 8KB，只保留解释所需字段；追问消息中固定数据仅出现一次。旧牌义快照继续原样显示，发送给 AI 的塔罗牌义采用当前 RWS 数据。
+
+12 个手动评测案例见 server/ai-eval/README.md。离线命令不会调用 API：
+
+```sh
+node server/ai-eval/run.mjs --dry-run --output=artifacts/ai-eval/dry-run.json
+```
+
+真实运行需要进程环境中的 DEEPSEEK_API_KEY，并会消耗模型额度，不进入 CI。当前只通过模拟流式/组件测试和离线案例校验，尚未完成真实 DeepSeek 回答质量评测或线上 Cloudflare 验收。第三阶段没有新增 SQL 或依赖；部署时需要同时更新前端与共用 server 模块。

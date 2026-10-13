@@ -62,3 +62,11 @@ describe('AI panel privacy, streaming, save and followups',()=>{
   const saved=useAppStore.getState().records[0];expect(saved.question).toBeUndefined();expect(saved.questionAddedLater).toBe('后来补充的问题');expect(saved.rawResult).toEqual(r.rawResult)
  })
 })
+
+it('legacy structured saved answers remain visible without rewriting them',async()=>{
+ const record=createRecord({type:'tarot',question:'旧问题',rawResult:{fixed:'old cards'},interpretation:createBasicInterpretation('原始','')})
+ record.aiInterpretations=[{id:'legacy',module:'tarot',question:'旧问题',createdAt:'2026-10-01T04:00:00Z',provider:'deepseek',model:'old',promptVersion:'old',directAnswer:'旧回答',summary:'旧摘要',sections:[{title:'旧依据',content:'旧详细内容',evidence:['旧事实']}],uncertainty:['旧不确定说明'],advice:['旧建议'],suggestedQuestions:[]}]
+ useAppStore.setState({records:[record]});const before=JSON.stringify(record)
+ mount({recordId:record.id});expect(screen.getByText('旧回答')).toBeTruthy();expect(screen.getByText('旧摘要')).toBeTruthy();expect(screen.getByText('旧不确定说明')).toBeTruthy()
+ fireEvent.click(screen.getByText('查看已保存的详细分析'));expect(screen.getByText('旧详细内容')).toBeTruthy();expect(screen.getByText('旧事实')).toBeTruthy();expect(JSON.stringify(useAppStore.getState().records[0])).toBe(before)
+})
