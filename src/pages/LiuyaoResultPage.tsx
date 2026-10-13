@@ -1,5 +1,6 @@
+import LiuyaoJudgementCard from '../components/LiuyaoJudgementCard'
 import { buildLiuyaoContext } from '../ai/context'
-import { judgeLiuyao, USE_GOD_OPTIONS, type UseGod } from '../calculation/liuyao/judgement'
+import { judgeLiuyao } from '../calculation/liuyao/judgement'
 import { useNavigate } from 'react-router-dom'
 import {
   calculateLiuyao,
@@ -28,7 +29,10 @@ export default function LiuyaoResultPage() {
   const navigate = useNavigate()
   const store = useAppStore()
   const draft = getDraft(store, 'liuyao')
-  if (!draft || draft.state.casts.length !== 6 || !draft.state.locked || !draft.state.lockedAt) return <><TopBar title="六爻结果" back /><EmptyState title="原始六爻尚未锁定" action={<LinkButton to="/divination/liuyao/confirm">前往确认</LinkButton>}>确认六次原始结果后即可查看卦象。</EmptyState></>
+  if (!draft || draft.state.casts.length !== 6 || !draft.state.locked || !draft.state.lockedAt) return <>
+      <TopBar title="六爻结果" back />
+      <EmptyState title="原始六爻尚未锁定" action={<LinkButton to="/divination/liuyao/confirm">前往确认</LinkButton>}>确认六次原始结果后即可查看卦象。</EmptyState>
+      </>
   const activeDraft = draft
   const lockedAt = draft.state.castCompletedAt ?? draft.state.lockedAt
   const profile = activeDraft.profileId === GUEST_PROFILE_ID ? undefined : store.profiles.find((item) => item.id === activeDraft.profileId)
@@ -65,22 +69,17 @@ export default function LiuyaoResultPage() {
     engineVersion: result.engineVersion,
     adapterVersion: result.adapterVersion,
     ruleVersion: result.ruleVersion,
-    localInterpretation,
   }
 
   function recordInterpretation(): Interpretation {
     return {
       headline: judgement.tendency,
       conclusion: judgement.reasons.join('；'),
-      evidence: [...new Set([
-        ...localInterpretation.overview.evidence,
-        ...localInterpretation.movingLines.flatMap((line) => line.evidence),
-        ...localInterpretation.relationReadings.flatMap((reading) => reading.evidence),
-      ])],
-      support: [localInterpretation.summary.drivers],
-      conflicts: [localInterpretation.summary.resistance],
-      uncertainty: localInterpretation.uncertainty,
-      advice: [localInterpretation.summary.advice],
+      evidence: judgement.reasons,
+      support: [],
+      conflicts: judgement.auxiliaryFlags,
+      uncertainty: judgement.uncertainty,
+      advice: [judgement.advice],
     }
   }
 
@@ -108,35 +107,78 @@ export default function LiuyaoResultPage() {
 
   return <>
     <TopBar title="六爻结果" eyebrow="原始六爻已锁定" back action={<span className="chip">{subjectLabel}</span>} />
-    {activeDraft.question.trim() && <Card className="question-summary"><span>本次问题</span><p>{activeDraft.question}</p></Card>}
+    {activeDraft.question.trim() && <Card className="question-summary">
+      <span>本次问题</span>
+      <p>{activeDraft.question}</p>
+      </Card>}
     <Card className="hero-card result-hero">
-      <div className="card-kicker"><span>{result.movingLines.length ? '本卦 → 变卦' : '本卦'}</span>{querentGender && <span className="chip">占问者 · {querentGender === 'male' ? '男' : '女'}</span>}</div>
-      <h2><HexagramHelp hexagram={{ ...result.original, upper: result.upperTrigram, lower: result.lowerTrigram }} movingLines={result.movingLines} context="本次起卦最初得到的卦象；红色标记为本次动爻。" /></h2>
+      <div className="card-kicker">
+      <span>{result.movingLines.length ? '本卦 → 变卦' : '本卦'}</span>{querentGender && <span className="chip">占问者 · {querentGender === 'male' ? '男' : '女'}</span>}</div>
+      <h2>
+      <HexagramHelp hexagram={{ ...result.original, upper: result.upperTrigram, lower: result.lowerTrigram }} movingLines={result.movingLines} context="本次起卦最初得到的卦象；红色标记为本次动爻。" />
+      </h2>
       {result.movingLines.length ? <>
         <span className="result-arrow">↓</span>
-        <h2><HexagramHelp hexagram={{ ...result.changed, upper: result.changedUpperTrigram, lower: result.changedLowerTrigram }} context="本卦动爻变化后形成的卦象，用来观察变化方向。" /></h2>
+        <h2>
+      <HexagramHelp hexagram={{ ...result.changed, upper: result.changedUpperTrigram, lower: result.changedLowerTrigram }} context="本卦动爻变化后形成的卦象，用来观察变化方向。" />
+      </h2>
         <div className="chip-row">{result.movingLines.map((line) => <span className="chip" key={line}>第 {line} 爻动</span>)}</div>
       </> : <p className="no-moving-note">无动爻，变卦同本卦</p>}
     </Card>
 
-    <Card className="interpretation-card summary-reading"><SectionHeading title={judgement.tendency} /><ul className="plain-list">{judgement.reasons.map(reason => <li key={reason}>{reason}</li>)}</ul>
-      <label className="field"><span>用神（可改选）</span><select value={judgement.useGod.relation} onChange={e => { const value = e.target.value as UseGod; if (savedRecord) store.setLiuyaoUseGodOverride(savedRecord.id,value); store.upsertDraft({ ...activeDraft, state:{ ...activeDraft.state, useGodOverride:value } }) }}>{USE_GOD_OPTIONS.map(g => <option key={g}>{g}</option>)}</select></label><p>{judgement.advice}</p><p className="helper">{judgement.uncertainty}</p>
-      <details><summary>查看用神与动变依据</summary><p>来源：{judgement.useGod.source === 'hidden' ? '伏神' : '卦中现爻'}；{judgement.auxiliaryFlags.join('、') || '无特殊辅助标记'}</p><p>原神：{judgement.originGod?.element}，{judgement.originGod?.lines.map(l => `第${l.index}爻 ${l.state.season} ${l.state.dayRelation} ${l.state.flags.join('、')}`).join('；') || '卦中不现'}</p><p>忌神：{judgement.avoidGod?.element}，{judgement.avoidGod?.lines.map(l => `第${l.index}爻 ${l.state.season} ${l.state.dayRelation} ${l.state.flags.join('、')}`).join('；') || '卦中不现'}</p><ul>{judgement.movingEffects.map(e => <li key={e}>{e}</li>)}</ul><p>按《增删卜易》《卜筮正宗》通行口径；权重是参考模型，不能代替具体事情的现实条件。</p></details>
-    </Card>
+    <LiuyaoJudgementCard judgement={judgement} onOverride={value => {
+      if (savedRecord) store.setLiuyaoUseGodOverride(savedRecord.id,value)
+      store.upsertDraft({ ...activeDraft, state: { ...activeDraft.state, useGodOverride:value } })
+    }} />
 
     <AiReadingPanel key={activeDraft.id} module="liuyao" question={activeDraft.question} context={buildLiuyaoContext(result,{question:activeDraft.question,category:activeDraft.category,timeRange:activeDraft.state.timeRange,useGod:override,gender:querentGender,castAt:lockedAt,method:activeDraft.state.method,judgement})} draftId={activeDraft.id} category={activeDraft.category} timeRange={activeDraft.state.timeRange} useGod={judgement.useGod.relation} recordId={activeDraft.state.recordId} ensureRecord={ensureRecord} title="结合卦象回答你的问题" />
 
-    <details className="result-disclosure"><summary>查看基础排盘</summary>    <Card className="liuyao-key-card">
+    <details className="result-disclosure">
+      <summary>查看基础排盘</summary>    <Card className="liuyao-key-card">
       <SectionHeading title="排盘要点" />
       <div className="liuyao-key-grid">
-        <div><span>起卦时间</span><b>{formatDate(lockedAt, true)}</b></div>
-        <div><span>占问人物</span><b>{subjectLabel}</b></div>
-        <div><span><TermHelp term="月建" /></span><b>{result.calendar.monthBranch}</b></div>
-        <div><span><TermHelp term="日辰" /></span><b>{result.calendar.dayGanZhi}</b></div>
-        <div><span><TermHelp term="旬空" /></span><b>{result.calendar.xunKong}</b></div>
-        <div><span>卦宫</span><b>{hexagramPalaceLabel(result.original)} · {result.original.palaceElement}</b></div>
-        <div><span><TermHelp term="世爻" /></span><b>{shiLine ? `第 ${shiLine.index} 爻 · ${shiLine.relation}` : '—'}</b></div>
-        <div><span><TermHelp term="应爻" /></span><b>{yingLine ? `第 ${yingLine.index} 爻 · ${yingLine.relation}` : '—'}</b></div>
+        <div>
+      <span>起卦时间</span>
+      <b>{formatDate(lockedAt, true)}</b>
+      </div>
+        <div>
+      <span>占问人物</span>
+      <b>{subjectLabel}</b>
+      </div>
+        <div>
+      <span>
+      <TermHelp term="月建" />
+      </span>
+      <b>{result.calendar.monthBranch}</b>
+      </div>
+        <div>
+      <span>
+      <TermHelp term="日辰" />
+      </span>
+      <b>{result.calendar.dayGanZhi}</b>
+      </div>
+        <div>
+      <span>
+      <TermHelp term="旬空" />
+      </span>
+      <b>{result.calendar.xunKong}</b>
+      </div>
+        <div>
+      <span>卦宫</span>
+      <b>{hexagramPalaceLabel(result.original)} · {result.original.palaceElement}</b>
+      </div>
+        <div>
+      <span>
+      <TermHelp term="世爻" />
+      </span>
+      <b>{shiLine ? `第 ${shiLine.index} 爻 · ${shiLine.relation}` : '—'}</b>
+      </div>
+        <div>
+      <span>
+      <TermHelp term="应爻" />
+      </span>
+      <b>{yingLine ? `第 ${yingLine.index} 爻 · ${yingLine.relation}` : '—'}</b>
+      </div>
       </div>
       <div className="liuyao-compact-board" aria-label="六爻基础排盘">
         {[...result.lines].reverse().map((line) => <div className={`liuyao-compact-line ${line.moving ? 'is-moving' : ''}`} key={line.index}>
@@ -151,37 +193,80 @@ export default function LiuyaoResultPage() {
     </Card>
 
 </details>
-    <details className="result-disclosure"><summary>查看卦象、动爻与变化依据</summary><Card className="interpretation-card">
+    <details className="result-disclosure">
+      <summary>查看卦象、动爻与变化依据</summary>
+      <Card className="interpretation-card">
       <div className="reading-sections">
-        <section className="reading-section"><h3>本卦核心主题</h3><p>{localInterpretation.overview.coreTheme}</p></section>
-        <section className="reading-section"><h3>卦辞的现代中文解释</h3><blockquote className="hexagram-text">{result.original.judgment}</blockquote><p>{localInterpretation.overview.modernJudgment}</p></section>
-        <section className="reading-section"><h3>当前整体状态</h3><p>{localInterpretation.overview.overallState}</p><details className="reading-evidence"><summary>查看判断依据</summary><ul>{localInterpretation.overview.evidence.map((item) => <li key={item}>{item}</li>)}</ul></details></section>
+        <section className="reading-section">
+      <h3>本卦核心主题</h3>
+      <p>{localInterpretation.overview.coreTheme}</p>
+      </section>
+        <section className="reading-section">
+      <h3>卦辞的现代中文解释</h3>
+      <blockquote className="hexagram-text">{result.original.judgment}</blockquote>
+      <p>{localInterpretation.overview.modernJudgment}</p>
+      </section>
+        <section className="reading-section">
+      <h3>当前整体状态</h3>
+      <p>{localInterpretation.overview.overallState}</p>
+      <details className="reading-evidence">
+      <summary>查看判断依据</summary>
+      <ul>{localInterpretation.overview.evidence.map((item) => <li key={item}>{item}</li>)}</ul>
+      </details>
+      </section>
       </div>
       <h3 className="reading-subheading">动爻解读</h3>
       {localInterpretation.movingLines.length ? <div className="reading-sections">{localInterpretation.movingLines.map((line) => <section className="reading-section moving-line-reading" key={line.lineIndex}>
         <h3>第 {line.lineIndex} 爻</h3>
         <blockquote className="hexagram-text">{line.originalText}</blockquote>
-        <p><b>通俗解释：</b>{line.plainExplanation}</p>
-        <p><b>对整体方向的影响：</b>{line.impact}</p>
-        <details className="reading-evidence"><summary>查看判断依据</summary><ul>{line.evidence.map((item) => <li key={item}>{item}</li>)}</ul></details>
+        <p>
+      <b>通俗解释：</b>{line.plainExplanation}</p>
+        <p>
+      <b>对整体方向的影响：</b>{line.impact}</p>
+        <details className="reading-evidence">
+      <summary>查看判断依据</summary>
+      <ul>{line.evidence.map((item) => <li key={item}>{item}</li>)}</ul>
+      </details>
       </section>)}</div> : <p className="no-moving-note">无动爻，本次不单列动爻解释。</p>}
-      <div className="reading-clue"><b>主要变化线索</b><p>{localInterpretation.movingClue}</p></div>
-    </Card></details>
+      <div className="reading-clue">
+      <b>主要变化线索</b>
+      <p>{localInterpretation.movingClue}</p>
+      </div>
+    </Card>
+      </details>
 
-    <details className="result-disclosure"><summary>查看关系解读与专业排盘</summary>{localInterpretation.changeDirection && <Card className="interpretation-card">
+    <details className="result-disclosure">
+      <summary>查看关系解读与专业排盘</summary>{localInterpretation.changeDirection && <Card className="interpretation-card">
       <SectionHeading title="变卦方向" />
       <div className="reading-sections">
-        <section className="reading-section"><h3>发展方向</h3><p>{localInterpretation.changeDirection.direction}</p></section>
-        <section className="reading-section"><h3>本卦与变卦的关系</h3><p>{localInterpretation.changeDirection.relationship}</p><details className="reading-evidence"><summary>查看判断依据</summary><ul>{localInterpretation.changeDirection.evidence.map((item) => <li key={item}>{item}</li>)}</ul></details></section>
+        <section className="reading-section">
+      <h3>发展方向</h3>
+      <p>{localInterpretation.changeDirection.direction}</p>
+      </section>
+        <section className="reading-section">
+      <h3>本卦与变卦的关系</h3>
+      <p>{localInterpretation.changeDirection.relationship}</p>
+      <details className="reading-evidence">
+      <summary>查看判断依据</summary>
+      <ul>{localInterpretation.changeDirection.evidence.map((item) => <li key={item}>{item}</li>)}</ul>
+      </details>
+      </section>
       </div>
     </Card>}
 
     <Card className="interpretation-card">
       <SectionHeading title="排盘关系解读" />
-      <div className="rule-basis"><h3>规则依据</h3><ol>{localInterpretation.relationRules.map((rule) => <li key={rule}>{rule}</li>)}</ol></div>
+      <div className="rule-basis">
+      <h3>规则依据</h3>
+      <ol>{localInterpretation.relationRules.map((rule) => <li key={rule}>{rule}</li>)}</ol>
+      </div>
       <div className="reading-sections">{localInterpretation.relationReadings.map((reading) => <section className="reading-section" key={reading.title}>
-        <h3>{reading.title}</h3><p>{reading.content}</p>
-        <details className="reading-evidence"><summary>查看对应排盘字段</summary><ul>{reading.evidence.map((item, index) => <li key={`${reading.title}-${index}`}>{item}</li>)}</ul></details>
+        <h3>{reading.title}</h3>
+      <p>{reading.content}</p>
+        <details className="reading-evidence">
+      <summary>查看对应排盘字段</summary>
+      <ul>{reading.evidence.map((item, index) => <li key={`${reading.title}-${index}`}>{item}</li>)}</ul>
+      </details>
       </section>)}</div>
     </Card>
 
@@ -199,21 +284,96 @@ export default function LiuyaoResultPage() {
       <Card>
         <SectionHeading title="排盘信息" />
         <ul className="compact-list">
-          <li><span>本卦宫位</span><b>{hexagramPalaceLabel(result.original)} · {result.original.palaceElement}</b></li>
-          <li><span>变卦宫位</span><b>{hexagramPalaceLabel(result.changed)} · {result.changed.palaceElement}</b></li>
-          <li><span>本卦上卦 / 下卦</span><b>{result.upperTrigram.name} / {result.lowerTrigram.name}</b></li>
-          <li><span>变卦上卦 / 下卦</span><b>{result.changedUpperTrigram.name} / {result.changedLowerTrigram.name}</b></li>
-          <li><span><TermHelp term="月建" /></span><b>{result.calendar.monthBranch}</b></li>
-          <li><span><TermHelp term="日辰" /></span><b>{result.calendar.dayGanZhi}</b></li>
-          <li><span><TermHelp term="旬空" /></span><b>{result.calendar.xunKong}</b></li>
-          <li><span><TermHelp term="卦身" /></span><b>{result.guaShen.branch}{result.guaShen.presentAtLines.length ? ` · 现于第 ${result.guaShen.presentAtLines.join('、')} 爻` : ' · 不现于本卦六爻'}</b></li>
-          <li><span><TermHelp term="世身" /></span><b>{result.shiShen.branch} · 第 {result.shiShen.lineIndex} 爻</b></li>
-          <li><span>常用神煞</span><b>{result.shenSha.map((item) => `${item.name}${item.branch}${item.presentAtLines.length ? `（第${item.presentAtLines.join('、')}爻）` : ''}`).join(' · ')}</b></li>
+          <li>
+      <span>本卦宫位</span>
+      <b>{hexagramPalaceLabel(result.original)} · {result.original.palaceElement}</b>
+      </li>
+          <li>
+      <span>变卦宫位</span>
+      <b>{hexagramPalaceLabel(result.changed)} · {result.changed.palaceElement}</b>
+      </li>
+          <li>
+      <span>本卦上卦 / 下卦</span>
+      <b>{result.upperTrigram.name} / {result.lowerTrigram.name}</b>
+      </li>
+          <li>
+      <span>变卦上卦 / 下卦</span>
+      <b>{result.changedUpperTrigram.name} / {result.changedLowerTrigram.name}</b>
+      </li>
+          <li>
+      <span>
+      <TermHelp term="月建" />
+      </span>
+      <b>{result.calendar.monthBranch}</b>
+      </li>
+          <li>
+      <span>
+      <TermHelp term="日辰" />
+      </span>
+      <b>{result.calendar.dayGanZhi}</b>
+      </li>
+          <li>
+      <span>
+      <TermHelp term="旬空" />
+      </span>
+      <b>{result.calendar.xunKong}</b>
+      </li>
+          <li>
+      <span>
+      <TermHelp term="卦身" />
+      </span>
+      <b>{result.guaShen.branch}{result.guaShen.presentAtLines.length ? ` · 现于第 ${result.guaShen.presentAtLines.join('、')} 爻` : ' · 不现于本卦六爻'}</b>
+      </li>
+          <li>
+      <span>
+      <TermHelp term="世身" />
+      </span>
+      <b>{result.shiShen.branch} · 第 {result.shiShen.lineIndex} 爻</b>
+      </li>
+          <li>
+      <span>常用神煞</span>
+      <b>{result.shenSha.map((item) => `${item.name}${item.branch}${item.presentAtLines.length ? `（第${item.presentAtLines.join('、')}爻）` : ''}`).join(' · ')}</b>
+      </li>
         </ul>
-        <div className="professional-term-row"><span><TermHelp term="世爻" /></span><span><TermHelp term="应爻" /></span><span><TermHelp term="六亲" /></span><span><TermHelp term="六神" /></span><span><TermHelp term="伏神" /></span><span><TermHelp term="纳甲" /></span></div>
+        <div className="professional-term-row">
+      <span>
+      <TermHelp term="世爻" />
+      </span>
+      <span>
+      <TermHelp term="应爻" />
+      </span>
+      <span>
+      <TermHelp term="六亲" />
+      </span>
+      <span>
+      <TermHelp term="六神" />
+      </span>
+      <span>
+      <TermHelp term="伏神" />
+      </span>
+      <span>
+      <TermHelp term="纳甲" />
+      </span>
+      </div>
         <div className="table-scroll">
           <table className="professional-table">
-            <thead><tr><th>爻位</th><th>六神</th><th>伏神</th><th>本卦六亲</th><th>本卦纳甲</th><th>本卦世应</th><th>本卦</th><th>日月标记</th><th>变卦六亲</th><th>变卦纳甲</th><th>变卦世应</th><th>变卦</th><th>变卦日月标记</th></tr></thead>
+            <thead>
+      <tr>
+      <th>爻位</th>
+      <th>六神</th>
+      <th>伏神</th>
+      <th>本卦六亲</th>
+      <th>本卦纳甲</th>
+      <th>本卦世应</th>
+      <th>本卦</th>
+      <th>日月标记</th>
+      <th>变卦六亲</th>
+      <th>变卦纳甲</th>
+      <th>变卦世应</th>
+      <th>变卦</th>
+      <th>变卦日月标记</th>
+      </tr>
+      </thead>
             <tbody>{[...result.lines].reverse().map((line) => <tr key={line.index}>
               <td>{line.index}</td>
               <td>{line.spirit}</td>
@@ -232,9 +392,13 @@ export default function LiuyaoResultPage() {
           </table>
         </div>
       </Card>
-    </details></details>
+    </details>
+      </details>
 
     <Button className="copy-reading-button secondary" onClick={handleCopy}>复制完整排盘信息</Button>
-    <div className="button-row"><LinkButton to="/divination" secondary>返回占卜</LinkButton><Button onClick={saveRecord}>{activeDraft.state.recordId ? '查看已保存记录' : '保存到记录'}</Button></div>
+    <div className="button-row">
+      <LinkButton to="/divination" secondary>返回占卜</LinkButton>
+      <Button onClick={saveRecord}>{activeDraft.state.recordId ? '查看已保存记录' : '保存到记录'}</Button>
+      </div>
   </>
 }

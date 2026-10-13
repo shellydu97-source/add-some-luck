@@ -7,7 +7,7 @@ export interface SimpleProfileFields {
   useTrueSolarTime?: Profile['useTrueSolarTime']
   dayBoundaryRule?: Profile['dayBoundaryRule']
   name: string
-  gender: Gender
+  gender: Gender | undefined
   calendarType: CalendarType
   rawBirthDate: string
   lunarLeapMonth: boolean
@@ -61,7 +61,7 @@ export function getSimpleProfileFields(profile?: Profile): SimpleProfileFields {
     useTrueSolarTime: source.useTrueSolarTime,
     dayBoundaryRule: source.dayBoundaryRule,
     name: source.name,
-    gender: source.gender,
+    gender: profile?.gender,
     calendarType: source.calendarType,
     rawBirthDate: source.rawBirthDate,
     lunarLeapMonth: source.lunarLeapMonth,
@@ -73,6 +73,7 @@ export function getSimpleProfileFields(profile?: Profile): SimpleProfileFields {
 }
 
 export function buildProfileInput(fields: SimpleProfileFields, existing?: Profile): ProfileInput {
+  if (!fields.gender) throw new Error('请选择性别')
   const base = existing ? profileInputFromExisting(existing) : { ...NEW_PROFILE_DEFAULTS }
   const enteredTime = fields.rawBirthTime.trim()
   const visibleTime = fields.unknownBirthTime || !enteredTime ? '' : enteredTime

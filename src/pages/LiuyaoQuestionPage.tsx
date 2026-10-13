@@ -1,3 +1,4 @@
+import UnfinishedFlowPrompt from '../components/UnfinishedFlowPrompt'
 import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { LIUYAO_COIN_CONVENTION_VERSION } from '../calculation/liuyao'
@@ -12,6 +13,11 @@ import { GUEST_PROFILE_ID } from '../utils/record'
 import { getRequestedDraft } from '../utils/draftEntry'
 
 export default function LiuyaoQuestionPage() {
+  const location = useLocation()
+  return <QuestionContent key={location.key} />
+}
+
+function QuestionContent() {
   const navigate = useNavigate()
   const location = useLocation()
   const store = useAppStore()
@@ -55,11 +61,12 @@ export default function LiuyaoQuestionPage() {
       temporarySubject: selectedProfile ? undefined : { name: temporaryName.trim() || undefined, gender: temporaryGender },
       state: { querentGender: selectedProfile?.gender ?? temporaryGender, coinConventionVersion: LIUYAO_COIN_CONVENTION_VERSION, timeRange: timeRange.trim(), casts: [], locked: false },
     }
-    store.upsertDraft(draft)
+    store.upsertDraft(resumed ? { ...draft, id: resumed.id, createdAt: resumed.createdAt, randomSeed: resumed.randomSeed, state: resumed.state, ai: resumed.ai } : draft)
     navigate('/divination/liuyao/cast')
   }
 
   return <>
+    <UnfinishedFlowPrompt draft={previous} resumed={resumed} />
     <TopBar title="六爻占问" eyebrow="第 1 步 · 明确问题" back />
     <ConfidenceNote>一事一占；想清楚再起卦；同一件事短期内不要反复占。</ConfidenceNote>
     <Card>

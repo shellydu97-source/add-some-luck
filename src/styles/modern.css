@@ -41,7 +41,7 @@ button, input, select, textarea { accent-color: var(--blue); }
 }
 
 .app-shell { background: transparent; }
-.page-container { width: min(100%, 760px); padding: 0 18px 38px; }
+.page-container { width: min(100%, 760px); padding: 0 18px calc(98px + env(safe-area-inset-bottom)); }
 .top-bar { min-height: 88px; padding: 23px 0 15px; }
 .top-bar h1 { font-size: clamp(24px, 6vw, 30px); font-weight: 750; letter-spacing: -.035em; }
 .eyebrow { color: var(--muted); font-size: 11px; letter-spacing: .02em; }
@@ -334,3 +334,6 @@ button, input, select, textarea { accent-color: var(--blue); }
   .result-line { grid-template-columns: 58px minmax(0,1fr) 72px; }
   .top-actions-inline { gap: 5px; }
 }
+
+.flow-confirm-backdrop { position: fixed; inset: 0; z-index: 100; background: #17253b77; display: grid; align-items: center; padding: 20px; }
+.flow-confirm-backdrop > .card { max-width: 520px; width: 100%; margin: auto; }

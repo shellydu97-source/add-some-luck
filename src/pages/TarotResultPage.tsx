@@ -1,3 +1,4 @@
+import { TAROT_CALCULATION_METADATA } from '../calculation/tarotVersions'
 import { buildTarotContext } from '../ai/context'
 import { useNavigate } from 'react-router-dom'
 import { getTarotCard, spreadPositions } from '../calculation/tarotMock'
@@ -47,6 +48,7 @@ export default function TarotResultPage() {
   })
   const localInterpretation = createTarotSpreadInterpretation(spread, cards)
   const rawResult = {
+    ...TAROT_CALCULATION_METADATA,
     spread,
     drawMode: activeDraft.state.drawMode,
     sessionId: activeDraft.randomSeed,

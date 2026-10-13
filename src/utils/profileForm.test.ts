@@ -39,19 +39,19 @@ describe('简化人物表单数据合并', () => {
     expect(newFields.unknownBirthTime).toBe(false)
     const input = buildProfileInput({
       ...newFields,
-      name: '新人物',
+      gender: 'male', name: '新人物',
       rawBirthDate: '2000/01/02',
       birthPlaceText: '上海市',
     })
     expect(input).toMatchObject({
-      name: '新人物', relation: 'self', notes: '', timezone: '', daylightSavingStatus: 'unknown',
+      gender: 'male', name: '新人物', relation: 'self', notes: '', timezone: '', daylightSavingStatus: 'unknown',
       timeAccuracy: 'unknown', normalizationStatus: 'unprocessed', useTrueSolarTime: 'system_default',
     })
   })
 
   it('确认城市后保存坐标、来源、版本和固定时区', () => {
     const input = buildProfileInput({
-      ...getSimpleProfileFields(), name: '上海人物', rawBirthDate: '2000/01/02',
+      ...getSimpleProfileFields(), gender: 'male', name: '上海人物', rawBirthDate: '2000/01/02',
       birthPlaceText: confirmedShanghai.canonicalName, birthLocation: confirmedShanghai,
     })
     expect(input).toMatchObject({
@@ -89,3 +89,5 @@ describe('简化人物表单数据合并', () => {
     expect(input.birthPlaceText).toBe('杭州市')
   })
 })
+
+it("新表单性别未选且必填，旧人物性别不变",()=>{expect(getSimpleProfileFields().gender).toBeUndefined();expect(()=>buildProfileInput(getSimpleProfileFields())).toThrow("请选择性别");expect(getSimpleProfileFields(oldProfile).gender).toBe("female")})

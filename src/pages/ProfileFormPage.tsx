@@ -30,6 +30,7 @@ export default function ProfileFormPage() {
   try { needsDst = correctBirthTime(buildProfileInput(form, existing)).requiresDaylightSavingChoice } catch { /* date validation occurs on save */ }
 
   function save() {
+    if (!form.gender) { setError('请选择性别'); return }
     if (!form.name.trim()) { setError('请填写姓名或昵称'); return }
     const birthError = validateDateInput(form.rawBirthDate, {
       calendarType: form.calendarType,
@@ -60,7 +61,7 @@ export default function ProfileFormPage() {
       </label>
 
       <fieldset className="field fieldset">
-        <legend>性别</legend>
+        <legend>性别 *</legend>
         <div className="radio-grid">
           {([['female', '女'], ['male', '男']] as [Gender, string][]).map(([value, label]) => <label className="radio-option" key={value}>
             <input type="radio" checked={form.gender === value} onChange={() => update('gender', value)} />{label}

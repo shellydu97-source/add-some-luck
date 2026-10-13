@@ -42,7 +42,7 @@ export const safeLocalStorage: StateStorage = {
     }
   },
   setItem(name, value) {
-    if (blockedNames.has(name)) throw new Error('本地数据处于保护状态，请先导出原始数据或明确重置。')
+    if (blockedNames.has(name)) return
     window.localStorage.setItem(name, value)
   },
   removeItem(name) {

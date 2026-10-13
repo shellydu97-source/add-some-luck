@@ -1,3 +1,4 @@
+import { decompressSnapshot } from '../utils/snapshotCodec'
 import { z } from 'zod'
 
 const confirmedBirthLocationSchema = z.object({
@@ -23,7 +24,12 @@ const recordSchema = z.object({
   liuyaoUseGodOverride: z.enum(['父母','兄弟','子孙','妻财','官鬼','世爻','应爻']).optional(),
   metaUpdatedAt: z.string().datetime().optional(),
   id: z.string().min(1), type: z.enum(['bazi', 'astrology', 'liuyao', 'meihua', 'tarot']), profileId: z.string(),
-  profileNameSnapshot: z.string(), createdAt: z.string(), rawResult: z.record(z.string(), z.unknown()),
+  profileNameSnapshot: z.string(), createdAt: z.string(), rawResult: z.record(z.string(), z.unknown()).superRefine((value, ctx) => {
+    if (value.snapshotFormat === 'lz77-json-1') {
+      try { const decoded = JSON.parse(decompressSnapshot(String(value.data))); if (!decoded || typeof decoded !== 'object') throw new Error('无效快照') }
+      catch { ctx.addIssue({ code: 'custom', message: '保存的快照编码无效' }) }
+    }
+  }),
   calculationVersion: z.string(), ruleVersion: z.string(), interpretation: z.object({
     headline: z.string(), conclusion: z.string(), evidence: z.array(z.string()), support: z.array(z.string()),
     conflicts: z.array(z.string()), uncertainty: z.string(), advice: z.array(z.string()),

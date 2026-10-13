@@ -1,3 +1,4 @@
+import { readSnapshot } from '../utils/snapshot'
 import { activeBaziYear,calculateBaziFlowDate,getSolarTermDateTime,analyzeBaziNatal, type BaziCalculationSuccess,type BaziNatalAnalysis } from '../calculation/bazi'
 import { calculateLiuyao } from '../calculation/liuyao'
 import { judgeLiuyao,type UseGod,type LiuyaoJudgement } from '../calculation/liuyao/judgement'
@@ -40,7 +41,7 @@ export function buildTarotContext(spread:TarotSpread,cards:TarotReadingCard[],dr
   return {contextVersion:CONTEXT_VERSION,spread,drawnAt,cards:cards.map(({id,nameZh,orientation,position,basicMeaning})=>({id,nameZh,orientation,position,basicMeaning}))}
 }
 export function buildRecordContext(record:DivinationRecord):Record<string,unknown> {
-  const raw=record.rawResult
+  const raw=readSnapshot(record.rawResult)
   if(record.type==='bazi' && (raw.result as BaziCalculationSuccess)?.ok) return buildBaziContext(raw.result as BaziCalculationSuccess)
   if(record.type==='tarot' && Array.isArray(raw.cards)) {
     // Upgrade only the AI context to current RWS meanings; never rewrite saved old card meanings.

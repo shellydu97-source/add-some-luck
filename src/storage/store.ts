@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
 import type { AiConversationMessage, AiInterpretationSnapshot, AppDataState, DivinationDraft, FollowUpMessage, PrimaryNav, Profile, RecordSnapshot, VerificationStatus } from '../models/types'
+import { appDataSchema } from './schema'
 import { makeId } from '../utils/id'
 import { normalizeQuestion } from '../utils/text'
 import { migrateToV12 } from './migrations'
@@ -73,7 +74,7 @@ export const useAppStore = create<AppState>()(persist((set, get) => ({
   notice: '', storageRecovery: undefined, hasHydrated: false,
   setNotice: (notice) => set({ notice }),
   dismissStorageRecovery: () => set({ storageRecovery: undefined }),
-  finishHydration: () => set({ hasHydrated: true }),
+  finishHydration: () => set(state => ({ hasHydrated: true, activeProfileId: state.profiles.find(p => p.isDefault)?.id ?? state.profiles[0]?.id ?? '' })),
   setLastPrimaryRoute: (lastPrimaryRoute) => set({ lastPrimaryRoute }),
   setReduceMotion: (reduceMotion) => set({ reduceMotion }),
   setActiveProfile: (activeProfileId) => set({ activeProfileId }),
@@ -102,7 +103,8 @@ export const useAppStore = create<AppState>()(persist((set, get) => ({
       activeProfileId = profiles[0].id
       notice += ` ${profiles[0].name}已自动设为默认人物。`
     }
-    return { profiles, activeProfileId, notice, tombstones: { ...state.tombstones, profiles: { ...state.tombstones.profiles, [id]: new Date().toISOString() } } }
+    const deletedDrafts = state.drafts.filter(d => d.profileId === id)
+    return { profiles, activeProfileId, notice, drafts: state.drafts.filter(d => d.profileId !== id), tombstones: { ...state.tombstones, drafts: { ...state.tombstones.drafts, ...Object.fromEntries(deletedDrafts.map(d => [d.id, new Date().toISOString()])) }, profiles: { ...state.tombstones.profiles, [id]: new Date().toISOString() } } }
   }),
   setDefaultProfile: (id) => set((state) => ({
     profiles: state.profiles.map((item) => ({ ...item, isDefault: item.id === id, updatedAt: item.isDefault !== (item.id === id) ? new Date().toISOString() : item.updatedAt })), activeProfileId: id,
@@ -175,12 +177,15 @@ export const useAppStore = create<AppState>()(persist((set, get) => ({
     return get().records.find((record) => record.profileId === profileId && record.type === type
       && normalizeQuestion(record.question ?? '') === normalized && new Date(record.createdAt).getTime() >= limit)
   },
-  upsertDraft: (draft) => set((state) => ({
+  upsertDraft: (draft) => {
+    if (!['bazi','astrology'].includes(draft.type) && get().drafts.some(d => d.type === draft.type && d.id !== draft.id && !d.state.recordId)) throw new Error('请先继续或放弃上次流程')
+    set((state) => ({
     tombstones: { ...state.tombstones, drafts: { ...state.tombstones.drafts, ...Object.fromEntries(state.drafts.filter((item) => item.type === draft.type && item.id !== draft.id && (!['bazi','astrology'].includes(draft.type) || item.profileId === draft.profileId)).map((item) => [item.id, new Date().toISOString()])) } },
     drafts: state.drafts.some((item) => item.id === draft.id)
       ? state.drafts.map((item) => item.id === draft.id ? clone({ ...draft, updatedAt: new Date().toISOString() }) : item)
       : [clone(draft), ...state.drafts.filter((item) => item.type !== draft.type || ['bazi','astrology'].includes(draft.type) && item.profileId !== draft.profileId)],
-  })),
+  }))
+  },
   deleteDraft: (id) => set((state) => ({ tombstones: { ...state.tombstones, drafts: { ...state.tombstones.drafts, [id]: new Date().toISOString() } }, drafts: state.drafts.filter((item) => item.id !== id), notice: '未完成流程已删除。' })),
   replaceAllData: (data) => {
     resetProtectedStorage(STORAGE_KEY)
@@ -203,6 +208,14 @@ export const useAppStore = create<AppState>()(persist((set, get) => ({
     catch (error) {
       protectStorageAfterMigrationFailure(STORAGE_KEY, `V1.2 数据迁移失败，旧数据未被覆盖：${error instanceof Error ? error.message : '未知错误'}`)
       throw error
+    }
+  },
+  merge: (persisted, current) => {
+    if (persisted === undefined) return current
+    try { appDataSchema.parse(persisted); return { ...current, ...(persisted as AppDataState) } }
+    catch (error) {
+      protectStorageAfterMigrationFailure(STORAGE_KEY, `本地数据校验失败，原数据已保护：${error instanceof Error ? error.message : '未知错误'}`)
+      return { ...current, storageRecovery: getStorageRecoveryInfo() }
     }
   },
   partialize: (state) => ({

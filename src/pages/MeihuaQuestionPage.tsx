@@ -1,3 +1,4 @@
+import UnfinishedFlowPrompt from '../components/UnfinishedFlowPrompt'
 import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import TopBar from '../components/TopBar'
@@ -11,6 +12,11 @@ import { GUEST_PROFILE_ID } from '../utils/record'
 import { getRequestedDraft } from '../utils/draftEntry'
 
 export default function MeihuaQuestionPage() {
+  const location = useLocation()
+  return <QuestionContent key={location.key} />
+}
+
+function QuestionContent() {
   const navigate = useNavigate()
   const location = useLocation()
   const store = useAppStore()
@@ -41,11 +47,12 @@ export default function MeihuaQuestionPage() {
       temporarySubject: selectedProfile ? undefined : { name: temporaryName.trim() || undefined },
       state: { method: 'time', locked: false },
     }
-    store.upsertDraft(draft)
+    store.upsertDraft(resumed ? { ...draft, id: resumed.id, createdAt: resumed.createdAt, randomSeed: resumed.randomSeed, state: resumed.state, ai: resumed.ai } : draft)
     navigate('/divination/meihua/cast')
   }
 
   return <>
+    <UnfinishedFlowPrompt draft={previous} resumed={resumed} />
     <TopBar title="梅花易数" eyebrow="第 1 步 · 问题选填" back />
     <ConfidenceNote>可以围绕一件具体的事起卦；问题留空也可以，结果会按本次数字与卦象保存。</ConfidenceNote>
     <Card>

@@ -1,18 +1,11 @@
 import type { Interpretation, Profile, RecordSnapshot, RecordType, TemporarySubject } from '../models/types'
+import { compactSnapshot } from './snapshot'
 import { makeId } from './id'
 
 export const GUEST_PROFILE_ID = 'guest'
 
 function clone<T>(value: T): T {
   return typeof structuredClone === 'function' ? structuredClone(value) : JSON.parse(JSON.stringify(value)) as T
-}
-
-const ruleVersions: Record<RecordType, string> = {
-  bazi: 'bazi-frozen-v1',
-  astrology: 'astrology-frozen-v1',
-  liuyao: 'three-coins-yin-2-yang-3-najia-eight-palaces-1.2.0',
-  meihua: 'xiantian-time-numbers-text-object-sound-1.2.0',
-  tarot: 'web-crypto-fisher-yates-1.0.0',
 }
 
 export function createRecord(input: {
@@ -24,6 +17,8 @@ export function createRecord(input: {
   rawResult: Record<string, unknown>
   interpretation: Interpretation
 }): RecordSnapshot {
+  const computed = (input.rawResult.result ?? input.rawResult) as Record<string, unknown>
+  const version = (key: string) => typeof computed[key] === 'string' ? computed[key] as string : 'unversioned'
   const question = input.question?.trim() || undefined
   const category = input.category?.trim() || undefined
   const temporaryName = input.temporarySubject?.name?.trim()
@@ -37,9 +32,9 @@ export function createRecord(input: {
       timeAccuracy: 'unknown', normalizationStatus: 'unprocessed',
     },
     subjectType: isTemporary ? 'temporary' : 'profile',
-    question, category, createdAt: new Date().toISOString(), rawResult: clone(input.rawResult),
-    calculationVersion: `${input.type}-calculation-1.0.0`, ruleVersion: input.type === 'bazi' && typeof (input.rawResult.result as { ruleVersion?: string })?.ruleVersion === 'string' ? (input.rawResult.result as { ruleVersion: string }).ruleVersion : ruleVersions[input.type], interpretationVersion: 'basic-meaning-1.0.0',
-    interpretation: clone(input.interpretation), followUpMessages: [], aiInterpretations: [], aiMessages: [],
+    question, category, createdAt: new Date().toISOString(), rawResult: input.type === 'liuyao' || input.type === 'meihua' ? compactSnapshot({ ...clone(input.rawResult), savedInterpretation: clone(input.interpretation) }) : clone(input.rawResult),
+    calculationVersion: version('calculationVersion') !== 'unversioned' ? version('calculationVersion') : version('adapterVersion'), ruleVersion: version('ruleVersion'), interpretationVersion: 'basic-meaning-1.0.0',
+    interpretation: input.type === 'liuyao' || input.type === 'meihua' ? createBasicInterpretation(input.interpretation.headline, '') : clone(input.interpretation), followUpMessages: [], aiInterpretations: [], aiMessages: [],
     verificationStatus: 'pending', verificationResult: '',
     verificationNote: '', verificationDate: '', mood: '', expectation: '', notes: '',
   }
