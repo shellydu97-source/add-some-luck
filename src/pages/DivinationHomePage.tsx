@@ -18,7 +18,7 @@ export default function DivinationHomePage() {
   return <div className="divination-home-page">
       <header className="home-brand-bar">
         <Link className="brand-lockup" to="/divination" aria-label="加点好运占卜首页">
-          <img src="/brand-mark.png" alt="" />
+          <picture><source srcSet="/brand-mark.webp" type="image/webp" /><img src="/brand-mark.png" alt="" /></picture>
           <b>加点好运</b>
         </Link>
         <PersonSwitcher compact />
