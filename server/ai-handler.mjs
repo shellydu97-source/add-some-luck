@@ -1,5 +1,6 @@
+import { sseEvent } from './sse.mjs'
 import { PROMPT_VERSION, validateAiRequest } from './ai-core.mjs'
-import { requestDeepSeek } from './deepseek-client.mjs'
+import { requestDeepSeek, openDeepSeekStream } from './deepseek-client.mjs'
 import { AiError } from './ai-errors.mjs'
 
 const counters = new Map()
@@ -85,11 +86,41 @@ export async function handleAiChat(request, env, deps = {}) {
       if (!quota.ok) throw new AiError(503, '智能解读限额服务暂不可用')
       if (await quota.json() !== true) throw new AiError(429, '今天的智能解读额度已用完，请明天再试')
     }
-    const result = await (deps.generate ?? requestDeepSeek)(input, c)
+    const meta = { provider:'deepseek',model:c.model,promptVersion:PROMPT_VERSION }
+    if (input.stream) {
+      const source = await (deps.openStream ?? openDeepSeekStream)(input,c,{signal:request.signal})
+      const iterator = source.events[Symbol.asyncIterator]()
+      const encoder = new TextEncoder()
+      let closed = false, heartbeat
+      const finish = () => {closed=true;clearInterval(heartbeat)}
+      const stream = new ReadableStream({
+        start(controller) {
+          controller.enqueue(encoder.encode(': connected\n\n'))
+          heartbeat=setInterval(()=>{if(!closed)controller.enqueue(encoder.encode(': keep-alive\n\n'))},15000)
+        },
+        async pull(controller) {
+          if(closed) return
+          try {
+            const {value,done}=await iterator.next()
+            if(closed) return
+            if(done) {finish();controller.close();return}
+            if(value.type==='done') {controller.enqueue(encoder.encode(sseEvent('done',{reading:value.reading,usage:value.usage,meta})));finish();controller.close();await iterator.return?.()}
+            else controller.enqueue(encoder.encode(sseEvent('delta',{text:value.text})))
+          } catch(error) {
+            if(closed) return
+            const message=error?.name==='TimeoutError' || error?.name==='AbortError' ? '智能解读响应超时，请重试' : error instanceof AiError ? error.message : '智能解读连接中断，请重试'
+            controller.enqueue(encoder.encode(sseEvent('error',{error:message})));finish();controller.close()
+          }
+        },
+        async cancel() {finish();source.cancel();await iterator.return?.()},
+      })
+      return new Response(stream,{headers:{'Content-Type':'text/event-stream; charset=utf-8','Cache-Control':'no-store, no-transform','X-Content-Type-Options':'nosniff','X-Accel-Buffering':'no'}})
+    }
+    const result = await (deps.generate ?? requestDeepSeek)(input, c, {signal:request.signal})
     return json({ ...result, meta: { provider: 'deepseek', model: c.model, promptVersion: PROMPT_VERSION } })
   } catch (error) {
     const status = error instanceof AiError ? error.status : 502
-    const message = error instanceof AiError ? error.message : error?.name === 'AbortError' ? '智能解读响应超时，请稍后重试' : '智能解读暂时不可用'
+    const message = error instanceof AiError ? error.message : ['AbortError','TimeoutError'].includes(error?.name) ? '智能解读响应超时，请稍后重试' : '智能解读暂时不可用'
     return json({ error: message }, status)
   }
 }

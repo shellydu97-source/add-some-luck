@@ -1,3 +1,4 @@
+import { buildRecordContext } from '../ai/context'
 import SavedJudgement from '../components/SavedJudgement'
 import { useState } from 'react'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
@@ -93,18 +94,6 @@ function SnapshotResult({ record }: { record: DivinationRecord }) {
   return <GenericRawResult data={record.rawResult} />
 }
 
-function aiContextForRecord(record: DivinationRecord): Record<string, unknown> {
-  if (record.type === 'tarot') {
-    const { spread, drawMode, cards } = record.rawResult
-    return { spread, drawMode, cards, drawnAt: record.createdAt }
-  }
-  if (record.type === 'liuyao') {
-    const { method, querentGender, lockedAt, castCompletedAt, coinTosses, original, changed, movingLines, lines, calendar, lowerTrigram, upperTrigram, changedLowerTrigram, changedUpperTrigram, guaShen, shiShen, shenSha } = record.rawResult
-    return { method, querentGender, castAt: castCompletedAt ?? lockedAt, coinTosses, original, changed, movingLines, lines, calendar, lowerTrigram, upperTrigram, changedLowerTrigram, changedUpperTrigram, guaShen, shiShen, shenSha }
-  }
-  return record.rawResult
-}
-
 export default function RecordDetailPage() {
   const { recordId } = useParams()
   const record = useAppStore((state) => state.records.find((item) => item.id === recordId))
@@ -136,9 +125,9 @@ function RecordDetailContent({ record }: { record: DivinationRecord }) {
   return <>
     <TopBar title="记录详情" eyebrow={`${recordTypeLabels[record.type]} · ${formatDate(record.createdAt, true)}`} back />
     <ConfidenceNote>保存后的原始问题、人物信息及牌面或卦象不会改变；验证结果与备注可以继续更新。</ConfidenceNote>
-    <Card><div className="card-kicker"><span>原始问题</span>{record.category && <span className="chip">{record.category}</span>}</div><h2>{record.question || '未填写问题'}</h2><ul className="compact-list record-meta"><li><span>当时人物</span><b>{record.profileNameSnapshot}</b></li>{accuracy && (record.type === 'bazi' || record.type === 'astrology') && <li><span>出生时间可信度</span><b>{accuracyLabels[accuracy]}</b></li>}<li><span>创建时间</span><b>{formatDate(record.createdAt, true)}</b></li></ul></Card>
+    <Card><div className="card-kicker"><span>原始问题</span>{record.category && <span className="chip">{record.category}</span>}</div><h2>{record.question || '未填写问题'}</h2>{!record.question && record.questionAddedLater && <p>后来补充的问题：{record.questionAddedLater}</p>}<ul className="compact-list record-meta"><li><span>当时人物</span><b>{record.profileNameSnapshot}</b></li>{accuracy && (record.type === 'bazi' || record.type === 'astrology') && <li><span>出生时间可信度</span><b>{accuracyLabels[accuracy]}</b></li>}<li><span>创建时间</span><b>{formatDate(record.createdAt, true)}</b></li></ul></Card>
     <SavedJudgement record={record} />
-    <AiReadingPanel module={record.type} question={record.question} context={aiContextForRecord(record)} recordId={record.id} ensureRecord={() => record.id} allowQuestionInput={!record.question} title="继续查看和追问" />
+    <AiReadingPanel module={record.type} question={record.question || record.questionAddedLater} context={buildRecordContext(record)} category={record.category} timeRange={record.rawResult.timeRange as string | undefined} useGod={record.liuyaoUseGodOverride} recordId={record.id} ensureRecord={() => record.id} allowQuestionInput={!record.question} title="继续查看和追问" />
     <Card><SectionHeading title="结果追踪" side={<span className="chip">{verificationLabels[verificationStatus]}</span>} /><div className="verification-grid">{verificationOptions.map(([value, label]) => <label className="radio-option" key={value}><input type="radio" checked={verificationStatus === value} onChange={() => setStatus(value)} />{label}</label>)}</div><DatePicker label="验证日期" value={verificationDate} onChange={setVerificationDate} allowFuture /><label className="field"><span>实际结果</span><textarea rows={3} value={verificationResult} onChange={(event) => setVerificationResult(event.target.value)} placeholder="记录后来实际发生了什么" /></label><label className="field"><span>用户备注</span><textarea rows={3} value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="其他需要保留的信息" /></label><Button onClick={saveMeta}>保存追踪信息</Button></Card>
     <details className="result-disclosure"><summary>查看原始牌面或卦象</summary><Card><SnapshotResult record={record} /></Card></details>
     <div className="record-danger-zone"><Button className="danger" onClick={removeRecord}>删除这条记录</Button></div>

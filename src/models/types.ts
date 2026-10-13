@@ -92,11 +92,13 @@ export interface AiReadingSection {
 
 export interface AiReading {
   directAnswer: string
-  summary: string
-  sections: AiReadingSection[]
-  uncertainty: string[]
-  advice: string[]
-  suggestedQuestions: string[]
+  basis?: string[]
+  summary?: string
+  sections?: AiReadingSection[]
+  uncertainty?: string[]
+  advice?: string[]
+  suggestedQuestions?: string[]
+  incomplete?: boolean
 }
 
 export interface AiUsageSnapshot {
@@ -237,7 +239,14 @@ export interface TarotDraftState {
   legacyImported?: boolean
 }
 
+export interface AiDraftContent {
+  question?: string
+  interpretations: AiInterpretationSnapshot[]
+  messages: AiConversationMessage[]
+}
+
 interface DraftBase {
+  ai?: AiDraftContent
   id: string
   profileId: string
   question: string
@@ -263,7 +272,9 @@ export interface MeihuaDraft extends DraftBase {
   state: MeihuaDraftState
 }
 
-export type DivinationDraft = LiuyaoDraft | MeihuaDraft | TarotDraft
+export interface BaziAiDraft extends DraftBase { type: 'bazi'; state: { locked: boolean; recordId?: string } }
+export interface AstrologyAiDraft extends DraftBase { type: 'astrology'; state: { locked: boolean; recordId?: string } }
+export type DivinationDraft = LiuyaoDraft | MeihuaDraft | TarotDraft | BaziAiDraft | AstrologyAiDraft
 
 export interface Tombstones {
   profiles: Record<string, string>

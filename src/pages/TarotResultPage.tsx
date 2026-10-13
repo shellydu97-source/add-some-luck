@@ -1,3 +1,4 @@
+import { buildTarotContext } from '../ai/context'
 import { useNavigate } from 'react-router-dom'
 import { getTarotCard, spreadPositions } from '../calculation/tarotMock'
 import { buildTarotCopyText, createTarotSpreadInterpretation, getTarotElement } from '../calculation/tarotInterpretation'
@@ -75,8 +76,7 @@ export default function TarotResultPage() {
     const existing = activeDraft.state.recordId && store.records.find((record) => record.id === activeDraft.state.recordId)
     if (existing) return existing.id
     const created = createRecord({ profile, temporarySubject: activeDraft.temporarySubject, type: 'tarot', question: activeDraft.question, category: activeDraft.category, rawResult, interpretation: recordInterpretation() })
-    store.createRecordSnapshot(created)
-    store.upsertDraft({ ...activeDraft, state: { ...activeDraft.state, recordId: created.id } })
+    store.createRecordSnapshot(created,activeDraft.id)
     return created.id
   }
 
@@ -104,7 +104,7 @@ export default function TarotResultPage() {
       <p className="fact-boundary">这是牌阵与固定牌义形成的基础答案，不需要调用智能解读。点击每张牌可以继续查看对应位置、关键词和基础牌义。</p>
     </Card>
 
-    <AiReadingPanel key={activeDraft.id} module="tarot" question={activeDraft.question} context={{ spread, drawnAt: activeDraft.createdAt, cards }} recordId={activeDraft.state.recordId} ensureRecord={ensureRecord} title="结合这组牌回答你的问题" />
+    <AiReadingPanel key={activeDraft.id} module="tarot" question={activeDraft.question} context={buildTarotContext(spread,cards,activeDraft.createdAt)} draftId={activeDraft.id} category={activeDraft.category} recordId={activeDraft.state.recordId} ensureRecord={ensureRecord} title="结合这组牌回答你的问题" />
 
     <details className="result-disclosure"><summary>查看牌阵基础分析</summary><Card className="interpretation-card">
       <p className="reading-intro">{localInterpretation.summary}</p>

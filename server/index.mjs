@@ -5,6 +5,7 @@ import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 import { aiHealth, handleAiChat, nodeClientIp } from './ai-handler.mjs'
 import { Readable } from 'node:stream'
+import { sendWebResponse } from './node-response.mjs'
 import { readConfig } from './config.mjs'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
@@ -40,10 +41,12 @@ async function handleApi(request, response, url) {
   if (url.pathname !== '/api/ai/chat') return false
   const headers = new Headers()
   for (const [key, value] of Object.entries(request.headers)) if (value) headers.set(key, Array.isArray(value) ? value.join(',') : value)
-  const standard = new Request(url, { method: request.method, headers, ...(request.method !== 'GET' && request.method !== 'HEAD' ? { body: Readable.toWeb(request), duplex: 'half' } : {}) })
+  const controller = new AbortController()
+  request.once('aborted',()=>controller.abort())
+  response.once('close',()=>{if(!response.writableEnded)controller.abort()})
+  const standard = new Request(url, { method: request.method, headers, signal:controller.signal, ...(request.method !== 'GET' && request.method !== 'HEAD' ? { body: Readable.toWeb(request), duplex: 'half' } : {}) })
   const result = await handleAiChat(standard, process.env, { clientIp: nodeClientIp(request, process.env) })
-  response.writeHead(result.status, Object.fromEntries(result.headers))
-  response.end(await result.text())
+  await sendWebResponse(result,response)
 }
 
 function serveStatic(response, url) {

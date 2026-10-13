@@ -1,3 +1,4 @@
+import { buildMeihuaContext } from '../ai/context'
 import { judgeMeihua } from '../calculation/meihua/judgement'
 import { useNavigate } from 'react-router-dom'
 import {
@@ -77,8 +78,7 @@ export default function MeihuaResultPage() {
     const existing = activeDraft.state.recordId && store.records.find((record) => record.id === activeDraft.state.recordId)
     if (existing) return existing.id
     const created = createRecord({ profile, temporarySubject: activeDraft.temporarySubject, type: 'meihua', question: activeDraft.question, category: activeDraft.category, rawResult, interpretation })
-    store.createRecordSnapshot(created)
-    store.upsertDraft({ ...activeDraft, state: { ...activeDraft.state, recordId: created.id } })
+    store.createRecordSnapshot(created,activeDraft.id)
     return created.id
   }
 
@@ -126,7 +126,7 @@ export default function MeihuaResultPage() {
     </Card>
 
     </details>
-    <AiReadingPanel key={activeDraft.id} module="meihua" question={activeDraft.question} context={{ lockedAt, ...resultContext(result) }} recordId={activeDraft.state.recordId} ensureRecord={ensureRecord} title="结合卦象回答你的问题" />
+    <AiReadingPanel key={activeDraft.id} module="meihua" question={activeDraft.question} context={buildMeihuaContext(result,judgement,lockedAt)} draftId={activeDraft.id} category={activeDraft.category} recordId={activeDraft.state.recordId} ensureRecord={ensureRecord} title="结合卦象回答你的问题" />
 
     <details className="result-disclosure"><summary>查看起卦依据</summary><Card>
       <p className="helper">子时按当天计算；时间起卦年数取农历年支序数。卦气按节令月建，互卦与变用卦分别对固定体卦判断生克。</p>

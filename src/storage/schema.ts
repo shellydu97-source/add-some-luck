@@ -19,6 +19,7 @@ const profileSchema = z.object({
 }).passthrough()
 
 const recordSchema = z.object({
+  questionAddedLater: z.string().max(2000).optional(),
   liuyaoUseGodOverride: z.enum(['父母','兄弟','子孙','妻财','官鬼','世爻','应爻']).optional(),
   metaUpdatedAt: z.string().datetime().optional(),
   id: z.string().min(1), type: z.enum(['bazi', 'astrology', 'liuyao', 'meihua', 'tarot']), profileId: z.string(),
@@ -33,7 +34,7 @@ const recordSchema = z.object({
 }).passthrough()
 
 const draftSchema = z.object({
-  id: z.string().min(1), type: z.enum(['liuyao', 'meihua', 'tarot']), profileId: z.string(), question: z.string(),
+  id: z.string().min(1), type: z.enum(['liuyao', 'meihua', 'tarot', 'bazi', 'astrology']), profileId: z.string(), question: z.string(),
   createdAt: z.string(), updatedAt: z.string(), state: z.record(z.string(), z.unknown()),
 }).passthrough()
 

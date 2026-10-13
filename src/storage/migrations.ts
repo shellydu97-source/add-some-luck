@@ -91,6 +91,7 @@ function migrateRecord(value: unknown, now: string): RecordSnapshot {
       }
   return {
     liuyaoUseGodOverride: ['父母','兄弟','子孙','妻财','官鬼','世爻','应爻'].includes(string(item.liuyaoUseGodOverride)) ? item.liuyaoUseGodOverride as RecordSnapshot['liuyaoUseGodOverride'] : undefined,
+    questionAddedLater: typeof item.questionAddedLater === 'string' ? item.questionAddedLater : undefined,
     metaUpdatedAt: typeof item.metaUpdatedAt === 'string' ? item.metaUpdatedAt : undefined,
     id: string(item.id, makeId('record')),
     type: ['bazi', 'astrology', 'liuyao', 'meihua', 'tarot'].includes(string(item.type)) ? item.type as RecordSnapshot['type'] : 'tarot',

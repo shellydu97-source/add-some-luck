@@ -8,6 +8,15 @@ import { getStorageRecoveryInfo, protectStorageAfterMigrationFailure, resetProte
 
 export const STORAGE_KEY = 'add-luck-v1-demo'
 
+interface AiSessionInput {
+  module: RecordSnapshot['type']
+  draftId?: string
+  profileId?: string
+  recordId?: string
+  question: string
+  interpretation?: AiInterpretationSnapshot
+  messages?: AiConversationMessage[]
+}
 interface VerificationPatch {
   verificationStatus: VerificationStatus
   verificationDate?: string
@@ -28,7 +37,9 @@ interface AppState extends AppDataState {
   saveProfile: (profile: Omit<Profile, 'id' | 'createdAt' | 'updatedAt'> & { id?: string }) => string
   deleteProfile: (id: string) => void
   setDefaultProfile: (id: string) => void
-  createRecordSnapshot: (record: RecordSnapshot) => void
+  createRecordSnapshot: (record: RecordSnapshot, draftId?: string) => void
+  saveAiSession: (input: AiSessionInput) => boolean
+  addRecordQuestion: (id: string, question: string) => void
   deleteRecord: (id: string) => void
   deleteRecords: (ids: string[]) => void
   appendRecordFollowUps: (id: string, messages: FollowUpMessage[]) => void
@@ -97,9 +108,29 @@ export const useAppStore = create<AppState>()(persist((set, get) => ({
     profiles: state.profiles.map((item) => ({ ...item, isDefault: item.id === id, updatedAt: item.isDefault !== (item.id === id) ? new Date().toISOString() : item.updatedAt })), activeProfileId: id,
     notice: `${state.profiles.find((item) => item.id === id)?.name ?? '人物'}已设为默认人物。`,
   })),
-  createRecordSnapshot: (record) => set((state) => state.records.some((item) => item.id === record.id)
-    ? { notice: '记录快照已存在，原始内容未覆盖。' }
-    : { records: [clone(record), ...state.records], notice: '已保存不可变记录快照。' }),
+  createRecordSnapshot: (record, draftId) => set((state) => {
+    if(state.records.some(item => item.id === record.id)) return { notice:'记录快照已存在，原始内容未覆盖。' }
+    const draft = state.drafts.find(d => d.id === draftId)
+    const saved = clone({ ...record, aiInterpretations: [...(record.aiInterpretations ?? []),...(draft?.ai?.interpretations ?? [])], aiMessages:[...(record.aiMessages ?? []),...(draft?.ai?.messages ?? [])], ...(!record.question?.trim() && draft?.ai?.question?.trim() ? {questionAddedLater:draft.ai.question.trim()} : {}) })
+    return {records:[saved,...state.records],drafts:state.drafts.map(d=>d.id===draftId ? {...d,state:{...d.state,recordId:record.id}} as DivinationDraft : d),notice:'已保存不可变记录快照。'}
+  }),
+  addRecordQuestion: (id, question) => set(state => ({records:state.records.map(r=>r.id===id && !r.question?.trim() ? {...r,questionAddedLater:question.slice(0,2000),metaUpdatedAt:new Date().toISOString()} : r)})),
+  saveAiSession: (input) => {
+    const state=get()
+    const draft=state.drafts.find(d=>d.id===input.draftId)
+    const recordId=draft?.state.recordId ?? input.recordId
+    const record=state.records.find(r=>r.id===recordId)
+    if(recordId && !record) return false
+    if(record) {
+      set({records:state.records.map(r=>r.id===recordId ? {...r,aiInterpretations:[...(r.aiInterpretations ?? []),...(input.interpretation ? [clone(input.interpretation)] : [])],aiMessages:[...(r.aiMessages ?? []),...clone(input.messages ?? [])],...(!r.question?.trim() ? {questionAddedLater:input.question,metaUpdatedAt:new Date().toISOString()} : {})} : r)})
+      return true
+    }
+    if(!draft && (!['bazi','astrology'].includes(input.module) || !input.draftId || !state.profiles.some(p=>p.id===input.profileId))) return false
+    const now=new Date().toISOString()
+    const next:DivinationDraft = draft ?? {id:input.draftId!,type:input.module as 'bazi',profileId:input.profileId!,question:'',createdAt:now,updatedAt:now,state:{locked:true}}
+    get().upsertDraft({...next,ai:{question:input.question,interpretations:[...(next.ai?.interpretations ?? []),...(input.interpretation ? [clone(input.interpretation)] : [])],messages:[...(next.ai?.messages ?? []),...clone(input.messages ?? [])]}})
+    return true
+  },
   deleteRecord: (id) => set((state) => ({
     records: state.records.filter((item) => item.id !== id),
     tombstones: { ...state.tombstones, records: { ...state.tombstones.records, [id]: new Date().toISOString() } },
@@ -145,10 +176,10 @@ export const useAppStore = create<AppState>()(persist((set, get) => ({
       && normalizeQuestion(record.question ?? '') === normalized && new Date(record.createdAt).getTime() >= limit)
   },
   upsertDraft: (draft) => set((state) => ({
-    tombstones: { ...state.tombstones, drafts: { ...state.tombstones.drafts, ...Object.fromEntries(state.drafts.filter((item) => item.type === draft.type && item.id !== draft.id).map((item) => [item.id, new Date().toISOString()])) } },
+    tombstones: { ...state.tombstones, drafts: { ...state.tombstones.drafts, ...Object.fromEntries(state.drafts.filter((item) => item.type === draft.type && item.id !== draft.id && (!['bazi','astrology'].includes(draft.type) || item.profileId === draft.profileId)).map((item) => [item.id, new Date().toISOString()])) } },
     drafts: state.drafts.some((item) => item.id === draft.id)
       ? state.drafts.map((item) => item.id === draft.id ? clone({ ...draft, updatedAt: new Date().toISOString() }) : item)
-      : [clone(draft), ...state.drafts.filter((item) => item.type !== draft.type)],
+      : [clone(draft), ...state.drafts.filter((item) => item.type !== draft.type || ['bazi','astrology'].includes(draft.type) && item.profileId !== draft.profileId)],
   })),
   deleteDraft: (id) => set((state) => ({ tombstones: { ...state.tombstones, drafts: { ...state.tombstones.drafts, [id]: new Date().toISOString() } }, drafts: state.drafts.filter((item) => item.id !== id), notice: '未完成流程已删除。' })),
   replaceAllData: (data) => {

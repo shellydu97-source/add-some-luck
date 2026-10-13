@@ -37,7 +37,7 @@ export function decideInitialSync(input: { userId: string; local: AppDataState; 
   }
   return meta?.dirty ? 'merge' : 'download'
 }
-const recordFields = ['liuyaoUseGodOverride', 'verificationStatus', 'verificationDate', 'verificationResult', 'verificationNote', 'notes'] as const
+const recordFields = ['questionAddedLater', 'liuyaoUseGodOverride', 'verificationStatus', 'verificationDate', 'verificationResult', 'verificationNote', 'notes'] as const
 function mutableFields(kind: keyof SyncBaseline, item: object) {
   if (kind === 'records') return recordFields
   return Object.keys(item).filter((key) => !['id', 'createdAt', 'updatedAt'].includes(key))

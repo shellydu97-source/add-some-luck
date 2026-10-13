@@ -151,7 +151,7 @@ export default function AstrologyPage() {
       profile, type: 'astrology', question: aiQuestion, rawResult: { result },
       interpretation: createBasicInterpretation('本命星盘', result.precision === 'exact' ? '已保存本命盘基础结果' : '已保存出生当日行星范围'),
     })
-    useAppStore.getState().createRecordSnapshot(created)
+    useAppStore.getState().createRecordSnapshot(created,`ai-astrology-${profile.id}-${profile.updatedAt}`)
     setAiRecordSession({ profileId: profile.id, recordId: created.id })
     return created.id
   }
@@ -160,7 +160,7 @@ export default function AstrologyPage() {
     <Segmented value={tab} options={options} onChange={setTab} label="星盘内容" scrollable />
     {loading && <Card className="calculation-loading"><span className="loading-orbit" />正在生成星盘…</Card>}
     {!loading && result && !result.ok && <ErrorState result={result} profileId={profile.id} />}
-    {!loading && result?.ok && tab === 'overview' && <><Overview result={result} /><AiReadingPanel key={profile.id} module="astrology" context={{ result }} recordId={aiRecordSession?.profileId === profile.id ? aiRecordSession.recordId : undefined} ensureRecord={ensureAiRecord} allowQuestionInput title="了解这份本命星盘" /></>}
+    {!loading && result?.ok && tab === 'overview' && <><Overview result={result} /><AiReadingPanel key={profile.id} module="astrology" context={{ result }} draftId={`ai-astrology-${profile.id}-${profile.updatedAt}`} profileId={profile.id} recordId={aiRecordSession?.profileId === profile.id ? aiRecordSession.recordId : undefined} ensureRecord={ensureAiRecord} allowQuestionInput title="了解这份本命星盘" /></>}
     {!loading && result?.ok && tab === 'planets' && <Planets result={result} />}
     {!loading && result?.ok && tab === 'houses' && <Houses result={result} />}
     {!loading && result?.ok && tab === 'aspects' && <Aspects result={result} />}

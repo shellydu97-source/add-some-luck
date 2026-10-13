@@ -1,3 +1,4 @@
+import { buildBaziContext } from '../ai/context'
 import { useMemo, useState } from 'react'
 import { Navigate, useParams, useSearchParams } from 'react-router-dom'
 import AiReadingPanel from '../components/AiReadingPanel'
@@ -201,7 +202,8 @@ export default function BaziPage() {
   const [selectedMonthIndex, setSelectedMonthIndex] = useState<number>()
   const [today] = useState(todayInShanghai)
   const [selectedFlowDate, setSelectedFlowDate] = useState(params.get('date') ?? today)
-  const [aiRecordSession, setAiRecordSession] = useState<{ profileId: string; recordId: string }>()
+  const aiDraftId = profile ? `ai-bazi-${profile.id}-${profile.updatedAt}` : ''
+  const savedAiDraft = useAppStore(s => s.drafts.find(d => d.id === aiDraftId))
   const result = useMemo(() => profile ? calculateBazi(profile) : undefined, [profile])
   const natalAnalysis = useMemo(() => result?.ok ? analyzeBaziNatal(result) : undefined, [result])
   const currentFlow = useMemo(() => calculateBaziFlowDate(today), [today])
@@ -234,14 +236,14 @@ export default function BaziPage() {
   if (!result) return null
 
   function ensureAiRecord(aiQuestion?: string) {
-    if (aiRecordSession && aiRecordSession.profileId === profileId) return aiRecordSession.recordId
+    const previous=useAppStore.getState().drafts.find(d=>d.id===aiDraftId)?.state.recordId
+    if(previous && useAppStore.getState().records.some(r=>r.id===previous)) return previous
     if (!profile || !result?.ok) throw new Error('八字结果尚未生成')
     const created = createRecord({
       profile, type: 'bazi', question: aiQuestion, rawResult: { result, analysis: natalAnalysis },
       interpretation: createBasicInterpretation('八字基础排盘', PILLAR_KEYS.map((key) => pillarSummary(result.pillars[key])).join(' · ')),
     })
-    useAppStore.getState().createRecordSnapshot(created)
-    setAiRecordSession({ profileId: profile.id, recordId: created.id })
+    useAppStore.getState().createRecordSnapshot(created,aiDraftId)
     return created.id
   }
 
@@ -305,7 +307,7 @@ export default function BaziPage() {
             {profile.timeAccuracy !== 'exact_minute' && <li><span>时间可信度</span><b>{accuracyLabels[profile.timeAccuracy]}</b></li>}
           </ul>
         </Card>
-        <AiReadingPanel key={profile.id} module="bazi" context={{ result, analysis: natalAnalysis }} recordId={aiRecordSession?.profileId === profile.id ? aiRecordSession.recordId : undefined} ensureRecord={ensureAiRecord} allowQuestionInput title="了解这份八字排盘" />
+        <AiReadingPanel key={profile.id} module="bazi" context={buildBaziContext(result,natalAnalysis)} draftId={aiDraftId} profileId={profile.id} recordId={savedAiDraft?.state.recordId} ensureRecord={ensureAiRecord} allowQuestionInput title="了解这份八字排盘" />
       </>}
 
       {tab === 'chart' && <>
