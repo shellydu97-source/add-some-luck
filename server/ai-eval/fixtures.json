@@ -1,0 +1,540 @@
+{
+  "bazi": {
+    "contextVersion": "3",
+    "pillars": {
+      "year": {
+        "status": "available",
+        "ganZhi": "戊辰",
+        "gan": "戊",
+        "zhi": "辰",
+        "hiddenStems": [
+          "戊",
+          "乙",
+          "癸"
+        ],
+        "stemTenGod": "正印",
+        "hiddenTenGods": [
+          "正印",
+          "偏财",
+          "食神"
+        ],
+        "fiveElements": {
+          "stem": "土",
+          "branch": "土"
+        },
+        "naYin": "大林木",
+        "twelveStage": "墓",
+        "selfStage": "冠带",
+        "xun": "甲子旬",
+        "xunKong": "戌亥"
+      },
+      "month": {
+        "status": "available",
+        "ganZhi": "己未",
+        "gan": "己",
+        "zhi": "未",
+        "hiddenStems": [
+          "己",
+          "丁",
+          "乙"
+        ],
+        "stemTenGod": "偏印",
+        "hiddenTenGods": [
+          "偏印",
+          "七杀",
+          "偏财"
+        ],
+        "fiveElements": {
+          "stem": "土",
+          "branch": "土"
+        },
+        "naYin": "天上火",
+        "twelveStage": "衰",
+        "selfStage": "冠带",
+        "xun": "甲寅旬",
+        "xunKong": "子丑"
+      },
+      "day": {
+        "status": "available",
+        "ganZhi": "辛未",
+        "gan": "辛",
+        "zhi": "未",
+        "hiddenStems": [
+          "己",
+          "丁",
+          "乙"
+        ],
+        "stemTenGod": "日主",
+        "hiddenTenGods": [
+          "偏印",
+          "七杀",
+          "偏财"
+        ],
+        "fiveElements": {
+          "stem": "金",
+          "branch": "土"
+        },
+        "naYin": "路旁土",
+        "twelveStage": "衰",
+        "selfStage": "衰",
+        "xun": "甲子旬",
+        "xunKong": "戌亥"
+      },
+      "time": {
+        "status": "available",
+        "ganZhi": "癸巳",
+        "gan": "癸",
+        "zhi": "巳",
+        "hiddenStems": [
+          "丙",
+          "戊",
+          "庚"
+        ],
+        "stemTenGod": "食神",
+        "hiddenTenGods": [
+          "正官",
+          "正印",
+          "劫财"
+        ],
+        "fiveElements": {
+          "stem": "水",
+          "branch": "火"
+        },
+        "naYin": "长流水",
+        "twelveStage": "死",
+        "selfStage": "胎",
+        "xun": "甲申旬",
+        "xunKong": "午未"
+      }
+    },
+    "fiveElements": {
+      "occurrences": {
+        "木": 0,
+        "火": 1,
+        "土": 5,
+        "金": 1,
+        "水": 1
+      },
+      "weighted": {
+        "木": 1.25,
+        "火": 2.25,
+        "土": 6,
+        "金": 1.3,
+        "水": 1.3
+      }
+    },
+    "tenGods": {
+      "occurrences": {
+        "正印": 3,
+        "偏财": 3,
+        "食神": 2,
+        "偏印": 3,
+        "七杀": 2,
+        "正官": 1,
+        "劫财": 1
+      },
+      "weighted": {
+        "正印": 2.5,
+        "偏财": 1.25,
+        "食神": 1.3,
+        "偏印": 3.5,
+        "七杀": 1.25,
+        "正官": 1,
+        "劫财": 0.3
+      }
+    },
+    "distributionNote": "显干1；藏干本中余气1/0.5/0.3；月支藏干×1.5，仅参考分布，不等同旺衰。",
+    "relations": [
+      {
+        "kind": "天干五合",
+        "text": "年柱戊与时柱癸构成天干五合",
+        "evidence": [
+          "年柱戊",
+          "时柱癸"
+        ]
+      }
+    ],
+    "shenSha": [
+      {
+        "name": "华盖",
+        "target": "年柱",
+        "basis": "按年支辰所在三合组查，见辰"
+      },
+      {
+        "name": "华盖",
+        "target": "月柱",
+        "basis": "按日支未所在三合组查，见未"
+      },
+      {
+        "name": "华盖",
+        "target": "日柱",
+        "basis": "按日支未所在三合组查，见未"
+      },
+      {
+        "name": "驿马",
+        "target": "时柱",
+        "basis": "按日支未所在三合组查，见巳"
+      }
+    ],
+    "currentLuck": "癸亥",
+    "luckCycles": [
+      {
+        "index": 3,
+        "ganZhi": "壬戌",
+        "startYear": 2016,
+        "endYear": 2025,
+        "startAge": 29,
+        "endAge": 38,
+        "startSolarDateTime": "2016-04-15 10:30:00"
+      },
+      {
+        "index": 4,
+        "ganZhi": "癸亥",
+        "startYear": 2026,
+        "endYear": 2035,
+        "startAge": 39,
+        "endAge": 48,
+        "startSolarDateTime": "2026-04-15 10:30:00"
+      },
+      {
+        "index": 5,
+        "ganZhi": "甲子",
+        "startYear": 2036,
+        "endYear": 2045,
+        "startAge": 49,
+        "endAge": 58,
+        "startSolarDateTime": "2036-04-15 10:30:00"
+      }
+    ],
+    "annual": [
+      {
+        "year": 2026,
+        "ganZhi": "丙午",
+        "lichun": "2026-02-04 04:02:08"
+      },
+      {
+        "year": 2027,
+        "ganZhi": "丁未",
+        "lichun": "2027-02-04 09:46:18"
+      },
+      {
+        "year": 2028,
+        "ganZhi": "戊申",
+        "lichun": "2028-02-04 15:31:13"
+      }
+    ],
+    "correction": {
+      "originalLocal": "1988-07-15 11:30",
+      "correctedLocal": "1988-07-15 10:30",
+      "daylightSavingMinutes": -60,
+      "trueSolarMinutes": 0,
+      "notes": [
+        "夏令时校正 −60 分钟"
+      ],
+      "requiresDaylightSavingChoice": true
+    },
+    "dayBoundaryRule": "system_default",
+    "timeKnown": true,
+    "warnings": [],
+    "ruleVersion": "bazi-v1.1-cn-shanghai-lichun-jie-dst-tst-option"
+  },
+  "liuyao": {
+    "contextVersion": "3",
+    "question": "",
+    "category": "工作 / 事业",
+    "timeRange": "未来两周",
+    "useGod": "官鬼",
+    "castAt": "2026-10-12T04:00:00Z",
+    "original": {
+      "number": 1,
+      "name": "乾为天",
+      "judgment": "乾：元，亨，利，贞。"
+    },
+    "changed": {
+      "number": 44,
+      "name": "天风姤",
+      "judgment": "姤：女壮，勿用取女。"
+    },
+    "movingLines": [
+      1
+    ],
+    "movingTexts": [
+      {
+        "index": 1,
+        "text": "初九：潜龙，勿用。"
+      }
+    ],
+    "lines": [
+      {
+        "index": 1,
+        "naJia": "甲子",
+        "element": "水",
+        "relation": "子孙",
+        "spirit": "腾蛇",
+        "environment": {
+          "isVoid": true,
+          "isMonthBuild": false,
+          "isMonthBreak": false,
+          "isMonthCombine": false,
+          "isDaySame": false,
+          "isDayClash": false,
+          "isDayCombine": false
+        },
+        "moving": true,
+        "changedNaJia": "辛丑",
+        "changedElement": "土",
+        "changedRelation": "父母",
+        "changedEnvironment": {
+          "isVoid": true,
+          "isMonthBuild": false,
+          "isMonthBreak": false,
+          "isMonthCombine": false,
+          "isDaySame": false,
+          "isDayClash": true,
+          "isDayCombine": false
+        }
+      },
+      {
+        "index": 2,
+        "naJia": "甲寅",
+        "element": "木",
+        "relation": "妻财",
+        "spirit": "白虎",
+        "environment": {
+          "isVoid": false,
+          "isMonthBuild": false,
+          "isMonthBreak": false,
+          "isMonthCombine": false,
+          "isDaySame": false,
+          "isDayClash": false,
+          "isDayCombine": false
+        },
+        "moving": false
+      },
+      {
+        "index": 3,
+        "naJia": "甲辰",
+        "element": "土",
+        "relation": "父母",
+        "spirit": "玄武",
+        "shiYing": "应",
+        "environment": {
+          "isVoid": false,
+          "isMonthBuild": false,
+          "isMonthBreak": true,
+          "isMonthCombine": false,
+          "isDaySame": false,
+          "isDayClash": false,
+          "isDayCombine": false
+        },
+        "moving": false
+      },
+      {
+        "index": 4,
+        "naJia": "壬午",
+        "element": "火",
+        "relation": "官鬼",
+        "spirit": "青龙",
+        "environment": {
+          "isVoid": false,
+          "isMonthBuild": false,
+          "isMonthBreak": false,
+          "isMonthCombine": false,
+          "isDaySame": false,
+          "isDayClash": false,
+          "isDayCombine": true
+        },
+        "moving": false
+      },
+      {
+        "index": 5,
+        "naJia": "壬申",
+        "element": "金",
+        "relation": "兄弟",
+        "spirit": "朱雀",
+        "environment": {
+          "isVoid": false,
+          "isMonthBuild": false,
+          "isMonthBreak": false,
+          "isMonthCombine": false,
+          "isDaySame": false,
+          "isDayClash": false,
+          "isDayCombine": false
+        },
+        "moving": false
+      },
+      {
+        "index": 6,
+        "naJia": "壬戌",
+        "element": "土",
+        "relation": "父母",
+        "spirit": "勾陈",
+        "shiYing": "世",
+        "environment": {
+          "isVoid": false,
+          "isMonthBuild": true,
+          "isMonthBreak": false,
+          "isMonthCombine": false,
+          "isDaySame": false,
+          "isDayClash": false,
+          "isDayCombine": false
+        },
+        "moving": false
+      }
+    ],
+    "calendar": {
+      "localDateTime": "2026-10-12 12:00:00",
+      "monthBranch": "戌",
+      "dayGanZhi": "己未",
+      "dayStem": "己",
+      "dayBranch": "未",
+      "xunKong": "子丑"
+    },
+    "judgement": {
+      "useGod": {
+        "relation": "官鬼",
+        "lines": [
+          4
+        ],
+        "source": "present"
+      },
+      "useGodState": {
+        "season": "休",
+        "dayRelation": "生日辰、日合",
+        "flags": []
+      },
+      "originGod": {
+        "element": "木",
+        "lines": [
+          {
+            "index": 2,
+            "moving": false,
+            "state": {
+              "season": "囚",
+              "dayRelation": "克日辰",
+              "flags": [
+                "入墓"
+              ]
+            }
+          }
+        ]
+      },
+      "avoidGod": {
+        "element": "水",
+        "lines": [
+          {
+            "index": 1,
+            "moving": true,
+            "state": {
+              "season": "死",
+              "dayRelation": "日克",
+              "flags": [
+                "旬空"
+              ]
+            }
+          }
+        ]
+      },
+      "movingEffects": [
+        "第 1 爻甲子水→辛丑土：回头克、化空、忌神动克用神"
+      ],
+      "auxiliaryFlags": [
+        "六冲"
+      ],
+      "tendency": "有阻力",
+      "reasons": [
+        "官鬼取第 4 爻（午火）。",
+        "月建戌，用神休；日辰己未：生日辰、日合。",
+        "第 1 爻甲子水→辛丑土：回头克、化空、忌神动克用神"
+      ],
+      "uncertainty": "这是通行规则的参考推断，不保证结果或精确应期；还需结合现实条件。",
+      "ruleVersion": "liuyao-usegod-season-moving-1.0.0"
+    }
+  },
+  "meihua": {
+    "contextVersion": "3",
+    "method": "specified_time",
+    "castAt": "2026-10-12 12:00:00",
+    "original": {
+      "number": 38,
+      "name": "火泽睽"
+    },
+    "mutual": {
+      "number": 63,
+      "name": "水火既济"
+    },
+    "changed": {
+      "number": 21,
+      "name": "火雷噬嗑"
+    },
+    "movingLine": 2,
+    "movingLineText": "九二：遇主于巷，无咎。",
+    "body": {
+      "name": "离",
+      "element": "火",
+      "position": "upper"
+    },
+    "use": {
+      "name": "兑",
+      "element": "金",
+      "position": "lower"
+    },
+    "judgement": {
+      "originalRelation": "体克用",
+      "mutualRelations": [
+        {
+          "name": "离",
+          "element": "火",
+          "relation": "比和"
+        },
+        {
+          "name": "坎",
+          "element": "水",
+          "relation": "用克体"
+        }
+      ],
+      "changedRelation": "用生体",
+      "changedUseName": "震",
+      "monthBranch": "戌",
+      "bodySeason": "休",
+      "inSeason": false,
+      "tendency": "变数较大",
+      "reasons": [
+        "本卦离火为体，兑金为用：体克用，需付出努力和执行成本；月建戌，体卦休（失令）。",
+        "互卦过程：离火与体卦比和；坎水与体卦用克体。",
+        "变卦用方变为震木：用生体。"
+      ],
+      "advice": "把结构提示落实为可检查的行动，持续观察过程和结果。",
+      "uncertainty": "体用与卦气是传统规则推断，不能保证成败或精确应期。",
+      "ruleVersion": "meihua-body-mutual-changed-season-1.0.0"
+    }
+  },
+  "tarot": {
+    "contextVersion": "3",
+    "spread": "three",
+    "drawnAt": "2026-10-12T04:00:00Z",
+    "cards": [
+      {
+        "id": "swords-three",
+        "nameZh": "宝剑三",
+        "orientation": "upright",
+        "position": "过去",
+        "basicMeaning": "心痛或失落提醒你承认真实感受，不必急着压抑难过，应给修复留出空间。"
+      },
+      {
+        "id": "cups-eight",
+        "nameZh": "圣杯八",
+        "orientation": "upright",
+        "position": "现在",
+        "basicMeaning": "主动离开不再满足的处境，重新寻找更有意义的方向，转身也需要承担选择。"
+      },
+      {
+        "id": "major-17",
+        "nameZh": "星星",
+        "orientation": "upright",
+        "position": "建议",
+        "basicMeaning": "恢复信心与耐心，把希望落实为温和而持续的行动，逐步重建对未来的信任。"
+      }
+    ]
+  }
+}
