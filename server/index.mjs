@@ -1,3 +1,4 @@
+import { securityHeaders } from './security-headers.mjs'
 import fs from 'node:fs'
 import http from 'node:http'
 import path from 'node:path'
@@ -11,11 +12,14 @@ import { readConfig } from './config.mjs'
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const dist = path.join(root, 'dist')
 const config = readConfig(root)
+const headers = fs.existsSync(path.join(dist,'_headers')) ? Object.fromEntries(fs.readFileSync(path.join(dist,'_headers'),'utf8').split(/\r?\n/).filter(line=>line.startsWith('  ')).map(line=>{const i=line.indexOf(':'); return [line.slice(2,i),line.slice(i+1).trim()]})) : securityHeaders(process.env.VITE_SUPABASE_URL)
 const apiOnly = process.argv.includes('--api-only')
 const portArgument = process.argv.find((item) => item.startsWith('--port='))?.split('=')[1]
 const requestedPort = Number(portArgument || config.port)
 
 const mimeTypes = {
+  '.jpg': 'image/jpeg',
+  '.webp': 'image/webp',
   '.css': 'text/css; charset=utf-8',
   '.html': 'text/html; charset=utf-8',
   '.ico': 'image/x-icon',
@@ -72,13 +76,13 @@ function serveStatic(response, url) {
     response.writeHead(200, {
       'Content-Type': mimeTypes[path.extname(file)] || 'application/octet-stream',
       'X-Content-Type-Options': 'nosniff',
-      'Referrer-Policy': 'same-origin',
     })
     stream.pipe(response)
   })
 }
 
 const server = http.createServer(async (request, response) => {
+  for (const [key,value] of Object.entries(headers)) response.setHeader(key,value)
   try {
     let url
     try { url = new URL(request.url || '/', `http://${request.headers.host || '127.0.0.1'}`) }
