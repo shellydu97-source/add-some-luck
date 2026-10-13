@@ -105,7 +105,7 @@ VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
 | 设置 | `/settings` |
 | 账号与同步 | `/account` |
 
-主导航为“命盘、起卦、记录”。`/fortune/*` 和 `/today` 重定向到 `/charts`。
+主导航为“今日 / 命理 / 占卜 / 我的”。`/today` 为今日入口，`/fortune/*` 兼容重定向到 `/today`。
 
 提高 AI 限额时，也需由项目管理员在 SQL Editor 更新 `public.ai_quota_limits` 的上限；RPC 会取环境变量与数据库上限的较小值，防止用户直接调用 RPC 提高额度。数据库不可用时 AI 接口拒绝生成，不退回匿名模式。
 
@@ -136,3 +136,9 @@ node server/ai-eval/run.mjs --dry-run --output=artifacts/ai-eval/dry-run.json
 ```
 
 真实运行需要进程环境中的 DEEPSEEK_API_KEY，并会消耗模型额度，不进入 CI。当前只通过模拟流式/组件测试和离线案例校验，尚未完成真实 DeepSeek 回答质量评测或线上 Cloudflare 验收。第三阶段没有新增 SQL 或依赖；部署时需要同时更新前端与共用 server 模块。
+
+## 第四阶段：体验与工程
+
+主导航为“今日 / 命理 / 占卜 / 我的”。新建性别必选、草稿继续确认、启动默认人物；记录显示保存时结论并兼容序号压缩快照。78 张塔罗使用 WebP + JPG fallback，增加隐私说明、使用须知和二次确认注销入口。
+
+详见 docs/PHASE_4_EXPERIENCE.md，包括新快照读取格式、Supabase Edge Function 部署、响应头及上线前事项。环境统一为 Node 24.19.0（.nvmrc）、pnpm 11.25.0（packageManager）；图片转换运行 `node scripts/optimize-images.mjs`。账号注销只做了模拟验收，未部署到真实 Supabase。
