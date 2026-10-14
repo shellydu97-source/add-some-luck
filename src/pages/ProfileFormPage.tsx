@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import DatePicker from '../components/DatePicker'
+import TimePicker from '../components/TimePicker'
+import { normalizeTimeInput } from '../utils/time'
 import BirthLocationPicker from '../components/BirthLocationPicker'
 import TopBar from '../components/TopBar'
 import { Button, Card } from '../components/UI'
@@ -27,7 +29,8 @@ export default function ProfileFormPage() {
   }
 
   let needsDst = false
-  try { needsDst = correctBirthTime(buildProfileInput(form, existing)).requiresDaylightSavingChoice } catch { /* date validation occurs on save */ }
+  const typedTime = form.unknownBirthTime ? '' : normalizeTimeInput(form.rawBirthTime) ?? ''
+  try { needsDst = !!typedTime && correctBirthTime(buildProfileInput({ ...form, rawBirthTime: typedTime }, existing)).requiresDaylightSavingChoice } catch { /* date validation occurs on save */ }
 
   function save() {
     if (!form.gender) { setError('请选择性别'); return }
@@ -45,7 +48,9 @@ export default function ProfileFormPage() {
     })
     if (calendarError) { setError(calendarError); return }
 
-    const input = buildProfileInput(form, existing)
+    const enteredTime = form.unknownBirthTime ? '' : form.rawBirthTime.trim()
+    if (enteredTime && !typedTime) { setError('出生时间请按 时:分 填写，例如 09:30'); return }
+    const input = buildProfileInput({ ...form, rawBirthTime: typedTime }, existing)
     if (needsDst && input.daylightSavingStatus === 'unknown') { setError('请确认出生时间是否按夏令时记录'); return }
     if (input.useTrueSolarTime === 'on' && !input.birthLocation) { setError('开启真太阳时需要选择出生城市'); return }
     const id = saveProfile({ ...input, id: existing?.id })
@@ -89,15 +94,12 @@ export default function ProfileFormPage() {
         onLunarLeapMonthChange={(value) => update('lunarLeapMonth', value)}
       />
 
-      <label className="field">
-        <span>出生时间</span>
-        <input
-          type="time"
-          disabled={form.unknownBirthTime}
-          value={form.unknownBirthTime ? '' : form.rawBirthTime}
-          onInput={(event) => update('rawBirthTime', event.currentTarget.value)}
-        />
-      </label>
+      <TimePicker
+        label="出生时间"
+        disabled={form.unknownBirthTime}
+        value={form.unknownBirthTime ? '' : form.rawBirthTime}
+        onChange={(value) => update('rawBirthTime', value)}
+      />
       <label className="radio-option unknown-time-option">
         <input type="checkbox" checked={form.unknownBirthTime} onChange={(event) => update('unknownBirthTime', event.target.checked)} />
         不知道出生时间

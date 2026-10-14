@@ -42,10 +42,12 @@ describe('第二阶段界面流程',()=>{
  })
 })
 
-it('指定时间响应 input 事件，锁定的是所填时刻',()=>{
+it('指定时间用日期与时间选择器填写，锁定的是所填时刻',()=>{
  reset();useAppStore.setState({drafts:[{id:'m',type:'meihua',profileId:'guest',question:'测试',createdAt:'2026-10-12T04:00:00Z',updatedAt:'2026-10-12T04:00:00Z',state:{method:'specified_time',locked:false}}]})
  render(<MemoryRouter><MeihuaCastPage/></MemoryRouter>)
- fireEvent.input(screen.getByLabelText('选择时间'),{target:{value:'2026-10-12T12:00'}})
+ const date=screen.getByPlaceholderText('YYYY/MM/DD');fireEvent.change(date,{target:{value:'2026/10/12'}});fireEvent.blur(date)
+ const time=screen.getByLabelText('时间');fireEvent.change(time,{target:{value:'12:00'}});fireEvent.blur(time)
+ expect(document.querySelector('input[type="datetime-local"]')).toBeNull()
  fireEvent.click(screen.getByText('按指定时间起卦'))
  const draft=useAppStore.getState().drafts[0]
  expect(draft.type==='meihua' && draft.state.specifiedLocalDateTime).toBe('2026-10-12T12:00')

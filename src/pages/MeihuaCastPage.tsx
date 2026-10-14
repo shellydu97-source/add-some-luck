@@ -5,6 +5,9 @@ import {
   calculateMeihuaBySpecifiedTime, calculateMeihuaByText, calculateMeihuaByThreeNumbers,
   calculateMeihuaByTime, normalizeMeihuaText, shanghaiLocalDateTimeToInstant,
 } from '../calculation/meihua'
+import DatePicker from '../components/DatePicker'
+import TimePicker from '../components/TimePicker'
+import { normalizeTimeInput } from '../utils/time'
 import TopBar from '../components/TopBar'
 import { Button, Card, ConfidenceNote, EmptyState, LinkButton } from '../components/UI'
 import { useFlowExitGuard } from '../hooks/useFlowExitGuard'
@@ -42,6 +45,9 @@ export default function MeihuaCastPage() {
   const [secondNumber, setSecondNumber] = useState(draft?.state.secondNumber ? String(draft.state.secondNumber) : '')
   const [thirdNumber, setThirdNumber] = useState(draft?.state.thirdNumber ? String(draft.state.thirdNumber) : '')
   const [specifiedLocalDateTime, setSpecifiedLocalDateTime] = useState(draft?.state.specifiedLocalDateTime ?? currentShanghaiInput)
+  // Date and time are edited separately so a half-typed date never garbles the time field.
+  const [specifiedDate, setSpecifiedDate] = useState(() => specifiedLocalDateTime.slice(0, 10).replaceAll('-', '/'))
+  const [specifiedTime, setSpecifiedTime] = useState(() => specifiedLocalDateTime.slice(11, 16))
   const [sourceText, setSourceText] = useState(draft?.state.sourceText ?? '')
   const [observedCount, setObservedCount] = useState(draft?.state.observedCount ? String(draft.state.observedCount) : '')
   const [error, setError] = useState('')
@@ -50,6 +56,15 @@ export default function MeihuaCastPage() {
   if (!draft) return <><TopBar title="梅花易数" back /><EmptyState title="还没有梅花易数草稿" action={<LinkButton to="/divination/meihua/question">重新开始</LinkButton>}>请先建立一次新的起卦流程。</EmptyState></>
   if (draft.state.locked) return <Navigate to="/divination/meihua/result" replace />
   const activeDraft = draft
+
+  function updateSpecified(date: string, time: string) {
+    setSpecifiedDate(date)
+    setSpecifiedTime(time)
+    const value = `${date.replaceAll('/', '-')}T${normalizeTimeInput(time) ?? time}`
+    setSpecifiedLocalDateTime(value)
+    setError('')
+    persistState({ method, specifiedLocalDateTime: value })
+  }
 
   function persistState(patch: Partial<MeihuaDraftState>) {
     upsertDraft({ ...activeDraft, state: { ...activeDraft.state, ...patch } })
@@ -120,7 +135,10 @@ export default function MeihuaCastPage() {
 
     {method === 'time' && <Card className="casting-stage"><div className="method-mark large-method-mark">今</div><h2>以点击按钮的此刻起卦</h2><p className="helper center">结果锁定后，刷新或返回页面都不会改变起卦时间与卦象。</p></Card>}
 
-    {method === 'specified_time' && <Card><label className="field"><span>选择时间</span><input type="datetime-local" value={specifiedLocalDateTime} onInput={(event) => { setSpecifiedLocalDateTime(event.currentTarget.value); setError(''); persistState({ method, specifiedLocalDateTime: event.currentTarget.value }) }} /></label><p className="helper">适合按某件事情实际发生或出现念头的时间起卦。</p></Card>}
+    {method === 'specified_time' && <Card><div className="datetime-fields">
+      <DatePicker label="日期" value={specifiedDate} allowFuture minYear={1901} onChange={(date) => updateSpecified(date, specifiedTime)} />
+      <TimePicker label="时间" value={specifiedTime} onChange={(time) => updateSpecified(specifiedDate, time)} />
+    </div><p className="helper">适合按某件事情实际发生或出现念头的时间起卦。</p></Card>}
 
     {(method === 'numbers' || method === 'three_numbers') && <Card>
       <div className={`number-entry-grid${method === 'three_numbers' ? ' three' : ''}`}>

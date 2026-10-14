@@ -701,3 +701,12 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 700; }
 .liuyao-compact-line > b { display: flex; flex-wrap: wrap; align-items: center; gap: 2px; }
 .auto-saved-note { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0 0 14px; padding: 10px 14px; border: 1px solid var(--line); border-radius: 14px; background: var(--panel); color: var(--muted); font-size: 13px; }
 .auto-saved-note a { flex: none; color: var(--blue); font-weight: 600; text-decoration: none; }
+
+/* Form controls never grow past their container (iOS Safari gives native inputs an intrinsic width). */
+.field input, .field select, .field textarea, .search-input { min-width: 0; max-width: 100%; box-sizing: border-box; }
+.date-input-row { grid-template-columns: minmax(0, 1fr) auto; }
+.date-input-row button { white-space: nowrap; }
+.card h2, .card h3, .card p, .card li, .card b, .card dd { overflow-wrap: anywhere; }
+.time-wheels { grid-template-columns: 1fr 1fr; }
+.time-preview { margin: 0; font-variant-numeric: tabular-nums; }
+.datetime-fields { display: grid; gap: 12px; }
