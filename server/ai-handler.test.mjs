@@ -70,4 +70,26 @@ describe('shared AI boundary', () => {
     const m = calculateMeihuaByTime('2026-10-12T04:00:00Z')
     expect(() => validateAiRequest({ module: 'meihua', context: { ...m, lockedAt: '2026-10-12T04:00:00Z' } })).not.toThrow()
   })
+  it('gives the quota back when generation fails before any answer', async () => {
+    const d = deps()
+    d.generate = vi.fn().mockRejectedValue(new Error('provider down'))
+    expect((await handleAiChat(req(), env, d)).status).toBe(502)
+    const refund = d.fetch.mock.calls.find(([url]) => url.endsWith('/rpc/refund_ai_quota'))
+    expect(refund?.[1].headers.Authorization).toBe('Bearer valid')
+  })
+  it('does not refund a successful answer', async () => {
+    const d = deps()
+    expect((await handleAiChat(req(), env, d)).status).toBe(200)
+    expect(d.fetch.mock.calls.some(([url]) => url.endsWith('/rpc/refund_ai_quota'))).toBe(false)
+  })
+  it('refunds a stream that fails before the first delta but not after', async () => {
+    const failing = (deliverFirst) => async () => ({ cancel() {}, events: (async function* () { if (deliverFirst) yield { type: 'delta', text: '部分' }; throw new Error('cut') })() })
+    for (const [deliverFirst, refunded] of [[false, true], [true, false]]) {
+      const d = deps()
+      d.openStream = failing(deliverFirst)
+      const response = await handleAiChat(req({ ...input, stream: true }), env, d)
+      await response.text()
+      expect(d.fetch.mock.calls.some(([url]) => url.endsWith('/rpc/refund_ai_quota'))).toBe(refunded)
+    }
+  })
 })

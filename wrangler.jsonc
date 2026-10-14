@@ -3,7 +3,7 @@
   "pages_build_output_dir": "./dist",
   "compatibility_date": "2026-07-16",
   "vars": {
-    "DEEPSEEK_MODEL": "deepseek-v4-flash",
+    "DEEPSEEK_MODEL": "deepseek-flash",
     "DEEPSEEK_API_URL": "https://api.deepseek.com/chat/completions",
     "AI_DAILY_REQUEST_LIMIT": "300",
     "AI_PER_IP_HOURLY_LIMIT": "60"

@@ -17,7 +17,7 @@ const results=[]
 for(const entry of cases.filter(c=>!filter || c.id===filter)) {
  const input=validateAiRequest({...entry,action:'interpret',context:fixtures[entry.module]})
  if(dryRun){results.push({id:entry.id,module:entry.module,contextBytes:new TextEncoder().encode(JSON.stringify(input.context)).length,validated:true});continue}
- try {const result=await requestDeepSeek(input,config);const text=[result.reading.directAnswer,...(result.reading.basis ?? []),...(result.reading.uncertainty ?? []),...(result.reading.advice ?? [])].join('\n');const checks=evaluateAnswer(result.reading.directAnswer,input.context);results.push({id:entry.id,module:entry.module,question:entry.question,...result,checks});console.log(`\n[${entry.id}]\n${text}\nChecks: ${JSON.stringify(checks)}`)}
+ try {const result=await requestDeepSeek(input,config);const text=[result.reading.directAnswer,...(result.reading.basis ?? []),...(result.reading.advice ?? [])].join('\n');const checks=evaluateAnswer(result.reading.directAnswer,input.context);results.push({id:entry.id,module:entry.module,question:entry.question,...result,checks});console.log(`\n[${entry.id}]\n${text}\nChecks: ${JSON.stringify(checks)}`)}
  catch {results.push({id:entry.id,error:'生成失败，请检查配置或服务状态'});console.error(`[${entry.id}] 生成失败`)}
 }
 if(!results.length)throw new Error('没有匹配案例')

@@ -6,7 +6,7 @@ import { openDeepSeekStream,requestDeepSeek } from './deepseek-client.mjs'
 import { handleAiChat } from './ai-handler.mjs'
 import { sendWebResponse } from './node-response.mjs'
 const encoder=new TextEncoder()
-const config={apiKey:'test',model:'deepseek-v4-flash',apiUrl:'https://example.test'}
+const config={apiKey:'test',model:'deepseek-flash',apiUrl:'https://example.test'}
 const input={module:'tarot',question:'怎么选',action:'interpret',context:{}}
 const body=(chunks)=>new ReadableStream({start(c){for(const chunk of chunks)c.enqueue(encoder.encode(chunk));c.close()}})
 const providerData=(text,finish=null,usage)=>`data: ${JSON.stringify({choices:[{delta:{content:text,reasoning_content:'PRIVATE REASONING'},finish_reason:finish}],usage})}\n\n`
@@ -49,7 +49,7 @@ describe('incremental SSE and cancellation',()=>{
  it('nonstream JSON validates basis and invalid JSON falls back to text',async()=>{
   const reading={directAnswer:'直接回答',basis:['事实'],uncertainty:['条件不足'],advice:['核实'],suggestedQuestions:[]}
   vi.stubGlobal('fetch',vi.fn().mockResolvedValue(Response.json({choices:[{message:{content:JSON.stringify(reading)},finish_reason:'stop'}]})))
-  expect((await requestDeepSeek(input,config)).reading).toEqual(reading)
+  const {uncertainty:_dropped,...expected}=reading;expect(_dropped).toEqual(['条件不足']);expect((await requestDeepSeek(input,config)).reading).toEqual(expected)
   vi.stubGlobal('fetch',vi.fn().mockResolvedValue(Response.json({choices:[{message:{content:'回答没有被截断。'.repeat(100)},finish_reason:'length'}]})))
   const result=await requestDeepSeek(input,config);expect(result.reading.directAnswer.length).toBeGreaterThan(600);expect(result.reading.incomplete).toBe(true)
  })

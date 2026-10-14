@@ -4,7 +4,7 @@ import { requestDeepSeek } from './deepseek-client.mjs'
 const config = {
   apiKey: 'test-key',
   apiUrl: 'https://example.test/chat',
-  model: 'deepseek-v4-flash',
+  model: 'deepseek-flash',
 }
 
 function providerResponse(content = '**结合这次卦象，我会这样分析。**\n\n### 卦象依据\n本卦为水天需，重点在等待时机。') {
@@ -27,7 +27,7 @@ afterEach(() => {
 })
 
 describe('DeepSeek thinking response', () => {
-  it('uses low-effort JSON request with text fallback', async () => {
+  it('uses a non-thinking JSON request with text fallback', async () => {
     const fetchMock = vi.fn().mockResolvedValue(providerResponse())
     vi.stubGlobal('fetch', fetchMock)
     const request = ({
@@ -42,8 +42,9 @@ describe('DeepSeek thinking response', () => {
 
     expect(fetchMock).toHaveBeenCalledTimes(1)
     const body = JSON.parse(fetchMock.mock.calls[0][1].body)
-    expect(body.thinking).toEqual({ type: 'enabled' })
-    expect(body.reasoning_effort).toBe('low')
+    expect(body.thinking).toEqual({ type: 'disabled' })
+    expect(body).not.toHaveProperty('reasoning_effort')
+    expect(body.max_tokens).toBe(1200)
     expect(body).not.toHaveProperty('temperature')
     expect(body.response_format).toEqual({type:'json_object'})
     expect(result.reading.directAnswer).toContain('我会这样分析')
@@ -109,5 +110,25 @@ describe('DeepSeek thinking response', () => {
     })
     const result = await requestDeepSeek(request, config)
     expect(result.reading.directAnswer.length).toBeGreaterThan(600)
+  })
+})
+
+describe('truncated and malformed provider output', () => {
+  const request = { module: 'tarot', action: 'interpret', question: 'q', messages: [], context: {} }
+  const reply = (content, finish_reason = 'stop') => Response.json({ choices: [{ finish_reason, message: { content } }] })
+  it('keeps the text of a truncated JSON answer and marks it incomplete', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(reply('{"directAnswer":"这次面试机会不小，\\n先把准备做足', 'length')))
+    const result = await requestDeepSeek(request, config)
+    expect(result.reading.directAnswer).toBe('这次面试机会不小，\n先把准备做足')
+    expect(result.reading.incomplete).toBe(true)
+    expect(result.reading.directAnswer).not.toContain('{')
+  })
+  it('never shows raw JSON when no answer text can be recovered', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(reply('{"basis":["只有依据"]')))
+    await expect(requestDeepSeek(request, config)).rejects.toThrow('格式不完整')
+  })
+  it('reports an empty truncated answer clearly', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(reply('', 'length')))
+    await expect(requestDeepSeek(request, config)).rejects.toThrow('回答被截断')
   })
 })

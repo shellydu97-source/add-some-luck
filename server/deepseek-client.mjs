@@ -12,13 +12,28 @@ function lifetime(signal) {
 export function plainReading(content) {
   return sanitizeReading({directAnswer:content.replace(/\*\*(.*?)\*\*/gs,'$1').replace(/__(.*?)__/gs,'$1').replace(/^\s{0,3}#{1,6}\s+/gm,'').trim()})
 }
+// Pull the answer text out of a truncated or malformed JSON reply instead of showing raw JSON.
+function directAnswerFromBrokenJson(content) {
+  const matched=/"directAnswer"\s*:\s*"((?:[^"\\]|\\.)*)/.exec(content)
+  if(!matched) return ''
+  try { return JSON.parse(`"${matched[1]}"`) }
+  catch { return matched[1].replace(/\\n/g,'\n').replace(/\\"/g,'"') }
+}
 export function parseProviderReading(content) {
-  try { return structuredReadingSchema.parse(JSON.parse(content)) }
-  catch {
-    // Legacy structured output also remains supported for older integrations.
-    try { const legacy=JSON.parse(content);if(Array.isArray(legacy.sections)) return sanitizeReading(legacy) } catch { /* plain response */ }
-    return plainReading(content)
+  let parsed
+  try { parsed=JSON.parse(content) } catch { parsed=undefined }
+  if(parsed && typeof parsed === 'object') {
+    // Legacy structured output (sections/summary) also remains supported for older integrations.
+    if(Array.isArray(parsed.sections) || typeof parsed.summary === 'string') return sanitizeReading(parsed)
+    const structured=structuredReadingSchema.safeParse(parsed)
+    if(structured.success) return structured.data
   }
+  if(content.trim().startsWith('{')) {
+    const answer=directAnswerFromBrokenJson(content).trim()
+    if(!answer) throw new AiError(502,'智能解读返回格式不完整，请重新生成')
+    return {...plainReading(answer),...(parsed ? {} : {incomplete:true})}
+  }
+  return plainReading(content)
 }
 async function provider(input,config,signal,stream) {
   const result = await fetch(config.apiUrl,{method:'POST',headers:{Authorization:`Bearer ${config.apiKey}`,'Content-Type':'application/json'},body:JSON.stringify({model:config.model,messages:buildDeepSeekMessages(input,{json:!stream}),...buildDeepSeekGenerationOptions(input,{json:!stream}),...(stream ? {stream:true,stream_options:{include_usage:true}} : {})}),signal})
@@ -31,7 +46,7 @@ export async function requestDeepSeek(input,config,{signal}={}) {
     const response=await provider(input,config,life.signal,false)
     const payload=await response.json()
     const content=payload?.choices?.[0]?.message?.content
-    if(!content) throw new AiError(502,'智能解读没有返回内容')
+    if(!content?.trim()) throw new AiError(502,payload?.choices?.[0]?.finish_reason === 'length' ? '回答被截断且没有正文，请重新生成' : '智能解读没有返回内容')
     const incomplete=payload.choices[0].finish_reason !== 'stop'
     return {reading:{...parseProviderReading(content),...(incomplete ? {incomplete:true} : {})},usage:extractDeepSeekUsage(payload.usage)}
   } finally { life.dispose() }
@@ -62,7 +77,7 @@ export async function openDeepSeekStream(input,config,{signal}={}) {
       }
       if(life.signal.aborted) throw life.signal.reason
       if(!finished) throw new AiError(502,'智能解读连接中断，请重试')
-      if(!answer.trim()) throw new AiError(502,'智能解读没有返回内容')
+      if(!answer.trim()) throw new AiError(502,reason === 'length' ? '回答被截断且没有正文，请重新生成' : '智能解读没有返回内容')
       yield {type:'done',reading:{...plainReading(answer),...(reason && reason!=='stop' ? {incomplete:true} : {})},usage}
     } finally {await response.body?.cancel().catch(()=>{});life.dispose()}
   })() }
