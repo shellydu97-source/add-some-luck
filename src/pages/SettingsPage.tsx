@@ -32,7 +32,7 @@ export default function SettingsPage() {
         if (!window.confirm('将备份与当前数据合并，并同步到这个账号，继续吗？')) return
         store.replaceAllData(mergeAppData(pickAppData(useAppStore.getState()), next))
       } else {
-        if (!window.confirm('导入会替换当前人物、记录和草稿，确定继续吗？')) return
+        if (!window.confirm('导入会替换当前人物和记录，确定继续吗？')) return
         if (account.session && !window.confirm('完全替换也会同步到云端并影响其他设备，请再次确认。')) return
         const current = pickAppData(useAppStore.getState())
         const now = new Date().toISOString()
@@ -52,7 +52,7 @@ export default function SettingsPage() {
 
   function clearData() {
     if (account.session) { setClearChoice(true); return }
-    if (!window.confirm('清空后人物、记录和草稿都将删除。继续吗？')) return
+    if (!window.confirm('清空后人物和记录都将删除。继续吗？')) return
     if (!window.confirm('请再次确认：确定清空当前浏览器中的全部数据吗？')) return
     store.clearAllData()
     navigate('/welcome', { replace: true })
@@ -60,7 +60,7 @@ export default function SettingsPage() {
 
   async function clearAccount(deleteCloud: boolean) {
     if (!window.confirm(deleteCloud ? '确认删除本机和云端数据？这会影响其他设备。' : '确认只清空本机并退出登录？')) return
-    if (deleteCloud && !window.confirm('请再次确认：删除云端保存的人物、记录和草稿。')) return
+    if (deleteCloud && !window.confirm('请再次确认：删除云端保存的人物和记录。')) return
     try { await account.clearLocalData(deleteCloud); navigate('/welcome', { replace: true }) }
     catch (cause) { setError(cause instanceof Error ? cause.message : '清空失败，数据仍保留。') }
   }
@@ -71,7 +71,7 @@ export default function SettingsPage() {
     {account.configured && <Card>
       <SectionHeading title="账号与同步" side={account.session ? <span className="chip">已登录</span> : undefined} />
       {account.session
-        ? <><p className="account-email">{account.session.user.email}</p><p className="helper">{account.syncMessage || '人物档案、记录和未完成流程会自动保存到云端。'}</p><LinkButton to="/account" secondary>管理账号</LinkButton></>
+        ? <><p className="account-email">{account.session.user.email}</p><p className="helper">{account.syncMessage || '人物档案和记录会自动保存到云端。'}</p><LinkButton to="/account" secondary>管理账号</LinkButton></>
         : <><p className="helper">登录后可在其他手机继续使用原来的人物档案和记录；不登录也能正常使用。</p><LinkButton to="/account" secondary>登录或注册</LinkButton></>}
     </Card>}
     <Card>

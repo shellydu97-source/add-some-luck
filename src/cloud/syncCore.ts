@@ -16,7 +16,8 @@ function stableSerialize(value: unknown): string {
   return JSON.stringify(value) ?? 'null'
 }
 export function pickSyncData(data: AppDataState) {
-  return { schemaVersion: data.schemaVersion, profiles: data.profiles, records: data.records, drafts: data.drafts, tombstones: data.tombstones ?? { profiles: {}, records: {}, drafts: {} } }
+  // In-progress flows stay on this device; finished results already live in records.
+  return { schemaVersion: data.schemaVersion, profiles: data.profiles, records: data.records, tombstones: data.tombstones ?? { profiles: {}, records: {}, drafts: {} } }
 }
 function hash(value: unknown) {
   let result = 0x811c9dc5
@@ -42,14 +43,19 @@ function mutableFields(kind: keyof SyncBaseline, item: object) {
   if (kind === 'records') return recordFields
   return Object.keys(item).filter((key) => !['id', 'createdAt', 'updatedAt'].includes(key))
 }
+const SYNCED_KINDS = ['profiles', 'records'] as const
 export function createSyncBaseline(data: AppDataState): SyncBaseline {
-  return Object.fromEntries((['profiles', 'records', 'drafts'] as const).map((kind) => [kind, Object.fromEntries(data[kind].map((item) => [item.id, Object.fromEntries(mutableFields(kind, item).map((key) => [key, hash((item as unknown as Record<string, unknown>)[key])]))]))])) as SyncBaseline
+  const baseline: SyncBaseline = { profiles: {}, records: {}, drafts: {} }
+  for (const kind of SYNCED_KINDS) {
+    baseline[kind] = Object.fromEntries(data[kind].map((item) => [item.id, Object.fromEntries(mutableFields(kind, item).map((key) => [key, hash((item as unknown as Record<string, unknown>)[key])]))]))
+  }
+  return baseline
 }
 export function findSyncConflicts(local: AppDataState, remote: AppDataState, baseline?: SyncBaseline) {
   const conflicts: string[] = []
-  for (const kind of ['profiles', 'records', 'drafts'] as const) {
+  for (const kind of SYNCED_KINDS) {
     for (const item of local[kind]) {
-      const other = remote[kind].find((r) => r.id === item.id)
+      const other = (remote[kind] as Array<{ id: string }>).find((r) => r.id === item.id)
       if (!other) continue
       const left = item as unknown as Record<string, unknown>, right = other as unknown as Record<string, unknown>
       const keys = new Set([...mutableFields(kind, item), ...mutableFields(kind, other)])
@@ -99,5 +105,5 @@ export function mergeAppData(local: AppDataState, remote: AppDataState, baseline
   profiles = profiles.map((x): Profile => ({ ...x, isDefault: x.id === defaultId }))
   const records = new Map(remote.records.map((x) => [x.id, x]))
   for (const item of local.records) { const old = records.get(item.id); records.set(item.id, old ? mergeRecord(item, old, baseline?.records[item.id]) : item) }
-  return { ...local, schemaVersion: '1.3', tombstones: pruneTombstones(tombstones), profiles, records: [...records.values()].filter((x) => alive('records', x)).sort((a, b) => b.createdAt.localeCompare(a.createdAt) || a.id.localeCompare(b.id)), drafts: latest(local.drafts, remote.drafts).filter((x) => alive('drafts', x)).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt) || a.id.localeCompare(b.id)), activeProfileId: profiles.some((x) => x.id === local.activeProfileId) ? local.activeProfileId : defaultId ?? '' }
+  return { ...local, schemaVersion: '1.3', tombstones: pruneTombstones(tombstones), profiles, records: [...records.values()].filter((x) => alive('records', x)).sort((a, b) => b.createdAt.localeCompare(a.createdAt) || a.id.localeCompare(b.id)), drafts: local.drafts, activeProfileId: profiles.some((x) => x.id === local.activeProfileId) ? local.activeProfileId : defaultId ?? '' }
 }

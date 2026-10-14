@@ -1,86 +1,38 @@
 import { buildMeihuaContext } from '../ai/context'
-import { judgeMeihua } from '../calculation/meihua/judgement'
-import { useNavigate } from 'react-router-dom'
-import {
-  calculateMeihuaByNumbers, calculateMeihuaByObjectCount, calculateMeihuaBySoundCount,
-  calculateMeihuaBySpecifiedTime, calculateMeihuaByText, calculateMeihuaByThreeNumbers,
-  calculateMeihuaByTime, createMeihuaBasicInterpretation, type MeihuaCalculationResult,
-} from '../calculation/meihua'
+import { Link } from 'react-router-dom'
 import AiReadingPanel from '../components/AiReadingPanel'
 import HexagramHelp from '../components/HexagramHelp'
 import TermHelp from '../components/TermHelp'
 import TopBar from '../components/TopBar'
-import { Button, Card, EmptyState, LinkButton, SectionHeading } from '../components/UI'
+import { Card, EmptyState, LinkButton, SectionHeading } from '../components/UI'
 import type { MeihuaDraft } from '../models/types'
 import { getDraft, useAppStore } from '../storage/store'
 import { formatDate } from '../utils/text'
-import { createRecord, GUEST_PROFILE_ID } from '../utils/record'
-
-function calculateResult(draft: MeihuaDraft) {
-  if (!draft.state.lockedAt || !draft.state.method) throw new Error('起卦信息尚未锁定。')
-  switch (draft.state.method) {
-    case 'time': return calculateMeihuaByTime(draft.state.lockedAt)
-    case 'specified_time': return calculateMeihuaBySpecifiedTime(draft.state.specifiedLocalDateTime!)
-    case 'numbers': return calculateMeihuaByNumbers(draft.state.firstNumber!, draft.state.secondNumber!)
-    case 'three_numbers': return calculateMeihuaByThreeNumbers(draft.state.firstNumber!, draft.state.secondNumber!, draft.state.thirdNumber!)
-    case 'text': return calculateMeihuaByText(draft.state.sourceText!)
-    case 'object_count': return calculateMeihuaByObjectCount(draft.state.observedCount!, draft.state.lockedAt)
-    case 'sound_count': return calculateMeihuaBySoundCount(draft.state.observedCount!, draft.state.lockedAt)
-  }
-}
+import { GUEST_PROFILE_ID } from '../utils/record'
+import { buildMeihuaOutcome, isMeihuaComplete, saveDivinationRecord } from '../utils/divinationRecords'
+import AutoSaveRecord from '../components/AutoSaveRecord'
 
 const methodLabels: Record<NonNullable<MeihuaDraft['state']['method']>, string> = {
   time: '当前时间起卦', specified_time: '指定时间起卦', numbers: '两数起卦', three_numbers: '三数起卦',
   text: '文字字数起卦', object_count: '物数起卦', sound_count: '声音起卦',
 }
 
-function resultContext(result: MeihuaCalculationResult) {
-  return {
-    method: result.method,
-    sourceNumbers: result.sourceNumbers,
-    calendar: result.calendar,
-    original: result.original,
-    mutual: result.mutual,
-    changed: result.changed,
-    opposite: result.opposite,
-    reversed: result.reversed,
-    movingLine: result.movingLine,
-    movingLineText: result.movingLineText,
-    bodyTrigram: result.bodyTrigram,
-    useTrigram: result.useTrigram,
-    bodyPosition: result.bodyPosition,
-    usePosition: result.usePosition,
-    bodyUseRelation: result.bodyUseRelation,
-  }
-}
-
 export default function MeihuaResultPage() {
-  const navigate = useNavigate()
   const store = useAppStore()
   const draft = getDraft(store, 'meihua')
-  if (!draft || !draft.state.locked || !draft.state.lockedAt || !draft.state.method) return <><TopBar title="梅花易数结果" back /><EmptyState title="结果尚未锁定" action={<LinkButton to="/divination/meihua/cast">继续起卦</LinkButton>}>确认起卦方式后即可查看结果。</EmptyState></>
+  if (!draft || !isMeihuaComplete(draft)) return <><TopBar title="梅花易数结果" back /><EmptyState title="结果尚未锁定" action={<LinkButton to="/divination/meihua/cast">继续起卦</LinkButton>}>确认起卦方式后即可查看结果。</EmptyState></>
   const activeDraft = draft
   const method = activeDraft.state.method as NonNullable<MeihuaDraft['state']['method']>
-  const lockedAt = activeDraft.state.lockedAt!
-  let result: MeihuaCalculationResult
+  let outcome: ReturnType<typeof buildMeihuaOutcome>
   try {
-    result = calculateResult(activeDraft)
+    outcome = buildMeihuaOutcome(activeDraft)
   } catch (caught) {
     return <><TopBar title="梅花易数结果" back /><EmptyState title="当前结果无法生成" action={<LinkButton to="/divination/meihua/cast">返回检查</LinkButton>}>{caught instanceof Error ? caught.message : '请重新检查起卦信息。'}</EmptyState></>
   }
+  const { lockedAt, result, judgement } = outcome
   const profile = activeDraft.profileId === GUEST_PROFILE_ID ? undefined : store.profiles.find((item) => item.id === activeDraft.profileId)
   const subjectLabel = profile?.name ?? activeDraft.temporarySubject?.name?.trim() ?? '临时测算'
-  const interpretation = createMeihuaBasicInterpretation(result)
-  const judgement = judgeMeihua(result, lockedAt)
-  const rawResult = { judgement, lockedAt, ...resultContext(result), engineVersion: result.engineVersion, adapterVersion: result.adapterVersion, ruleVersion: result.ruleVersion }
-
-  function ensureRecord() {
-    const existing = activeDraft.state.recordId && store.records.find((record) => record.id === activeDraft.state.recordId)
-    if (existing) return existing.id
-    const created = createRecord({ profile, temporarySubject: activeDraft.temporarySubject, type: 'meihua', question: activeDraft.question, category: activeDraft.category, rawResult, interpretation })
-    store.createRecordSnapshot(created,activeDraft.id)
-    return created.id
-  }
+  const savedRecord = store.records.find((record) => record.id === activeDraft.state.recordId)
 
   return <>
     <TopBar title="梅花易数结果" eyebrow={methodLabels[method]} back action={<span className="chip">{subjectLabel}</span>} />
@@ -93,8 +45,10 @@ export default function MeihuaResultPage() {
       <div className="chip-row"><span className="chip">第 {result.movingLine} 爻动</span><span className="chip">{result.bodyUseRelation.label}</span></div>
     </Card>
 
+    <AutoSaveRecord draftId={activeDraft.id} />
+    {savedRecord && <p className="auto-saved-note"><span>已自动保存到记录</span><Link to={`/records/${savedRecord.id}`}>查看记录</Link></p>}
     <Card className="interpretation-card"><SectionHeading title={judgement.tendency} /><ul className="plain-list">{judgement.reasons.map(r => <li key={r}>{r}</li>)}</ul><p>{judgement.advice}</p><p className="helper">{judgement.uncertainty}</p></Card>
-    <details className="result-disclosure"><summary>查看卦象结构</summary><Card>
+    <Card>
       <SectionHeading title="卦象结构" />
       <div className="meihua-sequence">
         <div><span><TermHelp term="本卦" /></span><b>{result.original.name}</b><small>{result.original.upper.symbol}{result.original.lower.symbol}</small></div>
@@ -114,19 +68,17 @@ export default function MeihuaResultPage() {
       </dl>
     </Card>
 
-    </details>
-    <details className="result-disclosure"><summary>查看卦辞与动爻</summary><Card className="interpretation-card summary-reading local-answer-card">
-      <SectionHeading title="基础答案" />
+    <Card className="interpretation-card summary-reading local-answer-card">
+      <SectionHeading title="卦辞与动爻" />
       <p className="reading-intro">{result.bodyUseRelation.summary}</p>
       <div className="reading-sections">
         <section className="reading-section"><h3>卦辞</h3><blockquote className="hexagram-text">{result.original.judgment}</blockquote></section>
         <section className="reading-section"><h3>第 {result.movingLine} 爻</h3><blockquote className="hexagram-text">{result.movingLineText}</blockquote></section>
       </div>
-      <p className="fact-boundary">以上答案来自固定卦象、动爻和体用关系，不需要调用智能解读。点击卦名可以继续查看卦辞和六爻原文。</p>
+      <p className="helper">点击卦名可以查看完整卦辞和六爻原文。</p>
     </Card>
 
-    </details>
-    <AiReadingPanel key={activeDraft.id} module="meihua" question={activeDraft.question} context={buildMeihuaContext(result,judgement,lockedAt)} draftId={activeDraft.id} category={activeDraft.category} recordId={activeDraft.state.recordId} ensureRecord={ensureRecord} title="结合卦象回答你的问题" />
+    <AiReadingPanel key={activeDraft.id} module="meihua" question={activeDraft.question} context={buildMeihuaContext(result,judgement,lockedAt)} draftId={activeDraft.id} category={activeDraft.category} recordId={activeDraft.state.recordId} ensureRecord={() => saveDivinationRecord(activeDraft.id) ?? ''} title="结合卦象回答你的问题" />
 
     <details className="result-disclosure"><summary>查看起卦依据</summary><Card>
       <p className="helper">子时按当天计算；时间起卦年数取农历年支序数。卦气按节令月建，互卦与变用卦分别对固定体卦判断生克。</p>
@@ -142,6 +94,6 @@ export default function MeihuaResultPage() {
       </ul>
     </Card></details>
 
-    <div className="button-row"><LinkButton to="/divination" secondary>返回占卜</LinkButton><Button onClick={() => navigate(`/records/${ensureRecord()}`)}>{activeDraft.state.recordId ? '查看已保存记录' : '保存到记录'}</Button></div>
+    <div className="button-row"><LinkButton to="/divination" secondary>返回占卜</LinkButton>{savedRecord && <LinkButton to={`/records/${savedRecord.id}`}>查看记录</LinkButton>}</div>
   </>
 }

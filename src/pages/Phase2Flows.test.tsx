@@ -20,12 +20,12 @@ describe('第二阶段界面流程',()=>{
   fireEvent.change(screen.getByRole('combobox',{name:'问题分类'}),{target:{value:'感情'}})
   fireEvent.click(screen.getByText('下一步：选择起爻方式'));expect(screen.getByText('感情占问请确认占问者性别，以便建议用神')).toBeTruthy()
  })
- it('改选用神保存后只更新可变字段，原始判断不改变',()=>{
+ it('结果自动保存，改选用神只更新可变字段，原始判断不改变',()=>{
   reset();useAppStore.setState({drafts:[{id:'d',type:'liuyao',profileId:'guest',question:'考试？',category:'学业 / 考试',createdAt:'2026-10-12T04:00:00Z',updatedAt:'2026-10-12T04:00:00Z',state:{timeRange:'',locked:true,lockedAt:'2026-10-12T04:00:00Z',casts:createCastFromValues([7,7,7,7,7,7])}}]})
   render(<MemoryRouter><LiuyaoResultPage /></MemoryRouter>)
   expect(screen.getByRole('heading',{name:'较有利'})).toBeTruthy()
+  expect(useAppStore.getState().records).toHaveLength(1)
   fireEvent.change(screen.getByRole('combobox',{name:'用神（可改选）'}),{target:{value:'官鬼'}})
-  fireEvent.click(screen.getByText('保存到记录'))
   const original=useAppStore.getState().records[0].rawResult
   expect(useAppStore.getState().records[0].liuyaoUseGodOverride).toBe('官鬼')
   fireEvent.change(screen.getByRole('combobox',{name:'用神（可改选）'}),{target:{value:'父母'}})

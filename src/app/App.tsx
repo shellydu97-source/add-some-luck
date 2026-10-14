@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react'
+import { lazy, Suspense, useEffect } from 'react'
 import { Navigate, Route, Routes, useParams } from 'react-router-dom'
 import AppShell from '../components/AppShell'
 import StartupSplash from '../components/StartupSplash'
@@ -6,6 +6,7 @@ import AccountGate from '../cloud/AccountGate'
 import { featureFlags } from '../config/features'
 import { useAppStore } from '../storage/store'
 import { resolveStartupPath } from './startup'
+import { saveCompletedDrafts } from '../utils/divinationRecords'
 
 const LegalPage = lazy(() => import('../pages/LegalPage'))
 const SettingsPage = lazy(() => import('../pages/SettingsPage'))
@@ -50,6 +51,8 @@ function AstrologyRoute() {
 }
 
 export default function App() {
+  const hasHydrated = useAppStore((state) => state.hasHydrated)
+  useEffect(() => { if (hasHydrated) saveCompletedDrafts() }, [hasHydrated])
   return <><StartupSplash /><Suspense fallback={<div className="route-loading">正在打开页面…</div>}><Routes>
     <Route path="privacy" element={<LegalPage />} />
     <Route path="terms" element={<LegalPage />} />

@@ -4,7 +4,6 @@ import { Card, SectionHeading } from '../components/UI'
 import { useAppStore } from '../storage/store'
 import { formatDate } from '../utils/text'
 import { recordTypeLabels } from '../models/labels'
-import DraftRecoveryPanel from '../components/DraftRecoveryPanel'
 
 export default function DivinationHomePage() {
   const store = useAppStore()
@@ -32,7 +31,6 @@ export default function DivinationHomePage() {
         <Link className="method-button method-meihua" to="/divination/meihua/question"><span className="method-mark">梅</span><span><b>梅花易数</b><small>用时间、数字、文字或所见所闻推演</small></span><i>›</i></Link>
         <Link className="method-button method-tarot" to="/divination/tarot/question"><span className="method-mark">塔</span><span><b>塔罗</b><small>通过牌阵观察不同角度和选择</small></span><i>›</i></Link>
       </div>
-      <DraftRecoveryPanel />
       {recent && <><SectionHeading title="最近一次" /><Card className="record-card recent-record-card"><Link className="recent-record-link" to={`/records/${recent.id}`}><div><h3>{recent.question || '未填写问题'}</h3><p className="helper">{recordTypeLabels[recent.type]} · {formatDate(recent.createdAt)}</p></div><span className="link-arrow">→</span></Link><button type="button" className="record-delete-button" onClick={deleteRecent}>删除</button></Card></>}
   </div>
 }

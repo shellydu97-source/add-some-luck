@@ -691,3 +691,13 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 700; }
 .ai-stream { margin: 14px 0; padding: 12px; background: var(--teal-soft); border-radius: 12px; overflow-wrap: anywhere; }
 .ai-reading-content, .ai-consent { overflow-wrap: anywhere; }
 .ai-reading-panel > .button { margin-top: 12px; }
+
+/* Use-god roles on the six-line board */
+.liuyao-compact-line .god-tag { display: inline-block; margin-left: 4px; padding: 1px 5px; border-radius: 6px; font-size: 10px; font-style: normal; font-weight: 600; white-space: nowrap; }
+.liuyao-compact-line.is-use-god { background: rgba(43, 108, 246, .08); box-shadow: inset 3px 0 0 var(--blue); }
+.liuyao-compact-line.is-use-god .god-tag { color: #fff; background: var(--blue); }
+.liuyao-compact-line.is-origin-god .god-tag { color: var(--teal, #0f9d8a); background: rgba(15, 157, 138, .1); }
+.liuyao-compact-line.is-avoid-god .god-tag { color: var(--coral); background: rgba(255, 93, 83, .1); }
+.liuyao-compact-line > b { display: flex; flex-wrap: wrap; align-items: center; gap: 2px; }
+.auto-saved-note { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0 0 14px; padding: 10px 14px; border: 1px solid var(--line); border-radius: 14px; background: var(--panel); color: var(--muted); font-size: 13px; }
+.auto-saved-note a { flex: none; color: var(--blue); font-weight: 600; text-decoration: none; }

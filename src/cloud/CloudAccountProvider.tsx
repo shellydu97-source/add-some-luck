@@ -57,7 +57,7 @@ function readGuestData() {
 }
 
 function latestChange(data: AppDataState) {
-  return [...data.profiles.map((p) => p.updatedAt), ...data.records.map((r) => r.metaUpdatedAt ?? r.createdAt), ...data.drafts.map((d) => d.updatedAt)].sort().at(-1) ?? ''
+  return [...data.profiles.map((p) => p.updatedAt), ...data.records.map((r) => r.metaUpdatedAt ?? r.createdAt)].sort().at(-1) ?? ''
 }
 
 function friendlyCloudError(cause: unknown) {
@@ -105,7 +105,7 @@ export function CloudAccountProvider({ children }: { children: ReactNode }) {
     applyingRemote.current = true
     // Navigation, accessibility and selection remain local to this browser.
     const local = getLocalData()
-    useAppStore.getState().restoreCloudData({ ...payload, lastPrimaryRoute: local.lastPrimaryRoute, reduceMotion: local.reduceMotion, activeProfileId: payload.profiles.some((p) => p.id === local.activeProfileId) ? local.activeProfileId : payload.profiles.find((p) => p.isDefault)?.id ?? payload.profiles[0]?.id ?? '' })
+    useAppStore.getState().restoreCloudData({ ...payload, drafts: local.drafts, lastPrimaryRoute: local.lastPrimaryRoute, reduceMotion: local.reduceMotion, activeProfileId: payload.profiles.some((p) => p.id === local.activeProfileId) ? local.activeProfileId : payload.profiles.find((p) => p.isDefault)?.id ?? payload.profiles[0]?.id ?? '' })
     applyingRemote.current = false
   }, [])
 

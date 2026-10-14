@@ -1,4 +1,4 @@
-import UnfinishedFlowPrompt from '../components/UnfinishedFlowPrompt'
+import { saveDivinationRecord } from '../utils/divinationRecords'
 import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { LIUYAO_COIN_CONVENTION_VERSION } from '../calculation/liuyao'
@@ -61,12 +61,13 @@ function QuestionContent() {
       temporarySubject: selectedProfile ? undefined : { name: temporaryName.trim() || undefined, gender: temporaryGender },
       state: { querentGender: selectedProfile?.gender ?? temporaryGender, coinConventionVersion: LIUYAO_COIN_CONVENTION_VERSION, timeRange: timeRange.trim(), casts: [], locked: false },
     }
+    // A finished earlier flow is kept as a record before the new flow replaces it.
+    if (previous && !resumed) saveDivinationRecord(previous.id)
     store.upsertDraft(resumed ? { ...draft, id: resumed.id, createdAt: resumed.createdAt, randomSeed: resumed.randomSeed, state: resumed.state, ai: resumed.ai } : draft)
     navigate('/divination/liuyao/cast')
   }
 
   return <>
-    <UnfinishedFlowPrompt draft={previous} resumed={resumed} />
     <TopBar title="六爻占问" eyebrow="第 1 步 · 明确问题" back />
     <ConfidenceNote>一事一占；想清楚再起卦；同一件事短期内不要反复占。</ConfidenceNote>
     <Card>

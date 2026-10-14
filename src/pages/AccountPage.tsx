@@ -215,14 +215,14 @@ export default function AccountPage() {
     <Card>
       <SectionHeading title="已登录" side={<span className="chip">{syncStatusLabel(account.syncStatus)}</span>} />
       <p className="account-email">{account.session.user.email}</p>
-      <p className="helper">{account.syncMessage || '人物档案、记录和未完成的占卜流程会自动保存到云端，换设备登录后会自动恢复。'}</p>
+      <p className="helper">{account.syncMessage || '人物档案和记录会自动保存到云端，换设备登录后会自动恢复。'}</p>
       {account.lastSyncedAt && <p className="account-meta">最近同步：{new Date(account.lastSyncedAt).toLocaleString('zh-CN')}</p>}
       {account.syncStatus === 'error' && <Button className="secondary" disabled={busy} onClick={() => void runAccountAction(account.syncNow)}>重新同步</Button>}
       {error && <p className="field-error account-feedback">{error}</p>}
     </Card>
     <SyncConflictPanel />
     <Card><SectionHeading title="数据说明" /><p className="helper">本机与云端按版本同步，冲突时由你选择。当前设备会保留一份安全缓存，断网时仍可使用；恢复网络或重新打开页面后会自动同步，不需要手动操作。</p></Card>
-    <Button className="danger" disabled={busy} onClick={() => { if (!window.confirm('注销将永久删除账号、云端人物、记录、草稿和用量数据。请先导出备份，继续吗？')) return; if (!window.confirm('再次确认：永久注销当前账号？此操作无法恢复。')) return; void runAccountAction(async () => { await account.deleteAccount(); allowGuestAccess(); navigate('/welcome', { replace: true }) }) }}>注销账号</Button>
+    <Button className="danger" disabled={busy} onClick={() => { if (!window.confirm('注销将永久删除账号、云端人物、记录和用量数据。请先导出备份，继续吗？')) return; if (!window.confirm('再次确认：永久注销当前账号？此操作无法恢复。')) return; void runAccountAction(async () => { await account.deleteAccount(); allowGuestAccess(); navigate('/welcome', { replace: true }) }) }}>注销账号</Button>
     <Button className="secondary" disabled={busy} onClick={() => void runAccountAction(async () => { await account.signOut(); clearGuestAccess(); navigate('/account?onboarding=1', { replace: true }) })}>退出登录</Button>
   </AccountFrame>
 
