@@ -6,7 +6,7 @@ import { migrateToV12 } from '../storage/migrations'
 import { useAppStore } from '../storage/store'
 import { createSyncBaseline, findSyncConflicts, hashAppData, mergeAppData, type CloudSyncMeta } from './syncCore'
 import { isVersionConflict, readRemote, writeRemote, type RemoteSnapshot } from './remoteData'
-import { hasUserData } from '../storage/appData'
+import GuestImportDialog from '../components/GuestImportDialog'
 import { getSupabaseClient, isCloudAccountConfigured } from './supabaseClient'
 import { CloudAccountContext, UnsyncedChangesError, type CloudAccountValue, type CloudSyncStatus } from './accountContext'
 
@@ -84,6 +84,11 @@ export function CloudAccountProvider({ children }: { children: ReactNode }) {
   const cloudDataReady = !accountUserId || syncReadyUserId === accountUserId || syncStatus === 'error'
 
   const version = useRef(0)
+  const sessionUser = useRef<string | undefined>(undefined)
+  const [guestImport, setGuestImport] = useState<{ profiles: number; records: number; resolve: (value: boolean) => void }>()
+  const askGuestImport = useCallback((local: AppDataState) => new Promise<boolean>((resolve) => {
+    setGuestImport({ profiles: local.profiles.length, records: local.records.length, resolve })
+  }), [])
   const syncing = useRef(false)
   const idleWaiters = useRef<Array<() => void>>([])
   const conflict = useRef<RemoteSnapshot | undefined>(undefined)
@@ -182,8 +187,8 @@ export function CloudAccountProvider({ children }: { children: ReactNode }) {
     if (owner !== userId && !restoredBackup) {
       if (owner === GUEST_OWNER) {
         saveGuestData(local)
-        if (hasUserData(local)) {
-          const importGuest = window.confirm('把本机人物、记录和草稿导入这个账号吗？选择“取消”则不导入。')
+        if (local.profiles.length || local.records.length) {
+          const importGuest = await askGuestImport(local)
           applyData(importGuest ? mergeAppData(local, remote?.payload ?? createEmptyAppData()) : remote?.payload ?? createEmptyAppData())
         } else applyData(remote?.payload ?? createEmptyAppData())
       } else applyData(remote?.payload ?? createEmptyAppData())
@@ -214,9 +219,8 @@ export function CloudAccountProvider({ children }: { children: ReactNode }) {
       if (defaultId) loadedStore.setActiveProfile(defaultId)
     }
     setSyncReadyUserId(userId)
-  }, [applyData, applyRemote, commitSynced, pushLocal, showConflict])
+  }, [applyData, applyRemote, askGuestImport, commitSynced, pushLocal, showConflict])
 
-  const sessionUser = useRef<string | undefined>(undefined)
   useEffect(() => {
     if (!isCloudAccountConfigured) return
     let active = true
@@ -472,5 +476,5 @@ export function CloudAccountProvider({ children }: { children: ReactNode }) {
     mergeBoth,
   }), [authLoading, deleteAccount, clearLocalData, cloudDataReady, conflictRemote, keepCloudData, keepLocalData, lastSyncedAt, mergeBoth, passwordRecovery, resendSignUpCode, sendPasswordReset, session, signIn, signOut, signUp, syncMessage, syncNow, syncStatus, updatePassword, verifyPasswordResetCode, verifySignUpCode])
 
-  return <CloudAccountContext.Provider value={value}>{children}</CloudAccountContext.Provider>
+  return <CloudAccountContext.Provider value={value}>{children}{guestImport && <GuestImportDialog profiles={guestImport.profiles} records={guestImport.records} onAnswer={(importData) => { guestImport.resolve(importData); setGuestImport(undefined) }} />}</CloudAccountContext.Provider>
 }

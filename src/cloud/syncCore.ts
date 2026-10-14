@@ -26,6 +26,8 @@ function hash(value: unknown) {
   return (result >>> 0).toString(16).padStart(8, '0')
 }
 export function hashAppData(data: AppDataState) { return hash(pickSyncData(data)) }
+// Field comparisons treat missing, null and empty-string values alike (migrations fill some of them with '').
+function fieldHash(value: unknown) { return hash(value === undefined || value === null || value === '' ? '' : value) }
 export function decideInitialSync(input: { userId: string; local: AppDataState; localHash: string; remoteHash?: string; meta?: CloudSyncMeta; localOwnerId?: string }): InitialSyncDecision {
   const { userId, localHash, remoteHash, meta, localOwnerId } = input
   if (localOwnerId !== userId) return remoteHash ? 'download' : 'initialize'
@@ -47,20 +49,23 @@ const SYNCED_KINDS = ['profiles', 'records'] as const
 export function createSyncBaseline(data: AppDataState): SyncBaseline {
   const baseline: SyncBaseline = { profiles: {}, records: {}, drafts: {} }
   for (const kind of SYNCED_KINDS) {
-    baseline[kind] = Object.fromEntries(data[kind].map((item) => [item.id, Object.fromEntries(mutableFields(kind, item).map((key) => [key, hash((item as unknown as Record<string, unknown>)[key])]))]))
+    baseline[kind] = Object.fromEntries(data[kind].map((item) => [item.id, Object.fromEntries(mutableFields(kind, item).map((key) => [key, fieldHash((item as unknown as Record<string, unknown>)[key])]))]))
   }
   return baseline
 }
 export function findSyncConflicts(local: AppDataState, remote: AppDataState, baseline?: SyncBaseline) {
   const conflicts: string[] = []
-  for (const kind of SYNCED_KINDS) {
+  // Without a baseline (first sync after upgrading) only edits to a record's own notes can truly clash;
+  // people are merged by their newest update.
+  const kinds = baseline ? SYNCED_KINDS : (['records'] as const)
+  for (const kind of kinds) {
     for (const item of local[kind]) {
       const other = (remote[kind] as Array<{ id: string }>).find((r) => r.id === item.id)
       if (!other) continue
       const left = item as unknown as Record<string, unknown>, right = other as unknown as Record<string, unknown>
       const keys = new Set([...mutableFields(kind, item), ...mutableFields(kind, other)])
       for (const key of keys) {
-        const l = hash(left[key]), r = hash(right[key]), base = baseline?.[kind][item.id]?.[key]
+        const l = fieldHash(left[key]), r = fieldHash(right[key]), base = baseline?.[kind][item.id]?.[key]
         if (l !== r && (!base || (l !== base && r !== base))) { conflicts.push(`${kind}:${item.id}:${key}`); break }
       }
     }
@@ -84,8 +89,8 @@ function mergeRecord(local: RecordSnapshot, remote: RecordSnapshot, baseline?: R
   const newer = (local.metaUpdatedAt ?? local.createdAt) > (remote.metaUpdatedAt ?? remote.createdAt) ? local : remote
   const merged = { ...local, metaUpdatedAt: newer.metaUpdatedAt }
   for (const key of recordFields) {
-    const leftChanged = baseline && hash(local[key]) !== baseline[key]
-    const rightChanged = baseline && hash(remote[key]) !== baseline[key]
+    const leftChanged = baseline && fieldHash(local[key]) !== baseline[key]
+    const rightChanged = baseline && fieldHash(remote[key]) !== baseline[key]
     const source = leftChanged && !rightChanged ? local : rightChanged && !leftChanged ? remote : newer
     Object.assign(merged, { [key]: source[key] })
   }

@@ -49,11 +49,15 @@ async function mount() {
   await waitFor(() => expect(account.syncStatus).toBe('synced'))
 }
 describe('账号数据保护流程', () => {
-  it.each([true, false])('首次登录由用户选择是否导入访客数据：%s', async (accept) => {
-    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(accept)
+  it.each([true, false])('首次登录用应用内对话框询问是否带入访客数据：%s', async (accept) => {
+    const confirm = vi.spyOn(window, 'confirm')
     useAppStore.setState({ records: [{ ...seedRecords[0], id: 'guest-record' }] })
-    await mount()
-    expect(confirm).toHaveBeenCalledWith(expect.stringContaining('把本机'))
+    render(<CloudAccountProvider><Probe /><SyncConflictPanel /></CloudAccountProvider>)
+    const dialog = await screen.findByRole('dialog', { name: '把这台设备上的数据带进账号？' })
+    expect(dialog.textContent).toContain('0 个人物、1 条记录')
+    fireEvent.click(screen.getByRole('button', { name: accept ? '带进账号' : '不用了' }))
+    await waitFor(() => expect(account.syncStatus).toBe('synced'))
+    expect(confirm).not.toHaveBeenCalled()
     expect(useAppStore.getState().records.map((r) => r.id).sort()).toEqual(accept ? ['guest-record', 'r'] : ['r'])
     expect(backend.rpc).toHaveBeenCalledTimes(accept ? 1 : 0)
     expect(JSON.parse(localStorage.getItem('add-luck-guest-data-v1')!).records[0].id).toBe('guest-record')
@@ -68,6 +72,18 @@ describe('账号数据保护流程', () => {
     expect(backend.row).toEqual(row)
     expect(useAppStore.getState().records).toEqual([])
     expect(account.session).toBeNull()
+  })
+  it('升级后首次同步没有基线：人物按最新修改合并，不弹冲突', async () => {
+    localStorage.setItem('add-luck-active-data-owner-v1', 'u')
+    localStorage.setItem('add-luck-cloud-sync-meta-v1', JSON.stringify({ userId: 'u', lastSyncedHash: 'old-hash-format', lastSyncedAt: '2026-10-01T00:00:00Z', dirty: true }))
+    const cloudPerson = { ...structuredClone(seedProfiles[0]), name: '云端改名', updatedAt: '2026-10-10T00:00:00Z' }
+    const localPerson = { ...structuredClone(seedProfiles[0]), name: '本机改名', updatedAt: '2026-10-11T00:00:00Z' }
+    const payload = { ...createEmptyAppData(), profiles: [cloudPerson], records: [{ ...seedRecords[0], id: 'r' }] }
+    backend.row = { payload: pickSyncData(payload), data_hash: hashAppData(payload), updated_at: '2026-10-12T04:00:00Z', version: 3 }
+    useAppStore.setState({ profiles: [localPerson], records: [{ ...seedRecords[0], id: 'r' }] })
+    await mount()
+    expect(account.hasConflict).toBe(false)
+    expect(useAppStore.getState().profiles[0].name).toBe('本机改名')
   })
   it('登录状态下切回页面不会把正在查看的人物换回默认人物', async () => {
     const payload = { ...createEmptyAppData(), profiles: structuredClone(seedProfiles), records: [{ ...seedRecords[0], id: 'r' }] }
