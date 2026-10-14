@@ -207,9 +207,12 @@ export function CloudAccountProvider({ children }: { children: ReactNode }) {
         await pushLocal(activeClient, userId)
       }
     }
+    // Keep the person the user is viewing; fall back to the default only when that person no longer exists.
     const loadedStore = useAppStore.getState()
-    const defaultId = loadedStore.profiles.find(p => p.isDefault)?.id ?? loadedStore.profiles[0]?.id
-    if (defaultId) loadedStore.setActiveProfile(defaultId)
+    if (!loadedStore.profiles.some((p) => p.id === loadedStore.activeProfileId)) {
+      const defaultId = loadedStore.profiles.find(p => p.isDefault)?.id ?? loadedStore.profiles[0]?.id
+      if (defaultId) loadedStore.setActiveProfile(defaultId)
+    }
     setSyncReadyUserId(userId)
   }, [applyData, applyRemote, commitSynced, pushLocal, showConflict])
 

@@ -8,6 +8,7 @@ import { useCloudAccount, type CloudAccountValue } from './accountContext'
 import { useAppStore } from '../storage/store'
 import { createEmptyAppData } from '../storage/appData'
 import { seedRecords } from '../mocks/records'
+import { seedProfiles } from '../mocks/profiles'
 import { hashAppData, pickSyncData } from './syncCore'
 
 const backend = vi.hoisted(() => ({ row: undefined as unknown, authChange: undefined as unknown, session: undefined as unknown, rpc: vi.fn(), delete: vi.fn(), invoke: vi.fn() }))
@@ -67,6 +68,16 @@ describe('账号数据保护流程', () => {
     expect(backend.row).toEqual(row)
     expect(useAppStore.getState().records).toEqual([])
     expect(account.session).toBeNull()
+  })
+  it('登录状态下切回页面不会把正在查看的人物换回默认人物', async () => {
+    const payload = { ...createEmptyAppData(), profiles: structuredClone(seedProfiles), records: [{ ...seedRecords[0], id: 'r' }] }
+    backend.row = { payload: pickSyncData(payload), data_hash: hashAppData(payload), updated_at: '2026-10-12T04:00:00Z', version: 1 }
+    await mount()
+    const other = seedProfiles.find((p) => !p.isDefault)!.id
+    act(() => useAppStore.getState().setActiveProfile(other))
+    await act(async () => { window.dispatchEvent(new Event('focus')); document.dispatchEvent(new Event('visibilitychange')) })
+    await waitFor(() => expect(account.syncStatus).toBe('synced'))
+    expect(useAppStore.getState().activeProfileId).toBe(other)
   })
   it('会话过期保留未同步改动并提示重新登录', async () => {
     await mount()
