@@ -39,6 +39,6 @@ export function EmptyState({ title, children, action }: { title: string; childre
   return <div className="empty-state"><div className="empty-mark">○</div><h2>{title}</h2><p>{children}</p>{action}</div>
 }
 
-export function SectionHeading({ title, side }: { title: string; side?: ReactNode }) {
+export function SectionHeading({ title, side }: { title: ReactNode; side?: ReactNode }) {
   return <div className="section-heading"><h2>{title}</h2>{side}</div>
 }

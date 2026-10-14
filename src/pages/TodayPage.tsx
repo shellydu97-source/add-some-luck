@@ -5,6 +5,7 @@ import { getActiveProfile, useAppStore } from '../storage/store'
 import { useMemo, useState } from 'react'
 import { calculateAlmanac } from '../calculation/almanac'
 import DatePicker from '../components/DatePicker'
+import TermHelp from '../components/TermHelp'
 import TopBar from '../components/TopBar'
 import { Button, Card, SectionHeading } from '../components/UI'
 import { formatDateParts, parseDateParts, shiftDate } from '../utils/date'
@@ -41,11 +42,11 @@ export default function TodayPage() {
   }
 
   return <div className="today-page almanac-page">
-    <TopBar title="今日黄历" eyebrow="择日参考" />
+    <TopBar title="今日" eyebrow="个人提示与黄历" />
     <Card className="personal-today"><SectionHeading title="今日提示" side={profile?.name} />
-      {personal ? <><h3>{personal.ganZhi}日 · {personal.stemTenGod}</h3><p>{termGlossary[personal.stemTenGod]?.definition}</p>
+      {personal ? <><h3>{personal.ganZhi}日 · <TermHelp term={personal.stemTenGod} /></h3><p>{(termGlossary[personal.stemTenGod]?.plain ?? termGlossary[personal.stemTenGod]?.definition)}</p>
         <ul className="plain-list">{personal.relations.map((r,i) => <li key={i}>{r.text}</li>)}</ul>
-        <p>{personal.shenSha.length ? personal.shenSha.map(h => `${h.name}（${h.basis}）`).join('；') : '本日未命中当前口径的常用神煞。'}</p><p className="helper">以上为结构事实，不直接代表吉凶。</p>
+        {personal.shenSha.length ? <p className="term-chip-row">{personal.shenSha.map((h, i) => <span key={i}><TermHelp term={h.name} />（{h.basis}）</span>)}</p> : <p className="helper">今天没有常用神煞落在你的命盘上。</p>}
         <Link className="button secondary" to={`/charts/${profile!.id}/bazi?tab=fortune&flow=day&date=${date}`}>查看完整流日分析</Link></> : <p>{profile ? '出生信息暂无法生成个人提示，请先核对档案。' : '建立人物档案后可查看与你相关的今日提示'}</p>}
     </Card>
     <Card className="almanac-date-nav">
@@ -67,15 +68,15 @@ export default function TodayPage() {
       </div>
 
       <Card><SectionHeading title="今日值日" /><div className="almanac-facts">
-        <div><span>十二建星</span><b>{result.value.dayOfficer}日</b></div><div><span>值神</span><b>{result.value.tianShen.name} · {result.value.tianShen.luck}</b></div>
-        <div><span>星宿</span><b>{result.value.xiu.name}宿 · {result.value.xiu.luck}</b></div><div><span>冲煞</span><b>冲{result.value.chong} · 煞{result.value.sha}</b></div>
+        <div><span><TermHelp term="十二建星" /></span><b><TermHelp term={`${result.value.dayOfficer}日`} /></b></div><div><span><TermHelp term="值神" /></span><b>{result.value.tianShen.name} · {result.value.tianShen.luck}</b></div>
+        <div><span><TermHelp term="星宿" /></span><b>{result.value.xiu.name}宿 · {result.value.xiu.luck}</b></div><div><span><TermHelp term="冲煞" /></span><b>冲{result.value.chong} · 煞{result.value.sha}</b></div>
       </div></Card>
 
-      <Card><SectionHeading title="吉神与凶煞" /><div className="almanac-spirit-grid"><div><b>吉神宜趋</b><ChipList items={result.value.jiShen} /></div><div><b>凶神宜忌</b><ChipList items={result.value.xiongSha} /></div></div></Card>
+      <Card><SectionHeading title="吉神与凶煞" /><div className="almanac-spirit-grid"><div><b><TermHelp term="吉神宜趋" /></b><ChipList items={result.value.jiShen} /></div><div><b><TermHelp term="凶神宜忌" /></b><ChipList items={result.value.xiongSha} /></div></div></Card>
 
       <Card><SectionHeading title="方位与日忌" />
-        <div className="almanac-facts three"><div><span>喜神</span><b>{result.value.positions.xi}</b></div><div><span>福神</span><b>{result.value.positions.fu}</b></div><div><span>财神</span><b>{result.value.positions.cai}</b></div></div>
-        <div className="almanac-notes"><div><b>彭祖百忌</b><p>{result.value.pengZu.join('；')}</p></div><div><b>胎神方位</b><p>{result.value.taiShen}</p></div></div>
+        <div className="almanac-facts three"><div><span><TermHelp term="喜神" /></span><b>{result.value.positions.xi}</b></div><div><span><TermHelp term="福神" /></span><b>{result.value.positions.fu}</b></div><div><span><TermHelp term="财神" /></span><b>{result.value.positions.cai}</b></div></div>
+        <div className="almanac-notes"><div><b><TermHelp term="彭祖百忌" /></b><p>{result.value.pengZu.join('；')}</p></div><div><b><TermHelp term="胎神" label="胎神方位" /></b><p>{result.value.taiShen}</p></div></div>
       </Card>
     </>}
   </div>

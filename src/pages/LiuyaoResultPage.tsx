@@ -276,6 +276,7 @@ export default function LiuyaoResultPage() {
             </tr>)}</tbody>
           </table>
         </div>
+        <p className="fine-print">以上为传统纳甲排盘规则得出的结构信息，供参考。</p>
       </Card>
     </details>
       </details>

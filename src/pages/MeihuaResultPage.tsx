@@ -47,7 +47,7 @@ export default function MeihuaResultPage() {
 
     <AutoSaveRecord draftId={activeDraft.id} />
     {savedRecord && <p className="auto-saved-note"><span>已自动保存到记录</span><Link to={`/records/${savedRecord.id}`}>查看记录</Link></p>}
-    <Card className="interpretation-card"><SectionHeading title={judgement.tendency} /><ul className="plain-list">{judgement.reasons.map(r => <li key={r}>{r}</li>)}</ul><p>{judgement.advice}</p><p className="helper">{judgement.uncertainty}</p></Card>
+    <Card className="interpretation-card"><SectionHeading title={judgement.tendency} /><ul className="plain-list">{judgement.reasons.map(r => <li key={r}>{r}</li>)}</ul><p>{judgement.advice}</p></Card>
     <Card>
       <SectionHeading title="卦象结构" />
       <div className="meihua-sequence">
@@ -64,7 +64,7 @@ export default function MeihuaResultPage() {
       <dl className="reading-summary-list">
         <div><dt><TermHelp term="体卦" label="体卦 · 主方" /></dt><dd>{result.bodyTrigram.symbol} {result.bodyTrigram.name} · {result.bodyTrigram.element}</dd></div>
         <div><dt><TermHelp term="用卦" label="用卦 · 所问之事" /></dt><dd>{result.useTrigram.symbol} {result.useTrigram.name} · {result.useTrigram.element}</dd></div>
-        <div><dt>体用关系</dt><dd>{result.bodyUseRelation.label}</dd></div>
+        <div><dt><TermHelp term="体用关系" /></dt><dd>{result.bodyUseRelation.label}</dd></div>
       </dl>
     </Card>
 

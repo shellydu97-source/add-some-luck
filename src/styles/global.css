@@ -710,3 +710,9 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 700; }
 .time-wheels { grid-template-columns: 1fr 1fr; }
 .time-preview { margin: 0; font-variant-numeric: tabular-nums; }
 .datetime-fields { display: grid; gap: 12px; }
+.term-help-sections { display: grid; gap: 12px; margin: 4px 0 16px; }
+.term-help-sections h3 { margin: 0 0 4px; color: var(--muted); font-size: 12px; font-weight: 600; }
+.term-help-sections p { margin: 0; line-height: 1.7; }
+.term-help-sheet { max-height: 85vh; overflow-y: auto; }
+.term-chip-row { display: flex; flex-wrap: wrap; gap: 6px 12px; margin-top: 10px; font-size: 13px; color: var(--muted); }
+.fine-print { margin: 12px 0 0; color: var(--muted); font-size: 11px; line-height: 1.6; }

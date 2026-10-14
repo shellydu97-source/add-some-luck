@@ -6,6 +6,7 @@ import AiReadingPanel from '../components/AiReadingPanel'
 import ChartHeader from '../components/ChartHeader'
 import DatePicker from '../components/DatePicker'
 import TermHelp from '../components/TermHelp'
+import TermText from '../components/TermText'
 import { Button, Card, ConfidenceNote, LinkButton, Segmented, SectionHeading } from '../components/UI'
 import {
   analyzeBaziFlow,
@@ -97,7 +98,7 @@ function PillarTable({ pillars, fields }: { pillars: Record<PillarKey, BaziPilla
     <div>
       </div>{PILLAR_KEYS.map((key) => <b key={key}>{PILLAR_LABELS[key]}</b>)}
     {fields.flatMap(([label, field]) => [
-      <span key={`${field}-label`}>{label}</span>,
+      <span key={`${field}-label`}><TermText term={label === '藏干十神' ? '十神' : label} label={label} /></span>,
       ...PILLAR_KEYS.map((key) => <span key={`${field}-${key}`} title={pillars[key].status === 'available' ? undefined : pillars[key].reason}>{pillarField(pillars[key], field)}</span>),
     ])}
   </div>
@@ -138,7 +139,6 @@ function NatalFacts({ analysis, compact = false }: { analysis: BaziNatalAnalysis
       <p>十神：{Object.entries(analysis.weightedTenGodCounts).map(([k,v]) => `${k} ${v?.toFixed(2)}`).join(' · ')}</p>
       <p className="helper">显干 1.0；藏干本气 1.0、中气 0.5、余气 0.3；月支藏干额外 ×1.5。十神不计日主显干，五行计入；此口径不作为旺衰结论。</p>
       </details>
-      <p className="fact-boundary">这里展示十神在原局中的客观出现位置与次数，不直接等同于旺衰、格局或吉凶。</p>
     </Card>
     <Card>
       <SectionHeading title="常用神煞" side={<span className="helper">按日干、年支、日支查表</span>} />
@@ -155,7 +155,6 @@ function NatalFacts({ analysis, compact = false }: { analysis: BaziNatalAnalysis
       <SectionHeading title="原局干支关系" />
       {relations.length ? <ul className="plain-list bazi-relation-list">{relations.slice(0, compact ? 4 : undefined).map((item, index) => <li key={`${item.kind}-${index}`}>
       <b>{item.kind}</b>：{item.text}</li>)}</ul> : <p className="helper">当前命盘没有形成完整的合、冲、刑、害、破组合。</p>}
-      <p className="fact-boundary">这里只标记结构关系，不判断是否成化，也不把单一关系直接解释为好或坏。</p>
     </Card>
   </>
 }
@@ -371,7 +370,7 @@ export default function BaziPage() {
           <PillarTable pillars={result.pillars} fields={CORE_FIELDS} />
         </Card>
         <Card>
-          <SectionHeading title="五行分布" side={<span className="helper">出现次数（天干与地支）</span>} />
+          <SectionHeading title={<TermHelp term="五行分布" />} side={<span className="helper">出现次数（天干与地支）</span>} />
           <div className="element-counts">{ELEMENTS.map((element) => <div key={element}>
       <b>{result.fiveElementCounts[element]}</b>
       <span>{element}</span>
@@ -412,7 +411,7 @@ export default function BaziPage() {
           <PillarTable pillars={result.pillars} fields={CORE_FIELDS} />
         </Card>
         <Card>
-          <SectionHeading title="五行分布" side={<span className="helper">出现次数（天干与地支）</span>} />
+          <SectionHeading title={<TermHelp term="五行分布" />} side={<span className="helper">出现次数（天干与地支）</span>} />
           <div className="element-counts">{ELEMENTS.map((element) => <div key={element}>
       <b>{result.fiveElementCounts[element]}</b>
       <span>{element}</span>
