@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import type { Profile } from '../models/types'
 import { featureFlags } from '../config/features'
@@ -5,18 +6,26 @@ import { useAppStore } from '../storage/store'
 import TopBar from './TopBar'
 import { ConfidenceNote, Segmented } from './UI'
 
+// The chart header only names the person, switches between people and links to their birth details.
 export default function ChartHeader({ profile, type }: { profile: Profile; type: 'bazi' | 'astrology' }) {
   const navigate = useNavigate()
   const profiles = useAppStore((state) => state.profiles)
   const setActiveProfile = useAppStore((state) => state.setActiveProfile)
-  function switchPerson(id: string) { setActiveProfile(id); navigate(`/charts/${id}/${type}`) }
+  const [switching, setSwitching] = useState(false)
+  function switchPerson(id: string) {
+    setSwitching(false)
+    setActiveProfile(id)
+    navigate(`/charts/${id}/${type}`)
+  }
   return <>
-    <TopBar title="命盘" eyebrow={profile.name} action={<div className="top-actions-inline"><label className="person-switcher compact"><select aria-label="切换人物" value={profile.id} onChange={(event) => switchPerson(event.target.value)}>{profiles.map((item) => <option value={item.id} key={item.id}>{item.name}</option>)}</select><span>⌄</span></label><Link className="icon-button" to="/settings" aria-label="打开设置">⚙</Link></div>} />
-    <div className="chart-toolbar">
-      <Link to="/profiles/new">＋ 新建人物</Link>
-      <Link to="/profiles">管理档案</Link>
-      <Link to={`/profiles/${profile.id}/edit`}>编辑出生信息</Link>
-    </div>
+    <TopBar title={profile.name} eyebrow="命盘" back onBack={() => navigate('/charts')} action={<div className="top-actions-inline">
+      {profiles.length > 1 && <button type="button" className="button secondary compact-button" onClick={() => setSwitching(true)}>切换人物</button>}
+      <Link className="icon-button" to={`/profiles/${profile.id}/edit`} aria-label="编辑出生信息">✎</Link>
+    </div>} />
+    {switching && <div className="modal-backdrop" onClick={() => setSwitching(false)}><section className="date-sheet" role="dialog" aria-modal="true" aria-label="切换人物" onClick={(event) => event.stopPropagation()}>
+      <div className="sheet-heading"><div><span className="eyebrow">命理</span><h2>切换人物</h2></div><button type="button" className="icon-button" onClick={() => setSwitching(false)} aria-label="关闭">×</button></div>
+      <div className="person-switch-sheet">{profiles.map((item) => <button type="button" aria-current={item.id === profile.id} onClick={() => switchPerson(item.id)} key={item.id}>{item.name}{item.isDefault ? '（默认）' : ''}</button>)}</div>
+    </section></div>}
     {featureFlags.astrology && <Segmented value={type} options={[{ value: 'bazi', label: '八字' }, { value: 'astrology', label: '星盘' }]} onChange={(next) => navigate(`/charts/${profile.id}/${next}`)} label="命盘类型" />}
     {type === 'bazi' && profile.timeAccuracy !== 'exact_minute' && <ConfidenceNote>
       {profile.timeAccuracy === 'unknown'

@@ -33,7 +33,7 @@ it('建档必选性别，保存后进入真实八字和命盘速览',()=>{
  fireEvent.input(screen.getByLabelText('出生时间'),{target:{value:'12:00'}})
  fireEvent.click(screen.getByText('保存档案'))
  expect(screen.getByText('命盘速览')).toBeTruthy();expect(useAppStore.getState().profiles[0].gender).toBe('male')
- expect(screen.getByText(/你的日主是甲/)).toBeTruthy()
+ expect(screen.getByText('命盘速览').closest('.card')?.textContent).toContain('你的日主是甲')
 })
 it('六爻问题→六次真实数字投掷→确认→结果即自动保存，排盘板在首屏',()=>{
  flows('/divination/liuyao/question')

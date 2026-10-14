@@ -108,7 +108,7 @@ export const useAppStore = create<AppState>()(persist((set, get) => ({
   }),
   setDefaultProfile: (id) => set((state) => ({
     profiles: state.profiles.map((item) => ({ ...item, isDefault: item.id === id, updatedAt: item.isDefault !== (item.id === id) ? new Date().toISOString() : item.updatedAt })), activeProfileId: id,
-    notice: `${state.profiles.find((item) => item.id === id)?.name ?? '人物'}已设为默认人物。`,
+    notice: `已设为默认，下次打开应用会先显示${state.profiles.find((item) => item.id === id)?.name ?? '这个人物'}。`,
   })),
   createRecordSnapshot: (record, draftId, options) => set((state) => {
     if(state.records.some(item => item.id === record.id)) return { notice:'记录快照已存在，原始内容未覆盖。' }

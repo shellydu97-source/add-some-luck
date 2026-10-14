@@ -11,7 +11,6 @@ import { saveCompletedDrafts } from '../utils/divinationRecords'
 const LegalPage = lazy(() => import('../pages/LegalPage'))
 const SettingsPage = lazy(() => import('../pages/SettingsPage'))
 const AccountPage = lazy(() => import('../pages/AccountPage'))
-const ProfilesPage = lazy(() => import('../pages/ProfilesPage'))
 const ProfileFormPage = lazy(() => import('../pages/ProfileFormPage'))
 const BaziPage = lazy(() => import('../pages/BaziPage'))
 const AstrologyPage = lazy(() => import('../pages/AstrologyPage'))
@@ -66,7 +65,7 @@ export default function App() {
         <Route path="me" element={<MyPage />} />
         <Route path="settings" element={<SettingsPage />} />
         <Route path="charts" element={<ChartLandingPage />} />
-        <Route path="profiles" element={<ProfilesPage />} />
+        <Route path="profiles" element={<Navigate to="/charts" replace />} />
         <Route path="profiles/new" element={<ProfileFormPage />} />
         <Route path="profiles/:profileId/edit" element={<ProfileFormPage />} />
         <Route path="charts/:profileId/bazi" element={<BaziPage />} />

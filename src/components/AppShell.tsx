@@ -33,9 +33,9 @@ export default function AppShell() {
     window.scrollTo({ top: 0, behavior: 'instant' })
     let primary: PrimaryNav | undefined
     if (location.pathname.startsWith('/today')) primary = 'fortune'
-    else if (location.pathname.startsWith('/charts')) primary = 'charts'
+    else if (location.pathname.startsWith('/charts') || location.pathname.startsWith('/profiles')) primary = 'charts'
     else if (location.pathname.startsWith('/divination')) primary = 'divination'
-    else if (location.pathname.startsWith('/me') || location.pathname.startsWith('/records') || location.pathname.startsWith('/profiles') || location.pathname.startsWith('/settings')) primary = 'records'
+    else if (location.pathname.startsWith('/me') || location.pathname.startsWith('/records') || location.pathname.startsWith('/settings')) primary = 'records'
     if (primary) setLastPrimaryRoute(primary)
   }, [location.pathname, setLastPrimaryRoute])
 
@@ -52,8 +52,9 @@ export default function AppShell() {
       <nav className="bottom-nav" aria-label="一级导航">
         {navItems.map((item) => (
           <NavLink key={item.to} to={item.to} className={({ isActive }) => {
-            const secondaryMineRoute = item.id === 'records' && (location.pathname.startsWith('/records') || location.pathname.startsWith('/profiles') || location.pathname.startsWith('/settings'))
-            return isActive || secondaryMineRoute ? 'active' : ''
+            const secondaryMineRoute = item.id === 'records' && (location.pathname.startsWith('/records') || location.pathname.startsWith('/settings'))
+            const personRoute = item.id === 'charts' && location.pathname.startsWith('/profiles')
+            return isActive || secondaryMineRoute || personRoute ? 'active' : ''
           }}>
             <span className="nav-icon" aria-hidden="true"><NavIcon name={item.icon} /></span><span>{item.label}</span>
           </NavLink>
