@@ -4,7 +4,7 @@ import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-libra
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Session } from '@supabase/supabase-js'
 import { CloudAccountProvider } from './CloudAccountProvider'
-import { useCloudAccount, type CloudAccountValue } from './accountContext'
+import { UnsyncedChangesError, useCloudAccount, type CloudAccountValue } from './accountContext'
 import { useAppStore } from '../storage/store'
 import { createEmptyAppData } from '../storage/appData'
 import { seedRecords } from '../mocks/records'
@@ -78,6 +78,25 @@ describe('账号数据保护流程', () => {
     await act(async () => { window.dispatchEvent(new Event('focus')); document.dispatchEvent(new Event('visibilitychange')) })
     await waitFor(() => expect(account.syncStatus).toBe('synced'))
     expect(useAppStore.getState().activeProfileId).toBe(other)
+  })
+  it('已同步时退出登录，本机不留账号数据副本', async () => {
+    await mount()
+    await act(async () => { await account.signOut() })
+    expect(account.session).toBeNull()
+    expect(Object.keys(localStorage).filter((key) => key.startsWith('add-luck-account-backup-'))).toEqual([])
+    expect(useAppStore.getState().records.map((r) => r.id)).not.toContain('r')
+  })
+  it('有改动且同步失败时退出需要明确选择，放弃后同样不留副本', async () => {
+    await mount()
+    backend.rpc.mockResolvedValue({ data: null, error: { message: 'network timeout' } })
+    act(() => useAppStore.getState().updateRecordVerification('r', { verificationStatus: 'matched', notes: '还没上传' }))
+    await act(async () => { await expect(account.signOut()).rejects.toBeInstanceOf(UnsyncedChangesError) })
+    expect(account.session?.user.id).toBe('u')
+    expect(useAppStore.getState().records[0].notes).toBe('还没上传')
+    await act(async () => { await account.signOut({ discardUnsynced: true }) })
+    expect(account.session).toBeNull()
+    expect(Object.keys(localStorage).filter((key) => key.startsWith('add-luck-account-backup-'))).toEqual([])
+    expect(JSON.stringify(useAppStore.getState().records)).not.toContain('还没上传')
   })
   it('会话过期保留未同步改动并提示重新登录', async () => {
     await mount()

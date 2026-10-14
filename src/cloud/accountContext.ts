@@ -23,11 +23,16 @@ export interface CloudAccountValue {
   verifyPasswordResetCode: (email: string, token: string) => Promise<void>
   updatePassword: (password: string) => Promise<void>
   deleteAccount: () => Promise<void>
-  signOut: () => Promise<void>
+  signOut: (options?: { discardUnsynced?: boolean }) => Promise<void>
   syncNow: () => Promise<void>
   keepCloudData: () => Promise<void>
   keepLocalData: () => Promise<void>
   mergeBoth: () => Promise<void>
+}
+
+// Thrown when signing out would drop changes that could not be uploaded yet.
+export class UnsyncedChangesError extends Error {
+  constructor() { super('还有改动没有同步到云端'); this.name = 'UnsyncedChangesError' }
 }
 
 export const CloudAccountContext = createContext<CloudAccountValue | undefined>(undefined)

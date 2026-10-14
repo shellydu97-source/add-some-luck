@@ -8,7 +8,7 @@ import { createSyncBaseline, findSyncConflicts, hashAppData, mergeAppData, type 
 import { isVersionConflict, readRemote, writeRemote, type RemoteSnapshot } from './remoteData'
 import { hasUserData } from '../storage/appData'
 import { getSupabaseClient, isCloudAccountConfigured } from './supabaseClient'
-import { CloudAccountContext, type CloudAccountValue, type CloudSyncStatus } from './accountContext'
+import { CloudAccountContext, UnsyncedChangesError, type CloudAccountValue, type CloudSyncStatus } from './accountContext'
 
 const CLOUD_META_KEY = 'add-luck-cloud-sync-meta-v1'
 const ACTIVE_DATA_OWNER_KEY = 'add-luck-active-data-owner-v1'
@@ -351,21 +351,30 @@ export function CloudAccountProvider({ children }: { children: ReactNode }) {
     setPasswordRecovery(false)
   }, [client])
 
-  const signOut = useCallback(async () => {
+  const signOut = useCallback(async (options?: { discardUnsynced?: boolean }) => {
     if (!client) return
+    const userId = sessionUser.current
+    if (syncing.current) await new Promise<void>((resolve) => idleWaiters.current.push(resolve))
+    const pending = () => { const meta = readSyncMeta(); return !!userId && meta?.userId === userId && meta.dirty }
+    if (pending() && !options?.discardUnsynced) {
+      // Upload what is still pending once; leaving with unsynced changes needs an explicit choice.
+      try { await pushLocal(client, userId!) } catch { /* reported through the error below */ }
+      if (pending()) throw new UnsyncedChangesError()
+    }
     paused.current = true
     if (syncing.current) await new Promise<void>((resolve) => idleWaiters.current.push(resolve))
-    // Preserve unsynced account data as a recovery backup before switching to guest.
-    if (sessionUser.current) window.localStorage.setItem(`add-luck-account-backup-${sessionUser.current}`, JSON.stringify(getLocalData()))
     const { error } = await client.auth.signOut()
     if (error) { paused.current = false; throw error }
+    // No copy of the account's data stays on this device after signing out.
+    if (userId) window.localStorage.removeItem(`add-luck-account-backup-${userId}`)
+    if (options?.discardUnsynced) window.localStorage.removeItem(CLOUD_META_KEY)
     setSyncReadyUserId('')
     applyingRemote.current = true
     useAppStore.getState().restoreCloudData(readGuestData())
     applyingRemote.current = false
     writeActiveDataOwner(GUEST_OWNER)
     setSyncMessage('')
-  }, [client])
+  }, [client, pushLocal])
 
   const clearLocalData = useCallback(async (deleteCloud = false) => {
     if (!client || !accountUserId) return
