@@ -47,7 +47,7 @@ export default function MeihuaResultPage() {
 
     <AutoSaveRecord draftId={activeDraft.id} />
     {savedRecord && <p className="auto-saved-note"><span>已自动保存到记录</span><Link to={`/records/${savedRecord.id}`}>查看记录</Link></p>}
-    <Card className="interpretation-card"><SectionHeading title={judgement.tendency} /><ul className="plain-list">{judgement.reasons.map(r => <li key={r}>{r}</li>)}</ul><p>{judgement.advice}</p></Card>
+    <Card className="interpretation-card"><SectionHeading title={judgement.tendency} /><ul className="plain-list">{judgement.reasons.map(r => <li key={r}>{r}</li>)}</ul><p>{judgement.advice}</p><p className="term-chip-row"><span>相关术语：</span>{['体卦', '用卦', '体用关系', '卦气', '旺相休囚死', '互卦'].map((term) => <TermHelp key={term} term={term} />)}</p></Card>
     <Card>
       <SectionHeading title="卦象结构" />
       <div className="meihua-sequence">

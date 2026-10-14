@@ -8,7 +8,7 @@ const SEASON: Record<string, string> = { 寅: '春季，木当令', 卯: '春季
 
 function tenGodLine(stemLabel: string, ganZhi: string, dayStem: HeavenlyStem) {
   const god = getTenGod(dayStem, ganZhi[0] as HeavenlyStem)
-  const plain = termGlossary[god]?.plain?.split('。')[0]
+  const plain = termGlossary[god]?.plain?.split(/[。；]/)[0]
   return <>{stemLabel}{ganZhi}，天干{ganZhi[0]}对你来说是<TermHelp term={god} />{plain ? `，${plain}。` : '。'}</>
 }
 

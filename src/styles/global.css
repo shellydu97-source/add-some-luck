@@ -719,14 +719,14 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 700; }
 
 /* 命理 landing: list of people */
 .person-list { display: grid; gap: 12px; }
-.person-card { position: relative; padding: 0; }
+.card.person-card { position: relative; padding: 0; }
 .person-card.default { border-color: #cddcff; }
 .person-card-main { display: grid; gap: 6px; width: 100%; padding: 18px 48px 18px 18px; border: 0; background: none; color: inherit; text-align: left; font: inherit; cursor: pointer; }
 .person-card-main i { position: absolute; top: 50%; right: 18px; transform: translateY(-50%); color: var(--muted); font-style: normal; font-size: 20px; }
 .person-card-name { display: flex; align-items: center; gap: 8px; font-size: 17px; }
 .person-card-pillars { font-size: 15px; letter-spacing: .04em; overflow-wrap: anywhere; }
 .person-card-main small { color: var(--muted); }
-.person-card-menu { position: absolute; top: 10px; right: 10px; }
+.person-card-menu { position: absolute; top: 10px; right: 10px; padding: 0; border: 0; }
 .person-card-menu > summary { list-style: none; padding: 2px 8px; border-radius: 8px; color: var(--muted); cursor: pointer; }
 .person-card-menu > summary::-webkit-details-marker { display: none; }
 .person-card-menu[open] > summary { background: var(--line); }
