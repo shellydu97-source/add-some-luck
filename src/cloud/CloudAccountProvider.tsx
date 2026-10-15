@@ -81,18 +81,45 @@ export function CloudAccountProvider({ children }: { children: ReactNode }) {
   const initializedUserId = useRef('')
   const applyingRemote = useRef(false)
   const accountUserId = session?.user.id
-  const cloudDataReady = !accountUserId || syncReadyUserId === accountUserId || syncStatus === 'error'
+  const cloudDataReady = !accountUserId || syncReadyUserId === accountUserId || (syncStatus === 'error' && readActiveDataOwner() === accountUserId)
 
   const version = useRef(0)
   const sessionUser = useRef<string | undefined>(undefined)
+  const sessionEpoch = useRef(0)
+  const sessionToken = useRef<string | undefined>(undefined)
   const [guestImport, setGuestImport] = useState<{ profiles: number; records: number; resolve: (value: boolean) => void }>()
+  const pendingGuestImport = useRef<((value: boolean) => void) | undefined>(undefined)
   const askGuestImport = useCallback((local: AppDataState) => new Promise<boolean>((resolve) => {
+    pendingGuestImport.current?.(false)
+    pendingGuestImport.current = resolve
     setGuestImport({ profiles: local.profiles.length, records: local.records.length, resolve })
   }), [])
   const syncing = useRef(false)
   const idleWaiters = useRef<Array<() => void>>([])
   const conflict = useRef<RemoteSnapshot | undefined>(undefined)
   const paused = useRef(false)
+  const ownsSession = useCallback((userId: string, epoch: number) => sessionUser.current === userId && sessionEpoch.current === epoch, [])
+  const isCurrentAccount = useCallback((userId: string, epoch: number) => ownsSession(userId, epoch) && !paused.current, [ownsSession])
+  const canFinishSignOut = useCallback((userId: string, epoch: number) => ownsSession(userId, epoch) || (sessionEpoch.current === epoch + 1 && sessionUser.current === undefined), [ownsSession])
+  const cancelSessionWork = useCallback(() => {
+    sessionEpoch.current++
+    initializedUserId.current = ''
+    pendingGuestImport.current?.(false)
+    pendingGuestImport.current = undefined
+  }, [])
+
+  const readAndUpgradeRemote = useCallback(async (activeClient: SupabaseClient, userId: string, epoch: number) => {
+    if (!isCurrentAccount(userId, epoch)) return undefined
+    const token = sessionToken.current
+    if (!token) throw new Error('登录状态已失效，请重新登录。')
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const remote = await readRemote(activeClient, userId)
+      if (!remote || !isCurrentAccount(userId, epoch) || !remote.requiresDraftMigration) return remote
+      try { return await writeRemote(activeClient, remote.payload, remote.version, token) }
+      catch (cause) { if (!isCurrentAccount(userId, epoch)) return undefined; if (!isVersionConflict(cause) || attempt === 2) throw cause }
+    }
+    return undefined
+  }, [isCurrentAccount])
 
   const commitSynced = useCallback((userId: string, remote: RemoteSnapshot) => {
     if (useAppStore.getState().hasHydrated && sessionUser.current !== userId) return
@@ -127,29 +154,33 @@ export function CloudAccountProvider({ children }: { children: ReactNode }) {
     setSyncMessage('两边修改了同一项内容，请选择如何保留。自动同步已暂停。')
   }, [])
 
-  const pushLocal = useCallback(async (activeClient: SupabaseClient, userId: string) => {
-    if (syncing.current || conflict.current || paused.current) return
+  const pushLocal = useCallback(async (activeClient: SupabaseClient, userId: string, epoch = sessionEpoch.current) => {
+    if (syncing.current || conflict.current || !isCurrentAccount(userId, epoch) || readActiveDataOwner() !== userId) return
+    const token = sessionToken.current
+    if (!token) throw new Error('登录状态已失效，请重新登录。')
     syncing.current = true
     try {
       // Capture a snapshot for each upload. Changes during upload remain dirty and are retried.
       for (let attempt = 0; attempt < 3; attempt++) {
-        if (sessionUser.current !== userId || paused.current) return
+        if (!isCurrentAccount(userId, epoch) || readActiveDataOwner() !== userId) return
         setSyncStatus('syncing')
         setSyncMessage('正在保存到云端…')
         const payload = getLocalData()
         try {
-          const saved = await writeRemote(activeClient, payload, version.current)
-          if (sessionUser.current !== userId || paused.current) return
+          const saved = await writeRemote(activeClient, payload, version.current, token)
+          if (!isCurrentAccount(userId, epoch)) return
           commitSynced(userId, saved)
           if (hashAppData(getLocalData()) === saved.dataHash) return
         } catch (cause) {
+          if (!isCurrentAccount(userId, epoch)) return
           if (!isVersionConflict(cause)) throw cause
-          const remote = await readRemote(activeClient, userId)
+          const remote = await readAndUpgradeRemote(activeClient, userId, epoch)
+          if (!isCurrentAccount(userId, epoch)) return
           if (!remote) {
             if (version.current > 0) { showConflict({ payload: createEmptyAppData(), dataHash: hashAppData(createEmptyAppData()), updatedAt: new Date().toISOString(), version: 0 }); return }
             version.current = 0; continue
           }
-          if (sessionUser.current !== userId || paused.current) return
+          if (!isCurrentAccount(userId, epoch)) return
           const meta = readSyncMeta()
           const baseline = meta?.userId === userId ? meta.baseline : undefined
           if (findSyncConflicts(getLocalData(), remote.payload, baseline).length) { showConflict(remote); return }
@@ -160,17 +191,19 @@ export function CloudAccountProvider({ children }: { children: ReactNode }) {
       setSyncStatus('waiting')
       setSyncMessage('本机改动仍保留，请点击同步重试。')
     } finally { syncing.current = false; idleWaiters.current.splice(0).forEach((resolve) => resolve()) }
-  }, [applyData, commitSynced, showConflict])
+  }, [applyData, commitSynced, isCurrentAccount, readAndUpgradeRemote, showConflict])
 
   const reconcileAccountData = useCallback(async (activeClient: SupabaseClient, userId: string) => {
-    if (syncing.current || conflict.current || paused.current) return
+    const epoch = sessionEpoch.current
+    if (syncing.current) await new Promise<void>((resolve) => idleWaiters.current.push(resolve))
+    if (conflict.current || !isCurrentAccount(userId, epoch)) return
     setSyncStatus('checking')
     setSyncMessage('正在读取云端数据…')
     const owner = readActiveDataOwner()
-    const remote = await readRemote(activeClient, userId)
+    const remote = await readAndUpgradeRemote(activeClient, userId, epoch)
     let local = getLocalData()
     const meta = readSyncMeta()
-    if (sessionUser.current !== userId || paused.current) return
+    if (!isCurrentAccount(userId, epoch)) return
     version.current = remote?.version ?? 0
     let restoredBackup = false
     if (owner !== userId && meta?.userId === userId && meta.dirty) {
@@ -190,29 +223,31 @@ export function CloudAccountProvider({ children }: { children: ReactNode }) {
         saveGuestData(local)
         if (local.profiles.length || local.records.length) {
           const importGuest = await askGuestImport(local)
+          if (!isCurrentAccount(userId, epoch)) return
           applyData(importGuest ? mergeAppData(local, remote?.payload ?? createEmptyAppData()) : remote?.payload ?? createEmptyAppData(), importGuest ? local.drafts : [])
         } else applyData(remote?.payload ?? createEmptyAppData(), [])
       } else applyData(remote?.payload ?? createEmptyAppData(), [])
       writeActiveDataOwner(userId)
       if (remote && hashAppData(getLocalData()) === remote.dataHash) commitSynced(userId, remote)
-      else await pushLocal(activeClient, userId)
+      else await pushLocal(activeClient, userId, epoch)
     } else if (!remote) {
       if ((meta?.lastSyncedVersion ?? 0) > 0) showConflict({ payload: createEmptyAppData(), dataHash: hashAppData(createEmptyAppData()), updatedAt: new Date().toISOString(), version: 0 })
-      else await pushLocal(activeClient, userId)
+      else await pushLocal(activeClient, userId, epoch)
     } else if (hashAppData(local) === remote.dataHash) {
       commitSynced(userId, remote)
     } else if (meta?.userId === userId && meta.lastSyncedHash === hashAppData(local) && !meta.dirty) {
       applyRemote(remote, userId)
     } else if (meta?.userId === userId && meta.lastSyncedHash === remote.dataHash) {
-      await pushLocal(activeClient, userId)
+      await pushLocal(activeClient, userId, epoch)
     } else {
       const baseline = meta?.userId === userId ? meta.baseline : undefined
       if (findSyncConflicts(local, remote.payload, baseline).length) showConflict(remote)
       else {
         applyData(mergeAppData(local, remote.payload, baseline))
-        await pushLocal(activeClient, userId)
+        await pushLocal(activeClient, userId, epoch)
       }
     }
+    if (!isCurrentAccount(userId, epoch) || readActiveDataOwner() !== userId) return
     // Keep the person the user is viewing; fall back to the default only when that person no longer exists.
     const loadedStore = useAppStore.getState()
     if (!loadedStore.profiles.some((p) => p.id === loadedStore.activeProfileId)) {
@@ -220,7 +255,7 @@ export function CloudAccountProvider({ children }: { children: ReactNode }) {
       if (defaultId) loadedStore.setActiveProfile(defaultId)
     }
     setSyncReadyUserId(userId)
-  }, [applyData, applyRemote, askGuestImport, commitSynced, pushLocal, showConflict])
+  }, [applyData, applyRemote, askGuestImport, commitSynced, isCurrentAccount, pushLocal, readAndUpgradeRemote, showConflict])
 
   useEffect(() => {
     if (!isCloudAccountConfigured) return
@@ -229,9 +264,20 @@ export function CloudAccountProvider({ children }: { children: ReactNode }) {
     void getSupabaseClient().then((nextClient) => {
       if (!active || !nextClient) return
       setClient(nextClient)
+      let authEvents = 0
       const acceptSession = (next: Session | null) => {
         if (!active) return
+        if (sessionUser.current !== next?.user.id) {
+          cancelSessionWork()
+          setSyncReadyUserId('')
+          conflict.current = undefined
+          setConflictRemote(undefined)
+          setLastSyncedAt(undefined)
+          setGuestImport(undefined)
+          setSyncStatus(next ? 'checking' : 'signed-out')
+        }
         sessionUser.current = next?.user.id
+        sessionToken.current = next?.access_token
         setSession(next)
         setAuthLoading(false)
         if (!next && readActiveDataOwner() !== GUEST_OWNER) {
@@ -239,8 +285,9 @@ export function CloudAccountProvider({ children }: { children: ReactNode }) {
           setSyncMessage('登录已过期，请重新登录，未同步的改动仍保留在本机。')
         }
       }
-      void nextClient.auth.getSession().then(({ data }) => acceptSession(data.session)).catch(() => { if (active) setAuthLoading(false) })
+      void nextClient.auth.getSession().then(({ data }) => { if (authEvents === 0) acceptSession(data.session) }).catch(() => { if (active) setAuthLoading(false) })
       const { data } = nextClient.auth.onAuthStateChange((event, nextSession) => {
+        authEvents++
         acceptSession(nextSession)
         if (event === 'PASSWORD_RECOVERY') setPasswordRecovery(true)
         if (event === 'SIGNED_OUT') {
@@ -252,16 +299,17 @@ export function CloudAccountProvider({ children }: { children: ReactNode }) {
       })
       unsubscribe = () => data.subscription.unsubscribe()
     })
-    return () => { active = false; unsubscribe() }
-  }, [])
+    return () => { active = false; cancelSessionWork(); unsubscribe() }
+  }, [cancelSessionWork])
 
   useEffect(() => {
     const userId = session?.user.id
     if (!client || !userId || !hasHydrated || initializedUserId.current === userId) return
     initializedUserId.current = userId
     paused.current = false
-    void reconcileAccountData(client, userId).catch((cause) => { setSyncStatus('error'); setSyncMessage(friendlyCloudError(cause)) })
-  }, [client, hasHydrated, reconcileAccountData, session?.user.id])
+    const epoch = sessionEpoch.current
+    void reconcileAccountData(client, userId).catch((cause) => { if (isCurrentAccount(userId, epoch)) { setSyncStatus('error'); setSyncMessage(friendlyCloudError(cause)) } })
+  }, [client, hasHydrated, isCurrentAccount, reconcileAccountData, session?.user.id])
 
   useEffect(() => {
     const userId = session?.user.id
@@ -270,18 +318,20 @@ export function CloudAccountProvider({ children }: { children: ReactNode }) {
     const refresh = () => {
       if (running || document.visibilityState === 'hidden') return
       running = true
-      void reconcileAccountData(client, userId).catch((cause) => { setSyncStatus('error'); setSyncMessage(friendlyCloudError(cause)) }).finally(() => { running = false })
+      const epoch = sessionEpoch.current
+      void reconcileAccountData(client, userId).catch((cause) => { if (isCurrentAccount(userId, epoch)) { setSyncStatus('error'); setSyncMessage(friendlyCloudError(cause)) } }).finally(() => { running = false })
     }
     const onVisibility = () => { if (document.visibilityState === 'visible') refresh() }
     window.addEventListener('focus', refresh)
     window.addEventListener('online', refresh)
     document.addEventListener('visibilitychange', onVisibility)
     return () => { window.removeEventListener('focus', refresh); window.removeEventListener('online', refresh); document.removeEventListener('visibilitychange', onVisibility) }
-  }, [client, hasHydrated, reconcileAccountData, session?.user.id])
+  }, [client, hasHydrated, isCurrentAccount, reconcileAccountData, session?.user.id])
 
   useEffect(() => {
     if (!hasHydrated) return
     const userId = session?.user.id
+    const epoch = sessionEpoch.current
     let observedHash = hashAppData(getLocalData())
     let timer: number | undefined
     const unsubscribe = useAppStore.subscribe((state) => {
@@ -289,7 +339,8 @@ export function CloudAccountProvider({ children }: { children: ReactNode }) {
       if (nextHash === observedHash) return
       observedHash = nextHash
       if (applyingRemote.current || paused.current) return
-      const owner = userId ?? readActiveDataOwner()
+      const owner = readActiveDataOwner()
+      if (userId && (!isCurrentAccount(userId, epoch) || owner !== userId)) return
       if (owner === GUEST_OWNER) return
       const previous = readSyncMeta()
       writeSyncMeta({ userId: owner, lastSyncedHash: previous?.userId === owner ? previous.lastSyncedHash : '', lastSyncedAt: previous?.lastSyncedAt ?? '', lastSyncedVersion: previous?.lastSyncedVersion, baseline: previous?.baseline, dirty: true })
@@ -297,10 +348,10 @@ export function CloudAccountProvider({ children }: { children: ReactNode }) {
       setSyncStatus('waiting')
       setSyncMessage('即将自动保存…')
       if (timer) window.clearTimeout(timer)
-      timer = window.setTimeout(() => { void pushLocal(client, userId).catch((cause) => { setSyncStatus('error'); setSyncMessage(friendlyCloudError(cause)) }) }, SYNC_DELAY_MS)
+      timer = window.setTimeout(() => { void pushLocal(client, userId, epoch).catch((cause) => { if (isCurrentAccount(userId, epoch)) { setSyncStatus('error'); setSyncMessage(friendlyCloudError(cause)) } }) }, SYNC_DELAY_MS)
     })
     return () => { unsubscribe(); if (timer) window.clearTimeout(timer) }
-  }, [client, hasHydrated, pushLocal, session?.user.id, syncReadyUserId])
+  }, [client, hasHydrated, isCurrentAccount, pushLocal, session?.user.id, syncReadyUserId])
 
   const signUp = useCallback(async (email: string, password: string) => {
     if (!client) throw new Error('账号服务尚未就绪')
@@ -359,16 +410,22 @@ export function CloudAccountProvider({ children }: { children: ReactNode }) {
   const signOut = useCallback(async (options?: { discardUnsynced?: boolean }) => {
     if (!client) return
     const userId = sessionUser.current
+    if (!userId) return
+    const epoch = sessionEpoch.current
     if (syncing.current) await new Promise<void>((resolve) => idleWaiters.current.push(resolve))
+    if (!ownsSession(userId, epoch)) return
     const pending = () => { const meta = readSyncMeta(); return !!userId && meta?.userId === userId && meta.dirty }
     if (pending() && !options?.discardUnsynced) {
       // Upload what is still pending once; leaving with unsynced changes needs an explicit choice.
-      try { await pushLocal(client, userId!) } catch { /* reported through the error below */ }
+      try { await pushLocal(client, userId, epoch) } catch { /* reported through the error below */ }
+      if (!ownsSession(userId, epoch)) return
       if (pending()) throw new UnsyncedChangesError()
     }
     paused.current = true
     if (syncing.current) await new Promise<void>((resolve) => idleWaiters.current.push(resolve))
+    if (!ownsSession(userId, epoch)) return
     const { error } = await client.auth.signOut()
+    if (!canFinishSignOut(userId, epoch)) return
     if (error) { paused.current = false; throw error }
     // No copy of the account's data stays on this device after signing out.
     if (userId) window.localStorage.removeItem(`add-luck-account-backup-${userId}`)
@@ -379,17 +436,23 @@ export function CloudAccountProvider({ children }: { children: ReactNode }) {
     applyingRemote.current = false
     writeActiveDataOwner(GUEST_OWNER)
     setSyncMessage('')
-  }, [client, pushLocal])
+  }, [canFinishSignOut, client, ownsSession, pushLocal])
 
   const clearLocalData = useCallback(async (deleteCloud = false) => {
     if (!client || !accountUserId) return
+    const epoch = sessionEpoch.current
+    const token = sessionToken.current
+    if (!ownsSession(accountUserId, epoch) || !token) return
     paused.current = true
     if (syncing.current) await new Promise<void>((resolve) => idleWaiters.current.push(resolve))
+    if (!ownsSession(accountUserId, epoch)) return
     if (deleteCloud) {
-      const { error } = await client.from('user_app_data').delete().eq('user_id', accountUserId)
+      const { error } = await client.from('user_app_data').delete().eq('user_id', accountUserId).setHeader('Authorization', `Bearer ${token}`)
+      if (!ownsSession(accountUserId, epoch)) return
       if (error) { paused.current = false; throw error }
     }
     const { error } = await client.auth.signOut()
+    if (!canFinishSignOut(accountUserId, epoch)) return
     if (error) { paused.current = false; throw error }
     applyingRemote.current = true
     useAppStore.getState().clearAllData()
@@ -400,17 +463,23 @@ export function CloudAccountProvider({ children }: { children: ReactNode }) {
     writeActiveDataOwner(GUEST_OWNER)
     setSyncReadyUserId('')
     setSyncMessage('')
-  }, [accountUserId, client])
+  }, [accountUserId, canFinishSignOut, client, ownsSession])
 
   const deleteAccount = useCallback(async () => {
     if (!client || !accountUserId) throw new Error('请先登录')
+    const epoch = sessionEpoch.current
+    const token = sessionToken.current
+    if (!ownsSession(accountUserId, epoch) || !token) return
     paused.current = true
     if (syncing.current) await new Promise<void>(resolve => idleWaiters.current.push(resolve))
+    if (!ownsSession(accountUserId, epoch)) return
     try {
-      const { data, error } = await client.functions.invoke('delete-account', { body: { confirmation: 'DELETE_MY_ACCOUNT' } })
+      const { data, error } = await client.functions.invoke('delete-account', { body: { confirmation: 'DELETE_MY_ACCOUNT' }, headers: { Authorization: `Bearer ${token}` } })
+      if (!ownsSession(accountUserId, epoch)) return
       if (error || !data?.deleted) throw new Error('注销未成功，请稍后重试；本机数据仍保留。')
-    } catch (error) { paused.current = false; throw error }
+    } catch (error) { if (!ownsSession(accountUserId, epoch)) return; paused.current = false; throw error }
     await client.auth.signOut({ scope: 'local' })
+    if (!canFinishSignOut(accountUserId, epoch)) return
     setSession(null)
     applyingRemote.current = true
     useAppStore.getState().restoreCloudData(readGuestData())
@@ -420,17 +489,20 @@ export function CloudAccountProvider({ children }: { children: ReactNode }) {
     writeActiveDataOwner(GUEST_OWNER)
     setSyncReadyUserId('')
     setSyncMessage('账号已注销，已回到访客状态。')
-  }, [accountUserId, client])
+  }, [accountUserId, canFinishSignOut, client, ownsSession])
 
   const syncNow = useCallback(async () => {
     if (!client || !accountUserId) return
+    const epoch = sessionEpoch.current
     try { await reconcileAccountData(client, accountUserId) }
-    catch (cause) { setSyncStatus('error'); setSyncMessage(friendlyCloudError(cause)); throw cause }
-  }, [accountUserId, client, reconcileAccountData])
+    catch (cause) { if (isCurrentAccount(accountUserId, epoch)) { setSyncStatus('error'); setSyncMessage(friendlyCloudError(cause)); throw cause } }
+  }, [accountUserId, client, isCurrentAccount, reconcileAccountData])
 
   const resolveConflict = useCallback(async (choice: 'cloud' | 'local' | 'merge') => {
     if (!client || !accountUserId || !conflict.current) return
-    const newest = await readRemote(client, accountUserId)
+    const epoch = sessionEpoch.current
+    const newest = await readAndUpgradeRemote(client, accountUserId, epoch)
+    if (!isCurrentAccount(accountUserId, epoch)) return
     const selected = conflict.current
     if ((newest?.version ?? 0) !== selected.version) { showConflict(newest ?? { payload: createEmptyAppData(), dataHash: hashAppData(createEmptyAppData()), updatedAt: new Date().toISOString(), version: 0 }); throw new Error('云端又有新改动，请查看最新情况后再选择。') }
     version.current = newest?.version ?? 0
@@ -438,14 +510,15 @@ export function CloudAccountProvider({ children }: { children: ReactNode }) {
     else {
       if (choice === 'merge') applyData(mergeAppData(getLocalData(), selected.payload, readSyncMeta()?.baseline))
       conflict.current = undefined
-      try { await pushLocal(client, accountUserId) }
-      catch (cause) { conflict.current = selected; throw cause }
+      try { await pushLocal(client, accountUserId, epoch) }
+      catch (cause) { if (!isCurrentAccount(accountUserId, epoch)) return; conflict.current = selected; throw cause }
     }
+    if (!isCurrentAccount(accountUserId, epoch)) return
     if (conflict.current && conflict.current !== selected) return
     conflict.current = undefined
     setConflictRemote(undefined)
     setSyncReadyUserId(accountUserId)
-  }, [accountUserId, applyData, applyRemote, client, pushLocal, showConflict])
+  }, [accountUserId, applyData, applyRemote, client, isCurrentAccount, pushLocal, readAndUpgradeRemote, showConflict])
   const keepCloudData = useCallback(() => resolveConflict('cloud'), [resolveConflict])
   const keepLocalData = useCallback(() => resolveConflict('local'), [resolveConflict])
   const mergeBoth = useCallback(() => resolveConflict('merge'), [resolveConflict])
@@ -477,5 +550,5 @@ export function CloudAccountProvider({ children }: { children: ReactNode }) {
     mergeBoth,
   }), [authLoading, deleteAccount, clearLocalData, cloudDataReady, conflictRemote, keepCloudData, keepLocalData, lastSyncedAt, mergeBoth, passwordRecovery, resendSignUpCode, sendPasswordReset, session, signIn, signOut, signUp, syncMessage, syncNow, syncStatus, updatePassword, verifyPasswordResetCode, verifySignUpCode])
 
-  return <CloudAccountContext.Provider value={value}>{children}{guestImport && <GuestImportDialog profiles={guestImport.profiles} records={guestImport.records} onAnswer={(importData) => { guestImport.resolve(importData); setGuestImport(undefined) }} />}</CloudAccountContext.Provider>
+  return <CloudAccountContext.Provider value={value}>{children}{guestImport && <GuestImportDialog profiles={guestImport.profiles} records={guestImport.records} onAnswer={(importData) => { guestImport.resolve(importData); pendingGuestImport.current = undefined; setGuestImport(undefined) }} />}</CloudAccountContext.Provider>
 }

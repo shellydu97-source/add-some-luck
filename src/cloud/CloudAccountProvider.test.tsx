@@ -12,18 +12,27 @@ import { seedProfiles } from '../mocks/profiles'
 import { hashAppData, pickSyncData } from './syncCore'
 import { createCastFromValues } from '../calculation/liuyao'
 import type { DivinationDraft } from '../models/types'
+import { adoptDraftResults } from '../utils/divinationRecords'
 
-const backend = vi.hoisted(() => ({ row: undefined as unknown, authChange: undefined as unknown, session: undefined as unknown, rpc: vi.fn(), delete: vi.fn(), invoke: vi.fn() }))
+const backend = vi.hoisted(() => ({ row: undefined as unknown, authChange: undefined as unknown, session: undefined as unknown, read: vi.fn(), rpc: vi.fn(), delete: vi.fn(), invoke: vi.fn(), signOut: vi.fn() }))
 vi.mock('./supabaseClient', () => ({
   isCloudAccountConfigured: true,
   getSupabaseClient: async () => ({
     auth: {
       getSession: async () => ({ data: { session: backend.session } }),
       onAuthStateChange: (callback: unknown) => { backend.authChange = callback; return { data: { subscription: { unsubscribe: () => {} } } } },
-      signOut: async () => { (backend.authChange as (event: string, session: null) => void)('SIGNED_OUT', null); return { error: null } },
+      signOut: backend.signOut,
     },
-    from: () => ({ select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: structuredClone(backend.row), error: null }) }) }), delete: () => ({ eq: backend.delete }) }),
-    rpc: backend.rpc,
+    from: () => ({ select: () => ({ eq: (_column: string, userId: string) => ({ maybeSingle: () => backend.read(userId) }) }), delete: () => ({ eq: (...args: unknown[]) => {
+      const headers: Record<string, string> = {}
+      const request = { setHeader: (name: string, value: string) => { headers[name] = value; return request }, then: (resolve: (value: unknown) => void, reject: (error: unknown) => void) => backend.delete(...args, headers).then(resolve, reject) }
+      return request
+    } }) }),
+    rpc: (...args: unknown[]) => {
+      const headers: Record<string, string> = {}
+      const request = { setHeader: (name: string, value: string) => { headers[name] = value; return request }, then: (resolve: (value: unknown) => void, reject: (error: unknown) => void) => backend.rpc(...args, headers).then(resolve, reject) }
+      return request
+    },
     functions: { invoke: backend.invoke },
   }),
 }))
@@ -39,8 +48,10 @@ beforeEach(() => {
   const payload = { ...createEmptyAppData(), records: [{ ...seedRecords[0], id: 'r' }] }
   backend.row = { payload: pickSyncData(payload), data_hash: hashAppData(payload), updated_at: '2026-10-12T04:00:00Z', version: 1 }
   backend.invoke.mockReset().mockResolvedValue({data:{deleted:true},error:null})
+  backend.read.mockReset().mockImplementation(async () => ({ data: structuredClone(backend.row), error: null }))
   backend.rpc.mockReset()
   backend.delete.mockReset().mockResolvedValue({ error: null })
+  backend.signOut.mockReset().mockImplementation(async () => { (backend.authChange as (event: string, session: null) => void)('SIGNED_OUT', null); return { error: null } })
   backend.rpc.mockImplementation(async (_name, args) => {
     const row = backend.row as { version: number }
     if (args.p_expected_version !== row.version) return { data: null, error: { message: 'version_conflict' } }
@@ -54,6 +65,126 @@ async function mount() {
   await waitFor(() => expect(account.syncStatus).toBe('synced'))
 }
 describe('账号数据保护流程', () => {
+  it.each(['signOut', 'clearLocalData', 'deleteAccount'] as const)('A的%s等待在途上传时换成B，旧操作不退出、清空或注销B', async (operation) => {
+    await mount()
+    let finishUpload!: (value: { data: number; error: null }) => void
+    backend.rpc.mockImplementationOnce(() => new Promise((resolve) => { finishUpload = resolve }))
+    act(() => useAppStore.getState().updateRecordVerification('r', { verificationStatus: 'pending', notes: 'A upload' }))
+    let uploading!: Promise<void>
+    act(() => { uploading = account.syncNow() })
+    await waitFor(() => expect(backend.rpc).toHaveBeenCalledTimes(1))
+    let pendingOperation!: Promise<void>
+    act(() => { pendingOperation = account[operation]() })
+    const bData = { ...createEmptyAppData(), records: [{ ...seedRecords[0], id: 'b-record' }] }
+    backend.row = { payload: pickSyncData(bData), data_hash: hashAppData(bData), updated_at: drafted, version: 1 }
+    act(() => (backend.authChange as (event: string, session: Session) => void)('SIGNED_IN', { user: { id: 'b' }, access_token: 'b-token' } as Session))
+    await act(async () => { finishUpload({ data: 2, error: null }); await Promise.all([uploading, pendingOperation]) })
+    await waitFor(() => expect(account.syncStatus).toBe('synced'))
+    expect(account.session?.user.id).toBe('b')
+    expect(useAppStore.getState().records.map((r) => r.id)).toEqual(['b-record'])
+    expect(backend.signOut).not.toHaveBeenCalled()
+    expect(backend.invoke).not.toHaveBeenCalled()
+    expect(backend.delete).not.toHaveBeenCalled()
+  })
+  it('A注销请求固定A token，返回前换成B时不退出B或恢复访客数据', async () => {
+    await mount()
+    let finishDelete!: (value: { data: { deleted: true }; error: null }) => void
+    backend.invoke.mockImplementationOnce(() => new Promise((resolve) => { finishDelete = resolve }))
+    let deleting!: Promise<void>
+    act(() => { deleting = account.deleteAccount() })
+    await waitFor(() => expect(backend.invoke).toHaveBeenCalledTimes(1))
+    expect(backend.invoke).toHaveBeenCalledWith('delete-account', { body: { confirmation: 'DELETE_MY_ACCOUNT' }, headers: { Authorization: 'Bearer test' } })
+    const bData = { ...createEmptyAppData(), records: [{ ...seedRecords[0], id: 'b-record' }] }
+    backend.row = { payload: pickSyncData(bData), data_hash: hashAppData(bData), updated_at: drafted, version: 1 }
+    act(() => (backend.authChange as (event: string, session: Session) => void)('SIGNED_IN', { user: { id: 'b' }, access_token: 'b-token' } as Session))
+    await waitFor(() => expect(account.syncStatus).toBe('synced'))
+    await act(async () => { finishDelete({ data: { deleted: true }, error: null }); await deleting })
+    expect(account.session?.user.id).toBe('b')
+    expect(useAppStore.getState().records.map((r) => r.id)).toEqual(['b-record'])
+    expect(backend.signOut).not.toHaveBeenCalled()
+    expect(localStorage.getItem('add-luck-active-data-owner-v1')).toBe('b')
+  })
+  it('B读取失败不放行A数据，也不把A未同步改动标为B；回到A可以继续保存', async () => {
+    await mount()
+    act(() => useAppStore.getState().updateRecordVerification('r', { verificationStatus: 'pending', notes: 'A尚未上传的备注' }))
+    const aRow = structuredClone(backend.row)
+    act(() => (backend.authChange as (event: string, session: Session | null) => void)('SIGNED_OUT', null))
+    backend.read.mockRejectedValue(new Error('network unavailable'))
+    act(() => (backend.authChange as (event: string, session: Session) => void)('SIGNED_IN', { user: { id: 'b' }, access_token: 'b-token' } as Session))
+    await waitFor(() => expect(account.syncStatus).toBe('error'))
+    expect(account.session?.user.id).toBe('b')
+    expect(account.cloudDataReady).toBe(false)
+    expect(useAppStore.getState().records[0].notes).toBe('A尚未上传的备注')
+    act(() => useAppStore.getState().updateRecordVerification('r', { verificationStatus: 'pending', notes: 'A本机备注仍保留' }))
+    expect(JSON.parse(localStorage.getItem('add-luck-cloud-sync-meta-v1')!).userId).toBe('u')
+    expect(backend.rpc).not.toHaveBeenCalled()
+    backend.row = aRow
+    backend.read.mockImplementation(async () => ({ data: structuredClone(backend.row), error: null }))
+    act(() => (backend.authChange as (event: string, session: Session) => void)('SIGNED_IN', backend.session as Session))
+    await waitFor(() => expect(account.syncStatus).toBe('synced'))
+    expect(account.session?.user.id).toBe('u')
+    expect((backend.row as { payload: { records: typeof seedRecords } }).payload.records[0].notes).toBe('A本机备注仍保留')
+    expect(backend.rpc.mock.calls[0][2]).toEqual({ Authorization: 'Bearer test' })
+  })
+  it('退出账号会取消访客导入弹窗，过期的选择不恢复旧账号云端数据', async () => {
+    useAppStore.setState({ records: [{ ...seedRecords[0], id: 'guest-record' }] })
+    render(<CloudAccountProvider><Probe /><SyncConflictPanel /></CloudAccountProvider>)
+    await screen.findByRole('dialog')
+    act(() => (backend.authChange as (event: string, session: Session | null) => void)('SIGNED_OUT', null))
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+    expect(account.session).toBeNull()
+    expect(useAppStore.getState().records.map((r) => r.id)).toEqual(['guest-record'])
+    expect(localStorage.getItem('add-luck-active-data-owner-v1')).not.toBe('u')
+    expect(backend.rpc).not.toHaveBeenCalled()
+  })
+  it.each([false, true])('同owner先归档旧云端完成草稿再走noop或push，本机已提前迁移=%s', async (alreadyAdopted) => {
+    const legacy = { ...createEmptyAppData(), records: [{ ...seedRecords[0], id: 'r' }], drafts: [finishedDraft('same-owner-legacy')] }
+    const local = alreadyAdopted ? adoptDraftResults(structuredClone(legacy)) : { ...createEmptyAppData(), records: structuredClone(legacy.records) }
+    useAppStore.setState(local)
+    localStorage.setItem('add-luck-active-data-owner-v1', 'u')
+    localStorage.setItem('add-luck-cloud-sync-meta-v1', JSON.stringify({ userId: 'u', lastSyncedHash: hashAppData(local), dirty: false }))
+    backend.row = { payload: legacy, data_hash: hashAppData(legacy), updated_at: drafted, version: 1 }
+    await mount()
+    expect(useAppStore.getState().records).toHaveLength(2)
+    expect(backend.rpc.mock.calls[0][1].p_expected_version).toBe(1)
+    expect((backend.row as { payload: unknown }).payload).not.toHaveProperty('drafts')
+    act(() => useAppStore.getState().updateRecordVerification('r', { verificationStatus: 'pending', notes: '随后编辑' }))
+    await act(async () => { await account.syncNow() })
+    expect((backend.row as { payload: { records: unknown[] } }).payload.records).toHaveLength(2)
+    expect(useAppStore.getState().records).toHaveLength(2)
+  })
+  it('旧云端草稿归档上传失败时不丢弃来源，不把失败当作完成同步', async () => {
+    const legacy = { ...createEmptyAppData(), records: [{ ...seedRecords[0], id: 'r' }], drafts: [finishedDraft('failed-archive')] }
+    localStorage.setItem('add-luck-active-data-owner-v1', 'u')
+    useAppStore.setState({ records: structuredClone(legacy.records) })
+    backend.row = { payload: legacy, data_hash: hashAppData(legacy), updated_at: drafted, version: 1 }
+    const before = structuredClone(backend.row)
+    backend.rpc.mockResolvedValue({ data: null, error: new Error('network unavailable') })
+    render(<CloudAccountProvider><Probe /><SyncConflictPanel /></CloudAccountProvider>)
+    await waitFor(() => expect(account.syncStatus).toBe('error'))
+    expect(backend.row).toEqual(before)
+    expect(account.cloudDataReady).toBe(true) // Safe offline use of this same account's data.
+    expect(useAppStore.getState().records).toHaveLength(1)
+  })
+  it('A在途上传只使用A的token，B等它结束后恢复自己的数据，旧回调不覆盖B', async () => {
+    await mount()
+    let finishUpload!: (value: { data: number; error: null }) => void
+    backend.rpc.mockImplementationOnce(() => new Promise((resolve) => { finishUpload = resolve }))
+    act(() => useAppStore.getState().updateRecordVerification('r', { verificationStatus: 'pending', notes: 'A upload' }))
+    let uploading!: Promise<void>
+    act(() => { uploading = account.syncNow() })
+    await waitFor(() => expect(backend.rpc).toHaveBeenCalledTimes(1))
+    const bData = { ...createEmptyAppData(), records: [{ ...seedRecords[0], id: 'b-record', question: 'B question' }] }
+    backend.row = { payload: pickSyncData(bData), data_hash: hashAppData(bData), updated_at: drafted, version: 1 }
+    act(() => (backend.authChange as (event: string, session: Session) => void)('SIGNED_IN', { user: { id: 'b' }, access_token: 'b-token' } as Session))
+    expect(account.cloudDataReady).toBe(false)
+    await act(async () => { finishUpload({ data: 2, error: null }); await uploading })
+    await waitFor(() => expect(account.syncStatus).toBe('synced'))
+    expect(account.session?.user.id).toBe('b')
+    expect(useAppStore.getState().records.map((r) => r.id)).toEqual(['b-record'])
+    expect(JSON.parse(localStorage.getItem('add-luck-cloud-sync-meta-v1')!).userId).toBe('b')
+    expect(backend.rpc.mock.calls[0][2]).toEqual({ Authorization: 'Bearer test' })
+  })
   it.each([true, false])('首次登录用应用内对话框询问是否带入访客数据：%s', async (accept) => {
     const confirm = vi.spyOn(window, 'confirm')
     useAppStore.setState({ records: [{ ...seedRecords[0], id: 'guest-record' }] })
@@ -178,6 +309,6 @@ it('模拟注销成功回到访客并清理该账号备份，删除失败保留�
  localStorage.setItem('add-luck-account-backup-u','private backup')
  await act(async()=>{await account.deleteAccount()})
  expect(account.session).toBeNull();expect(localStorage.getItem('add-luck-account-backup-u')).toBeNull()
- expect(backend.invoke).toHaveBeenCalledWith('delete-account',{body:{confirmation:'DELETE_MY_ACCOUNT'}})
+ expect(backend.invoke).toHaveBeenCalledWith('delete-account',{body:{confirmation:'DELETE_MY_ACCOUNT'},headers:{Authorization:'Bearer test'}})
  expect(useAppStore.getState().records).toHaveLength(0)
 })
