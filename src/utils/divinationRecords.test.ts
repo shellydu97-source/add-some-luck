@@ -3,7 +3,7 @@ import { createCastFromValues } from '../calculation/liuyao'
 import { pickSyncData } from '../cloud/syncCore'
 import { createEmptyAppData } from '../storage/appData'
 import { useAppStore } from '../storage/store'
-import { saveCompletedDrafts, saveDivinationRecord } from './divinationRecords'
+import { adoptDraftResults, saveCompletedDrafts, saveDivinationRecord } from './divinationRecords'
 
 const now = '2026-10-12T04:00:00.000Z'
 const lockedLiuyao = { id: 'done', type: 'liuyao' as const, profileId: 'guest', question: '面试能过吗？', category: '工作 / 事业', createdAt: now, updatedAt: now, state: { timeRange: '', casts: createCastFromValues([8, 8, 8, 6, 7, 9]), locked: true, lockedAt: now } }
@@ -31,5 +31,22 @@ describe('finished divinations become records automatically', () => {
   it('in-progress flows are not part of cloud sync data', () => {
     useAppStore.setState({ drafts: [structuredClone(openMeihua)] })
     expect(pickSyncData(useAppStore.getState())).not.toHaveProperty('drafts')
+  })
+  it('two devices adopting the same legacy draft get one identical record', () => {
+    const data = { ...createEmptyAppData(), drafts: [{ ...structuredClone(lockedLiuyao), ai: { question: '', interpretations: [], messages: [{ id: 'm', role: 'user' as const, content: '问一句', createdAt: now }] } }, structuredClone(openMeihua)] }
+    const first = adoptDraftResults(structuredClone(data))
+    const second = adoptDraftResults(structuredClone(data))
+    expect(first.records).toHaveLength(1)
+    expect(second.records[0].id).toBe(first.records[0].id)
+    expect(first.records[0].createdAt).toBe(now)
+    expect(first.records[0].aiMessages).toHaveLength(1)
+    expect(adoptDraftResults(first)).toBe(first)
+  })
+  it('a legacy result deleted on another device is not brought back', () => {
+    const data = { ...createEmptyAppData(), drafts: [structuredClone(lockedLiuyao)] }
+    const id = adoptDraftResults(structuredClone(data)).records[0].id
+    const deleted = adoptDraftResults({ ...data, tombstones: { profiles: {}, records: { [id]: '2026-10-13T00:00:00.000Z' }, drafts: {} } })
+    expect(deleted.records).toEqual([])
+    expect((deleted.drafts[0].state as { recordId?: string }).recordId).toBe(id)
   })
 })

@@ -106,11 +106,12 @@ export function CloudAccountProvider({ children }: { children: ReactNode }) {
     setSyncMessage(dirty ? '还有本机改动等待同步' : '数据已保存到云端')
   }, [])
 
-  const applyData = useCallback((payload: AppDataState) => {
+  // In-progress flows stay on this device and belong to whoever's data is open; switching owners passes their own.
+  const applyData = useCallback((payload: AppDataState, drafts = getLocalData().drafts) => {
     applyingRemote.current = true
     // Navigation, accessibility and selection remain local to this browser.
     const local = getLocalData()
-    useAppStore.getState().restoreCloudData({ ...payload, drafts: local.drafts, lastPrimaryRoute: local.lastPrimaryRoute, reduceMotion: local.reduceMotion, activeProfileId: payload.profiles.some((p) => p.id === local.activeProfileId) ? local.activeProfileId : payload.profiles.find((p) => p.isDefault)?.id ?? payload.profiles[0]?.id ?? '' })
+    useAppStore.getState().restoreCloudData({ ...payload, drafts, lastPrimaryRoute: local.lastPrimaryRoute, reduceMotion: local.reduceMotion, activeProfileId: payload.profiles.some((p) => p.id === local.activeProfileId) ? local.activeProfileId : payload.profiles.find((p) => p.isDefault)?.id ?? payload.profiles[0]?.id ?? '' })
     applyingRemote.current = false
   }, [])
 
@@ -178,7 +179,7 @@ export function CloudAccountProvider({ children }: { children: ReactNode }) {
         if (raw) {
           if (owner === GUEST_OWNER) saveGuestData(local)
           local = migrateToV12(JSON.parse(raw))
-          applyData(local)
+          applyData(local, local.drafts)
           writeActiveDataOwner(userId)
           restoredBackup = true
         }
@@ -189,9 +190,9 @@ export function CloudAccountProvider({ children }: { children: ReactNode }) {
         saveGuestData(local)
         if (local.profiles.length || local.records.length) {
           const importGuest = await askGuestImport(local)
-          applyData(importGuest ? mergeAppData(local, remote?.payload ?? createEmptyAppData()) : remote?.payload ?? createEmptyAppData())
-        } else applyData(remote?.payload ?? createEmptyAppData())
-      } else applyData(remote?.payload ?? createEmptyAppData())
+          applyData(importGuest ? mergeAppData(local, remote?.payload ?? createEmptyAppData()) : remote?.payload ?? createEmptyAppData(), importGuest ? local.drafts : [])
+        } else applyData(remote?.payload ?? createEmptyAppData(), [])
+      } else applyData(remote?.payload ?? createEmptyAppData(), [])
       writeActiveDataOwner(userId)
       if (remote && hashAppData(getLocalData()) === remote.dataHash) commitSynced(userId, remote)
       else await pushLocal(activeClient, userId)

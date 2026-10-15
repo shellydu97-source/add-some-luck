@@ -10,6 +10,8 @@ import { createEmptyAppData } from '../storage/appData'
 import { seedRecords } from '../mocks/records'
 import { seedProfiles } from '../mocks/profiles'
 import { hashAppData, pickSyncData } from './syncCore'
+import { createCastFromValues } from '../calculation/liuyao'
+import type { DivinationDraft } from '../models/types'
 
 const backend = vi.hoisted(() => ({ row: undefined as unknown, authChange: undefined as unknown, session: undefined as unknown, rpc: vi.fn(), delete: vi.fn(), invoke: vi.fn() }))
 vi.mock('./supabaseClient', () => ({
@@ -26,6 +28,9 @@ vi.mock('./supabaseClient', () => ({
   }),
 }))
 let account: CloudAccountValue
+const drafted = '2026-10-12T04:00:00.000Z'
+const openDraft = (id: string): DivinationDraft => ({ id, type: 'meihua', profileId: 'guest', question: `${id}的问题`, createdAt: drafted, updatedAt: drafted, state: { locked: false } })
+const finishedDraft = (id: string): DivinationDraft => ({ id, type: 'liuyao', profileId: 'guest', question: '旧版本没保存的结果', category: '其他', createdAt: drafted, updatedAt: drafted, state: { timeRange: '', casts: createCastFromValues([8, 8, 8, 6, 7, 9]), locked: true, lockedAt: drafted } })
 function Probe() { const value = useCloudAccount(); useEffect(() => { account = value }, [value]); return <p>{value.syncMessage}</p> }
 beforeEach(() => {
   localStorage.clear()
@@ -121,6 +126,31 @@ describe('账号数据保护流程', () => {
     expect(useAppStore.getState().records[0].notes).toBe('未上传备注')
     expect(account.syncMessage).toContain('未同步的改动仍保留')
     expect(JSON.parse(localStorage.getItem('add-luck-cloud-sync-meta-v1')!).dirty).toBe(true)
+  })
+  it('换成另一个账号的数据时，不带上一个账号没做完的占卜', async () => {
+    localStorage.setItem('add-luck-active-data-owner-v1', 'someone-else')
+    useAppStore.setState({ drafts: [openDraft('别人的草稿')], records: [{ ...seedRecords[0], id: 'other-record' }] })
+    await mount()
+    expect(useAppStore.getState().drafts).toEqual([])
+    expect(useAppStore.getState().records.map((r) => r.id)).toEqual(['r'])
+  })
+  it('访客没做完的占卜不进账号，退出登录后回到访客时还在', async () => {
+    useAppStore.setState({ drafts: [openDraft('访客草稿')] })
+    await mount()
+    expect(useAppStore.getState().drafts).toEqual([])
+    await act(async () => { await account.signOut() })
+    expect(useAppStore.getState().drafts.map((d) => d.id)).toEqual(['访客草稿'])
+  })
+  it('云端旧版本留在草稿里的结果先变成记录再上传，不会被覆盖丢失', async () => {
+    const legacy = { ...pickSyncData(createEmptyAppData()), records: [{ ...seedRecords[0], id: 'r' }], drafts: [finishedDraft('legacy'), openDraft('legacy-open')] }
+    backend.row = { payload: legacy, data_hash: 'old', updated_at: '2026-10-12T04:00:00Z', version: 1 }
+    await mount()
+    const row = backend.row as { payload: { records: Array<{ id: string; question?: string; createdAt: string }> } }
+    const adopted = row.payload.records.find((r) => r.question === '旧版本没保存的结果')
+    expect(adopted?.createdAt).toBe(drafted)
+    expect(row.payload).not.toHaveProperty('drafts')
+    expect(useAppStore.getState().records.map((r) => r.id)).toContain(adopted?.id)
+    expect(useAppStore.getState().drafts).toEqual([])
   })
   it('同一字段两端修改暂停同步，保留云端按最新版本恢复', async () => {
     await mount()

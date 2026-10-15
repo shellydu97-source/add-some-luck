@@ -10,7 +10,8 @@ import { getTarotCard, spreadPositions } from '../calculation/tarotMock'
 import { createTarotSpreadInterpretation, getTarotElement } from '../calculation/tarotInterpretation'
 import { TAROT_CALCULATION_METADATA } from '../calculation/tarotVersions'
 import { getTarotKnowledge } from '../data/tarotMeanings'
-import type { DivinationDraft, Interpretation, LiuyaoDraft, MeihuaDraft, Profile, TarotDraft } from '../models/types'
+import type { AppDataState, DivinationDraft, Interpretation, LiuyaoDraft, MeihuaDraft, Profile, RecordSnapshot, TarotDraft } from '../models/types'
+import { pickAppData } from '../storage/appData'
 import { useAppStore } from '../storage/store'
 import { createRecord, GUEST_PROFILE_ID } from './record'
 
@@ -143,39 +144,88 @@ function isComplete(draft: DivinationDraft) {
   return false
 }
 
+function buildRecord(draft: DivinationDraft, profiles: Profile[]): RecordSnapshot | undefined {
+  const profile = subjectProfile(draft, profiles)
+  const common = { profile, temporarySubject: draft.temporarySubject, question: draft.question, category: draft.category }
+  if (draft.type === 'liuyao') {
+    const outcome = buildLiuyaoOutcome(draft)
+    const created = createRecord({ ...common, type: 'liuyao', rawResult: outcome.rawResult, interpretation: outcome.interpretation })
+    if (draft.state.useGodOverride) created.liuyaoUseGodOverride = draft.state.useGodOverride
+    return created
+  }
+  if (draft.type === 'meihua') {
+    const outcome = buildMeihuaOutcome(draft)
+    return createRecord({ ...common, type: 'meihua', rawResult: outcome.rawResult, interpretation: outcome.interpretation })
+  }
+  if (draft.type === 'tarot') {
+    const outcome = buildTarotOutcome(draft)
+    return createRecord({ ...common, type: 'tarot', rawResult: outcome.rawResult, interpretation: outcome.interpretation })
+  }
+  return undefined
+}
+
 // Results are saved the moment they exist; calling this again for the same draft returns the same record.
 export function saveDivinationRecord(draftId: string): string | undefined {
   const state = useAppStore.getState()
   const draft = state.drafts.find((item) => item.id === draftId)
   if (!draft || !isComplete(draft)) return undefined
   if (draft.state.recordId && state.records.some((record) => record.id === draft.state.recordId)) return draft.state.recordId
-  const profile = subjectProfile(draft, state.profiles)
-  const common = { profile, temporarySubject: draft.temporarySubject, question: draft.question, category: draft.category }
-  let created
-  if (draft.type === 'liuyao') {
-    const outcome = buildLiuyaoOutcome(draft)
-    created = createRecord({ ...common, type: 'liuyao', rawResult: outcome.rawResult, interpretation: outcome.interpretation })
-    if (draft.state.useGodOverride) created.liuyaoUseGodOverride = draft.state.useGodOverride
-  } else if (draft.type === 'meihua') {
-    const outcome = buildMeihuaOutcome(draft)
-    created = createRecord({ ...common, type: 'meihua', rawResult: outcome.rawResult, interpretation: outcome.interpretation })
-  } else if (draft.type === 'tarot') {
-    const outcome = buildTarotOutcome(draft)
-    created = createRecord({ ...common, type: 'tarot', rawResult: outcome.rawResult, interpretation: outcome.interpretation })
-  } else return undefined
+  const created = buildRecord(draft, state.profiles)
+  if (!created) return undefined
   state.createRecordSnapshot(created, draft.id, { quiet: true })
   return created.id
 }
 
-// Older versions kept finished results as drafts until the user pressed save; turn those into records.
-export function saveCompletedDrafts() {
-  const saved: string[] = []
-  for (const draft of useAppStore.getState().drafts) {
-    if (draft.state.recordId || !isComplete(draft)) continue
-    try {
-      const id = saveDivinationRecord(draft.id)
-      if (id) saved.push(id)
-    } catch { /* A draft that can no longer be calculated stays as it was. */ }
+function shortHash(text: string) {
+  let result = 0x811c9dc5
+  for (let i = 0; i < text.length; i++) result = Math.imul(result ^ text.charCodeAt(i), 0x01000193)
+  return (result >>> 0).toString(16).padStart(8, '0')
+}
+
+// The same finished draft always becomes the same record (id and time), so devices adopting it
+// independently end up with one record, and a record deleted elsewhere stays deleted.
+function adoptedRecord(draft: DivinationDraft, profiles: Profile[]): RecordSnapshot | undefined {
+  const record = buildRecord(draft, profiles)
+  if (!record) return undefined
+  const lockedAt = draft.type === 'liuyao' || draft.type === 'meihua' ? draft.state.lockedAt : undefined
+  const stamp = draft.type === 'tarot' ? `${draft.state.spread}:${draft.state.selected.join('.')}` : lockedAt ?? ''
+  const ai = draft.ai
+  return {
+    ...record,
+    id: `record-${draft.id}-${shortHash(stamp)}`,
+    createdAt: lockedAt ?? draft.updatedAt,
+    aiInterpretations: [...(ai?.interpretations ?? [])],
+    aiMessages: [...(ai?.messages ?? [])],
+    ...(!record.question && ai?.question?.trim() ? { questionAddedLater: ai.question.trim() } : {}),
   }
+}
+
+// Older versions kept finished results as drafts (synced to the cloud) until the user pressed save.
+// Turn each of them into a record so nothing is lost now that drafts stay on one device.
+export function adoptDraftResults<T extends AppDataState>(data: T): T {
+  const known = new Set(data.records.map((record) => record.id))
+  const adopted: RecordSnapshot[] = []
+  let changed = false
+  const drafts = data.drafts.map((draft) => {
+    if (draft.state.recordId || !isComplete(draft)) return draft
+    try {
+      const record = adoptedRecord(draft, data.profiles)
+      if (!record) return draft
+      if (!known.has(record.id) && !data.tombstones?.records[record.id]) { adopted.push(record); known.add(record.id) }
+      changed = true
+      return { ...draft, state: { ...draft.state, recordId: record.id } } as DivinationDraft
+    } catch { return draft /* A draft that can no longer be calculated stays as it was. */ }
+  })
+  if (!changed) return data
+  const records = [...adopted, ...data.records].sort((a, b) => b.createdAt.localeCompare(a.createdAt) || a.id.localeCompare(b.id))
+  return { ...data, records, drafts }
+}
+
+export function saveCompletedDrafts() {
+  const state = useAppStore.getState()
+  const next = adoptDraftResults(pickAppData(state))
+  if (next.drafts === state.drafts) return []
+  const saved = next.records.filter((record) => !state.records.includes(record)).map((record) => record.id)
+  useAppStore.setState({ records: next.records, drafts: next.drafts })
   return saved
 }
