@@ -25,7 +25,7 @@ beforeEach(()=>{
 })
 afterEach(()=>{cleanup();vi.unstubAllGlobals();localStorage.clear()})
 describe('AI panel privacy, streaming, save and followups',()=>{
- it('blocks first transmission until consent, renders deltas, keeps results in draft then explicitly saves',async()=>{
+ it('blocks first transmission until consent, renders deltas, then writes the finished answer straight into the record',async()=>{
   const ensure=vi.fn(()=>{const record=createRecord({type:'tarot',question:'测试问题',rawResult:{fixed:'cards'},interpretation:createBasicInterpretation('本地','')});useAppStore.getState().createRecordSnapshot(record,'d');return record.id})
   mount({ensureRecord:ensure});await waitFor(()=>expect(screen.getByText('结合问题生成解读')).toBeEnabled())
   fireEvent.click(screen.getByText('结合问题生成解读'));expect(chats()).toHaveLength(0)
@@ -33,11 +33,10 @@ describe('AI panel privacy, streaming, save and followups',()=>{
   fireEvent.click(screen.getByText('结合问题生成解读'));fireEvent.click(screen.getByText('同意并继续'));await waitFor(()=>expect(chats()).toHaveLength(1))
   await act(async()=>frame('delta',{text:'逐步显示的答案。'}));expect(screen.getByText('逐步显示的答案。')).toBeTruthy();expect(screen.getByText('停止生成')).toBeTruthy()
   expect(useAppStore.getState().records).toHaveLength(0);expect(ensure).not.toHaveBeenCalled()
-  await act(async()=>finish());await waitFor(()=>expect(screen.getByText('保存结果与解读到记录')).toBeTruthy())
-  expect(useAppStore.getState().drafts[0].ai?.interpretations).toHaveLength(1)
+  await act(async()=>finish());await waitFor(()=>expect(useAppStore.getState().records[0]?.aiInterpretations).toHaveLength(1))
+  expect(ensure).toHaveBeenCalledTimes(1);expect(screen.queryByText('保存结果与解读到记录')).toBeNull()
   const reloaded=migrateToV13(JSON.parse(JSON.stringify(useAppStore.getState())))
-  expect(reloaded.drafts[0].ai?.interpretations[0].directAnswer).toContain('首句回答')
-  fireEvent.click(screen.getByText('保存结果与解读到记录'));expect(ensure).toHaveBeenCalledTimes(1);expect(useAppStore.getState().records[0].aiInterpretations).toHaveLength(1)
+  expect(reloaded.records[0].aiInterpretations?.[0].directAnswer).toContain('首句回答')
   fireEvent.change(screen.getByPlaceholderText('继续问，我会结合刚才的结果回答'),{target:{value:'为什么？'}});fireEvent.click(screen.getByText('发送'));await waitFor(()=>expect(chats()).toHaveLength(2))
   await act(async()=>finish('追问回答。',1));await waitFor(()=>expect(useAppStore.getState().records[0].aiMessages).toHaveLength(2))
   expect(useAppStore.getState().records).toHaveLength(1)

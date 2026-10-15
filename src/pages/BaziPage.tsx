@@ -6,6 +6,7 @@ import AiReadingPanel from '../components/AiReadingPanel'
 import ChartHeader from '../components/ChartHeader'
 import DatePicker from '../components/DatePicker'
 import TermHelp from '../components/TermHelp'
+import TermText from '../components/TermText'
 import { Button, Card, ConfidenceNote, LinkButton, Segmented, SectionHeading } from '../components/UI'
 import {
   analyzeBaziFlow,
@@ -33,7 +34,7 @@ type FortuneTab = 'dayun' | 'liunian' | 'liuyue' | 'liuri'
 type PillarField = 'tenGod' | 'gan' | 'zhi' | 'hidden' | 'hiddenGods' | 'elements' | 'stage' | 'selfStage' | 'xun' | 'xunKong' | 'naYin'
 
 const options = [
-  { value: 'overview' as const, label: '总览' },
+  { value: 'overview' as const, label: '概览' },
   { value: 'chart' as const, label: '排盘' },
   { value: 'fortune' as const, label: '运势' },
 ]
@@ -97,7 +98,7 @@ function PillarTable({ pillars, fields }: { pillars: Record<PillarKey, BaziPilla
     <div>
       </div>{PILLAR_KEYS.map((key) => <b key={key}>{PILLAR_LABELS[key]}</b>)}
     {fields.flatMap(([label, field]) => [
-      <span key={`${field}-label`}>{label}</span>,
+      <span key={`${field}-label`}><TermText term={label === '藏干十神' ? '十神' : label} label={label} /></span>,
       ...PILLAR_KEYS.map((key) => <span key={`${field}-${key}`} title={pillars[key].status === 'available' ? undefined : pillars[key].reason}>{pillarField(pillars[key], field)}</span>),
     ])}
   </div>
@@ -138,7 +139,6 @@ function NatalFacts({ analysis, compact = false }: { analysis: BaziNatalAnalysis
       <p>十神：{Object.entries(analysis.weightedTenGodCounts).map(([k,v]) => `${k} ${v?.toFixed(2)}`).join(' · ')}</p>
       <p className="helper">显干 1.0；藏干本气 1.0、中气 0.5、余气 0.3；月支藏干额外 ×1.5。十神不计日主显干，五行计入；此口径不作为旺衰结论。</p>
       </details>
-      <p className="fact-boundary">这里展示十神在原局中的客观出现位置与次数，不直接等同于旺衰、格局或吉凶。</p>
     </Card>
     <Card>
       <SectionHeading title="常用神煞" side={<span className="helper">按日干、年支、日支查表</span>} />
@@ -155,7 +155,6 @@ function NatalFacts({ analysis, compact = false }: { analysis: BaziNatalAnalysis
       <SectionHeading title="原局干支关系" />
       {relations.length ? <ul className="plain-list bazi-relation-list">{relations.slice(0, compact ? 4 : undefined).map((item, index) => <li key={`${item.kind}-${index}`}>
       <b>{item.kind}</b>：{item.text}</li>)}</ul> : <p className="helper">当前命盘没有形成完整的合、冲、刑、害、破组合。</p>}
-      <p className="fact-boundary">这里只标记结构关系，不判断是否成化，也不把单一关系直接解释为好或坏。</p>
     </Card>
   </>
 }
@@ -271,9 +270,6 @@ export default function BaziPage() {
   const activeMonth = yearDetails?.ok
     ? yearDetails.months.find((month) => month.index === selectedMonthIndex) ?? yearDetails.months[0]
     : undefined
-  const currentDayAnalysis = result?.ok && currentFlow.ok && currentFlow.day.status === 'available'
-    ? analyzeBaziFlow(result, currentFlow.day.ganZhi, '今日流日')
-    : undefined
   const fortuneBoardPeriods = result?.ok ? [
     { label: '大运', analysis: activeCycle ? analyzeBaziFlow(result, activeCycle.ganZhi, '所选大运') : undefined },
     { label: '流年', analysis: activeAnnual ? analyzeBaziFlow(result, activeAnnual.ganZhi, '所选流年') : undefined },
@@ -326,10 +322,6 @@ export default function BaziPage() {
       <LinkButton to={`/profiles/${profile.id}/edit`} secondary>确认出生时间</LinkButton>
       </Card>}
       {result.birthTimeCorrection?.notes.length ? <ConfidenceNote>排盘使用时间 {result.birthTimeCorrection.correctedLocal}（{result.birthTimeCorrection.notes.join('；')}）</ConfidenceNote> : null}
-      <details className="professional-details">
-      <summary>时间规则说明</summary>
-      <p>年柱按立春精确时刻、月柱按节交接；{profile.dayBoundaryRule === 'zi-23' ? '23:00 起日柱与时柱按次日子时计算' : '晚子时日柱不换（sect 2）'}。流年以立春为界，{calendarYear} 年交接时刻：{lichun}。岁数为虚岁。</p>
-      </details>
       {tab === 'overview' && <>
         <Card className="hero-card">
           <div className="card-kicker">
@@ -348,36 +340,35 @@ export default function BaziPage() {
           </div>
         </Card>
         {result.warnings.filter((warning) => !warning.startsWith('V1 ') && !warning.includes('真太阳时')).map((warning) => <ConfidenceNote key={warning}>{warning}</ConfidenceNote>)}
-        <BaziOverview result={result} cycle={currentCycle} />
-        <div className="summary-grid bazi-overview-summary">
-          <Card>
-      <span className="summary-label">日主</span>
-      <h3>{result.pillars.day.status === 'available' ? result.pillars.day.gan : '待确定'}</h3>
-      <p className="helper">{result.pillars.day.status === 'available' ? `${result.pillars.day.fiveElements.stem} · ${result.pillars.day.ganZhi}日` : pillarSummary(result.pillars.day)}</p>
-      </Card>
-          <Card>
-      <span className="summary-label">当前大运</span>
-      <h3>{currentCycle?.ganZhi ?? '待确定'}</h3>
-      <p className="helper">{currentCycle ? `${currentCycle.startYear}—${currentCycle.endYear}` : '需要明确出生时间'}</p>
-      </Card>
-          <Card>
-      <span className="summary-label">今日流日</span>
-      <h3>{currentFlow.ok ? periodText(currentFlow.day) : '无法生成'}</h3>
-      <p className="helper">{currentDayAnalysis ? `${currentDayAnalysis.stemTenGod} · ${currentDayAnalysis.stemElement}${currentDayAnalysis.branchElement}` : currentFlow.ok ? `${periodText(currentFlow.year)}流年 · ${periodText(currentFlow.month)}流月` : currentFlow.error.message}</p>
-      </Card>
-        </div>
+        <BaziOverview result={result} cycle={currentCycle} year={currentFlow.ok && currentFlow.year.status === 'available' ? currentFlow.year.ganZhi : undefined} />
         <Card>
-          <SectionHeading title="基础排盘" side={<button type="button" className="text-button" onClick={() => setTab('chart')}>查看完整排盘</button>} />
+          <SectionHeading title="四柱简表" side={<button type="button" className="text-button" onClick={() => setTab('chart')}>查看完整排盘</button>} />
+          <PillarTable pillars={result.pillars} fields={CORE_FIELDS} />
+        </Card>
+        <AiReadingPanel key={profile.id} module="bazi" context={buildBaziContext(result,natalAnalysis)} draftId={aiDraftId} profileId={profile.id} recordId={savedAiDraft?.state.recordId} ensureRecord={ensureAiRecord} allowQuestionInput title="了解这份八字排盘" />
+      </>}
+
+      {tab === 'chart' && <>
+        <Card>
+          <div className="card-kicker">
+      <span>
+      <TermHelp term="四柱" label="四柱排盘" />
+      </span>
+      </div>
           <PillarTable pillars={result.pillars} fields={CORE_FIELDS} />
         </Card>
         <Card>
-          <SectionHeading title="五行分布" side={<span className="helper">出现次数（天干与地支）</span>} />
+          <SectionHeading title={<TermHelp term="五行分布" />} side={<span className="helper">出现次数（天干与地支）</span>} />
           <div className="element-counts">{ELEMENTS.map((element) => <div key={element}>
       <b>{result.fiveElementCounts[element]}</b>
       <span>{element}</span>
       </div>)}</div>
         </Card>
-        {natalAnalysis && <NatalFacts analysis={natalAnalysis} compact />}
+        <Card>
+      <SectionHeading title="藏干、十神与纳音" />
+      <PillarTable pillars={result.pillars} fields={DETAIL_FIELDS} />
+      </Card>
+        {natalAnalysis && <NatalFacts analysis={natalAnalysis} />}
         <Card>
           <SectionHeading title="出生信息" />
           <ul className="compact-list">
@@ -399,30 +390,11 @@ export default function BaziPage() {
       </li>}
           </ul>
         </Card>
-        <AiReadingPanel key={profile.id} module="bazi" context={buildBaziContext(result,natalAnalysis)} draftId={aiDraftId} profileId={profile.id} recordId={savedAiDraft?.state.recordId} ensureRecord={ensureAiRecord} allowQuestionInput title="了解这份八字排盘" />
-      </>}
-
-      {tab === 'chart' && <>
-        <Card>
-          <div className="card-kicker">
-      <span>
-      <TermHelp term="四柱" label="四柱排盘" />
-      </span>
-      </div>
-          <PillarTable pillars={result.pillars} fields={CORE_FIELDS} />
-        </Card>
-        <Card>
-          <SectionHeading title="五行分布" side={<span className="helper">出现次数（天干与地支）</span>} />
-          <div className="element-counts">{ELEMENTS.map((element) => <div key={element}>
-      <b>{result.fiveElementCounts[element]}</b>
-      <span>{element}</span>
-      </div>)}</div>
-        </Card>
-        <Card>
-      <SectionHeading title="藏干、十神与纳音" />
-      <PillarTable pillars={result.pillars} fields={DETAIL_FIELDS} />
-      </Card>
-        {natalAnalysis && <NatalFacts analysis={natalAnalysis} />}
+        <details className="professional-details">
+      <summary>时间规则说明</summary>
+      <p>年柱按立春精确时刻、月柱按节交接；{profile.dayBoundaryRule === 'zi-23' ? '23:00 起日柱与时柱按次日子时计算' : '晚子时日柱不换（sect 2）'}。流年以立春为界，{calendarYear} 年交接时刻：{lichun}。岁数为虚岁。</p>
+      </details>
+        <p className="fine-print">以上为按传统排盘规则得出的结构信息，供参考。</p>
       </>}
 
       {tab === 'fortune' && <>

@@ -1,4 +1,4 @@
-import UnfinishedFlowPrompt from '../components/UnfinishedFlowPrompt'
+import { saveDivinationRecord } from '../utils/divinationRecords'
 import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import TopBar from '../components/TopBar'
@@ -65,12 +65,13 @@ function QuestionContent() {
         revealed: false,
       },
     }
+    // A finished earlier flow is kept as a record before the new flow replaces it.
+    if (previous && !resumed) saveDivinationRecord(previous.id)
     store.upsertDraft(resumed ? { ...draft, id: resumed.id, createdAt: resumed.createdAt, randomSeed: resumed.randomSeed, state: resumed.state, ai: resumed.ai } : draft)
     navigate('/divination/tarot/spread')
   }
 
   return <>
-    <UnfinishedFlowPrompt draft={previous} resumed={resumed} />
     <TopBar title="塔罗占问" eyebrow="第 1 步 · 问题选填" back />
     <ConfidenceNote>问题可以帮助后续解读；留空也可以正常抽牌。</ConfidenceNote>
     <Card><DivinationSubjectField profiles={store.profiles} subjectId={subjectId} temporaryName={temporaryName} onSubjectChange={setSubjectId} onTemporaryNameChange={setTemporaryName} /><label className="field"><span>问题（选填）</span><textarea rows={4} maxLength={120} value={question} onChange={(event) => { setQuestion(event.target.value); setDuplicate(undefined) }} placeholder="可以留空；例如：两个选择分别可能怎样发展？" /></label><label className="field"><span>问题分类</span><select value={category} onChange={(event) => setCategory(event.target.value)}>{categoryOptions.map((item) => <option key={item}>{item}</option>)}</select></label><label className="radio-option"><input type="checkbox" checked={isChoice} onChange={(event) => setIsChoice(event.target.checked)} />这是一个 A / B 选择题</label></Card>

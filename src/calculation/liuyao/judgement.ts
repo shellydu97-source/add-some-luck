@@ -1,10 +1,10 @@
 import type { Gender } from '../../models/types'
 import type { FiveElement, LiuyaoCalculationResult, LiuyaoLine, SixRelation } from './types'
 // 《增删卜易》《卜筮正宗》通行生克口径；计分是透明参考模型，不等同于传统断卦的唯一结论。
-export const LIUYAO_JUDGEMENT_VERSION = 'liuyao-usegod-season-moving-1.0.0'
+export const LIUYAO_JUDGEMENT_VERSION = 'liuyao-usegod-season-moving-1.1.0'
 export type UseGod = SixRelation | '世爻' | '应爻'
 export const USE_GOD_OPTIONS: UseGod[] = ['父母', '兄弟', '子孙', '妻财', '官鬼', '世爻', '应爻']
-export const JUDGEMENT_WEIGHTS = { strong: 2, weak: -1, monthBreak: -2, void: -1, daySupport: 1, dayControl: -1, originMoving: 2, avoidMoving: -2, returnGenerate: 2, returnControl: -2, advance: 1, retreat: -1, transformedBad: -1 } as const
+export const JUDGEMENT_WEIGHTS = { strong: 2, weak: -1, monthBreak: -2, void: -1, daySupport: 1, dayControl: -1, originMoving: 2, avoidMoving: -2, returnGenerate: 2, returnControl: -2, advance: 1, retreat: -1, transformedBad: -1, avoidHoldsShi: -1, shiYingSupport: 0.5, useGodOnDayOrMonth: 1, weakActiveFactor: 0.5 } as const
 export const GENERATES: Record<FiveElement, FiveElement> = { 木:'火', 火:'土', 土:'金', 金:'水', 水:'木' }
 export const CONTROLS: Record<FiveElement, FiveElement> = { 木:'土', 土:'水', 水:'火', 火:'金', 金:'木' }
 export const BRANCH_ELEMENT: Record<string, FiveElement> = { 寅:'木', 卯:'木', 巳:'火', 午:'火', 申:'金', 酉:'金', 亥:'水', 子:'水', 辰:'土', 戌:'土', 丑:'土', 未:'土' }
@@ -41,6 +41,8 @@ export interface LiuyaoJudgement {
   uncertainty: string
   advice: string
   ruleVersion: string
+  /** Internal reference score; never shown to users. */
+  score: number
 }
 export function godState(result: LiuyaoCalculationResult, branch: string, element: FiveElement, moving: boolean): GodState {
   const { monthBranch, dayBranch, xunKong } = result.calendar
@@ -65,16 +67,31 @@ export function movingTransformation(line: LiuyaoLine, voidBranches: string): st
   if (line.changedBranch === EXTINCTION[line.element]) out.push('化绝')
   return out
 }
+// A moving origin/avoid god that transforms into void, tomb, extinction or is countered by its change has no force;
+// one that is seasonally weak, month-broken or entombed by the day acts with half force (《增删卜易》 common reading).
+export function activeStrength(result: LiuyaoCalculationResult, line: LiuyaoLine): { factor: number; note: string } {
+  if (line.moving) {
+    const fatal = movingTransformation(line, result.calendar.xunKong).filter((effect) => ['化空', '化墓', '化绝', '回头克'].includes(effect))
+    if (fatal.length) return { factor: 0, note: fatal.join('、') }
+  }
+  const state = godState(result, line.branch, line.element, line.moving)
+  const weak = [...(['休', '囚', '死'].includes(state.season) ? [state.season] : []), ...state.flags.filter((flag) => ['月破', '入墓'].includes(flag))]
+  return weak.length ? { factor: JUDGEMENT_WEIGHTS.weakActiveFactor, note: weak.join('、') } : { factor: 1, note: '' }
+}
 export function judgeLiuyao(result: LiuyaoCalculationResult, category?: string, override?: UseGod, gender?: Gender): LiuyaoJudgement {
   const selected = override ?? defaultUseGod(category, gender)
-  const base: LiuyaoJudgement = { useGod: { relation: selected ?? '世爻', lines: [], source: 'present' }, movingEffects: [], auxiliaryFlags: [...result.original.specialTypes], tendency: '信息不足', reasons: [], uncertainty: '这是通行规则的参考推断，不保证结果或精确应期；还需结合现实条件。', advice: '核实关键条件，制定备选方案，再观察事情的实际进展。', ruleVersion: LIUYAO_JUDGEMENT_VERSION }
+  const base: LiuyaoJudgement = { useGod: { relation: selected ?? '世爻', lines: [], source: 'present' }, movingEffects: [], auxiliaryFlags: [...result.original.specialTypes], tendency: '信息不足', score: 0, reasons: [], uncertainty: '这是通行规则的参考推断，不保证结果或精确应期；还需结合现实条件。', advice: '核实关键条件，制定备选方案，再观察事情的实际进展。', ruleVersion: LIUYAO_JUDGEMENT_VERSION }
   if (!selected) return { ...base, reasons: ['感情占问需要确认性别或手动选择用神。'] }
   let candidates = result.lines.filter((line) => selected === '世爻' ? line.shiYing === '世' : selected === '应爻' ? line.shiYing === '应' : line.relation === selected)
   let hidden = false
   if (!candidates.length) { hidden = true; candidates = result.lines.filter((line) => line.hiddenSpirit?.relation === selected) }
   const getSpirit = (line: LiuyaoLine) => hidden ? line.hiddenSpirit! : line
   candidates.sort((a,b) => {
-    const priority = (line: LiuyaoLine) => (line.shiYing === '世' ? 100 : 0) + (line.moving ? 50 : 0) + (['旺','相'].includes(godState(result, getSpirit(line).branch, getSpirit(line).element, false).season) ? 10 : 0)
+    const priority = (line: LiuyaoLine) => {
+      const state = godState(result, getSpirit(line).branch, getSpirit(line).element, false)
+      const intact = !state.flags.some((flag) => ['旬空', '月破', '日破'].includes(flag))
+      return (line.shiYing === '世' ? 100 : 0) + (line.moving ? 50 : 0) + (['旺','相'].includes(state.season) ? 10 : 0) + (intact ? 5 : 0)
+    }
     return priority(b) - priority(a) || a.index - b.index
   })
   const use = candidates[0]
@@ -87,7 +104,7 @@ export function judgeLiuyao(result: LiuyaoCalculationResult, category?: string, 
   const origin = (Object.keys(GENERATES) as FiveElement[]).find(e => GENERATES[e] === spirit.element)!
   const avoid = (Object.keys(CONTROLS) as FiveElement[]).find(e => CONTROLS[e] === spirit.element)!
   base.originGod = group(origin); base.avoidGod = group(avoid)
-  base.reasons.push(`${selected}${hidden ? '伏藏于' : '取'}第 ${use.index} 爻（${spirit.branch}${spirit.element}）${candidates.length > 1 ? '；多现时依持世、发动、旺相顺序取舍' : ''}。`)
+  base.reasons.push(`${selected}${hidden ? '伏藏于' : '取'}第 ${use.index} 爻（${spirit.branch}${spirit.element}）${candidates.length > 1 ? '；多现时依持世、发动、旺相、不空不破的顺序取舍' : ''}。`)
   base.reasons.push(`月建${result.calendar.monthBranch}，用神${state.season}；日辰${result.calendar.dayGanZhi}：${state.dayRelation}${state.flags.length ? '；' + state.flags.join('、') : ''}。`)
   const w = JUDGEMENT_WEIGHTS
   let score = ['旺','相'].includes(state.season) ? w.strong : w.weak
@@ -105,8 +122,14 @@ export function judgeLiuyao(result: LiuyaoCalculationResult, category?: string, 
     if (!active) continue
     const effects = line.moving ? movingTransformation(line,result.calendar.xunKong) : ['暗动']
     if (line.index !== use.index || hidden) {
-      if (GENERATES[line.element] === spirit.element) { effects.push('原神动生用神'); score += w.originMoving }
-      if (CONTROLS[line.element] === spirit.element) { effects.push('忌神动克用神'); score += w.avoidMoving }
+      const role = GENERATES[line.element] === spirit.element ? 'origin' : CONTROLS[line.element] === spirit.element ? 'avoid' : undefined
+      if (role) {
+        const { factor, note } = activeStrength(result, line)
+        const name = role === 'origin' ? '原神' : '忌神'
+        if (factor === 0) effects.push(`${name}虽动但${note}，${role === 'origin' ? '生扶无力' : '克制无力'}`)
+        else effects.push(`${name}动${role === 'origin' ? '生' : '克'}用神${factor < 1 ? `（${note}，力弱）` : ''}`)
+        score += (role === 'origin' ? w.originMoving : w.avoidMoving) * factor
+      }
     }
     if (!hidden && line.index === use.index && line.moving) {
       if (effects.includes('回头生')) score += w.returnGenerate
@@ -123,9 +146,27 @@ export function judgeLiuyao(result: LiuyaoCalculationResult, category?: string, 
   }
   if (base.movingEffects.length) base.reasons.push(base.movingEffects.join('；'))
   else if (!hidden) base.reasons.push(result.movingLines.length ? '动爻未形成直接生克用神的关系。' : '无动爻，主要依据用神日月状态判断。')
-  base.reasons = base.reasons.slice(0,4)
+  // Static factors: avoid god holding the self line, self/other relation, use god on the day or month branch.
+  const shiLine = result.lines.find((line) => line.shiYing === '世')
+  const yingLine = result.lines.find((line) => line.shiYing === '应')
+  if (shiLine && !['世爻', '应爻'].includes(selected) && shiLine.index !== use.index && CONTROLS[shiLine.element] === spirit.element && !shiLine.moving) {
+    score += w.avoidHoldsShi
+    base.reasons.push(`世爻${shiLine.branch}${shiLine.element}${shiLine.relation}是忌神，忌神持世，对所问之事不利。`)
+  }
+  if (shiLine && yingLine && !['世爻', '应爻'].includes(selected)) {
+    const relation = GENERATES[yingLine.element] === shiLine.element ? '应生世' : CONTROLS[yingLine.element] === shiLine.element ? '应克世' : GENERATES[shiLine.element] === yingLine.element ? '世生应' : CONTROLS[shiLine.element] === yingLine.element ? '世克应' : '世应比和'
+    score += relation === '应生世' ? w.shiYingSupport : relation === '应克世' ? -w.shiYingSupport : 0
+    const meaning: Record<string, string> = { 应生世: '对方或外部环境对你有帮助', 应克世: '外部对你有压力', 世生应: '你这边付出较多', 世克应: '你这边比较能掌控', 世应比和: '双方立场接近' }
+    base.reasons.push(`${relation}：${meaning[relation]}。`)
+  }
+  if (!hidden && (spirit.branch === result.calendar.dayBranch || spirit.branch === result.calendar.monthBranch)) {
+    score += w.useGodOnDayOrMonth
+    base.reasons.push(`用神${spirit.branch}${spirit.branch === result.calendar.dayBranch ? '临日辰' : '临月建'}，得时得力。`)
+  }
+  base.reasons = base.reasons.slice(0,5)
   const selfEffect = (text:string) => !hidden && text.startsWith(`第 ${use.index} 爻`)
   const mixed = base.movingEffects.some(s=>s.includes('生用神') || selfEffect(s) && s.includes('回头生')) && base.movingEffects.some(s=>s.includes('克用神') || selfEffect(s) && s.includes('回头克'))
+  base.score = score
   base.tendency = mixed || score > -2 && score < 2 ? '变数较大' : score >= 2 ? '较有利' : '有阻力'
   if (category === '健康') { base.uncertainty += '世爻代表自身，官鬼为病、子孙为医药，仅为传统象意；身体不适应及时就医。'; base.advice = '以正规检查和医生建议为准，不据卦象调整药物。' }
   return base

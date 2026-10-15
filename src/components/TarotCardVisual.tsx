@@ -24,7 +24,6 @@ export default function TarotCardVisual({ card, orientation, keywords, basicMean
       <div className="tarot-help-image"><picture><source srcSet={imagePath.replace('.jpg','.webp')} type="image/webp" /><img className={orientation === 'reversed' ? 'is-reversed' : ''} src={imagePath} alt={`${card.nameZh}${orientation === 'reversed' ? '逆位' : '正位'}牌面`} /></picture></div>
       <div className="chip-row">{keywords.map((keyword) => <span className="chip" key={keyword}>{keyword}</span>)}</div>
       <p className="tarot-help-meaning">{basicMeaning}</p>
-      <p className="fact-boundary">这是这张牌在当前正逆位下的基础牌义，结合问题时还需要同时看牌阵位置和其他牌。</p>
       <button type="button" className="button secondary" onClick={() => setOpen(false)}>关闭</button>
     </section></div>}
   </>

@@ -25,11 +25,11 @@ it('相同版本的无效本地数据也校验、备份并保护，可进入恢�
  expect(localStorage.getItem(STORAGE_KEY)).toBe(raw)
  useAppStore.getState().setLastPrimaryRoute('records');expect(localStorage.getItem(STORAGE_KEY)).toBe(raw)
 })
-it('同类未完成草稿不能从store被静默覆盖',()=>{
+it('开始新的同类流程直接替换进行中的流程，不再报错',()=>{
  const now=new Date().toISOString();const draft={id:'a',type:'meihua' as const,profileId:'guest',question:'问题',createdAt:now,updatedAt:now,state:{locked:false}}
  useAppStore.getState().upsertDraft(draft)
- expect(()=>useAppStore.getState().upsertDraft({...draft,id:'b'})).toThrow('请先继续或放弃上次流程')
- expect(useAppStore.getState().drafts[0].id).toBe('a')
+ useAppStore.getState().upsertDraft({...draft,id:'b'})
+ expect(useAppStore.getState().drafts.map(d=>d.id)).toEqual(['b'])
 })
 it('同版本损坏的压缩快照同样受保护，原文不覆盖',async()=>{
  const {seedRecords}=await import('../mocks/records')

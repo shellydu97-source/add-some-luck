@@ -7,7 +7,7 @@ const counters = new Map()
 export function aiConfig(env) {
   const positive = (key, fallback) => Number.isSafeInteger(Number(env[key])) && Number(env[key]) > 0 ? Number(env[key]) : fallback
   return {
-    apiKey: env.DEEPSEEK_API_KEY?.trim() || '', model: env.DEEPSEEK_MODEL?.trim() || 'deepseek-v4-flash',
+    apiKey: env.DEEPSEEK_API_KEY?.trim() || '', model: env.DEEPSEEK_MODEL?.trim() || 'deepseek-flash',
     apiUrl: env.DEEPSEEK_API_URL?.trim() || 'https://api.deepseek.com/chat/completions',
     supabaseUrl: env.SUPABASE_URL?.replace(/\/$/, '') || '', supabaseKey: env.SUPABASE_PUBLISHABLE_KEY || '',
     anonymous: env.AI_ALLOW_ANONYMOUS === 'true', dailyLimit: positive('AI_DAILY_REQUEST_LIMIT', 1000),
@@ -69,6 +69,7 @@ export async function handleAiChat(request, env, deps = {}) {
     const configured = Boolean(c.supabaseUrl && c.supabaseKey)
     const fetcher = deps.fetch ?? fetch
     let authHeaders
+    let refundQuota = async () => undefined
     if (c.supabaseUrl || c.supabaseKey) {
       if (!configured) throw new AiError(503, '智能解读需要登录后使用')
       const authorization = request.headers.get('authorization')
@@ -81,14 +82,25 @@ export async function handleAiChat(request, env, deps = {}) {
     const input = validateAiRequest(await parseBody(request))
     consumeMemory(c, deps.clientIp || 'unknown', (deps.now ?? Date.now)(), deps.counters ?? counters, !configured)
     if (configured) {
-      const quota = await fetcher(`${c.supabaseUrl}/rest/v1/rpc/consume_ai_quota`, { method: 'POST', headers: authHeaders, signal: AbortSignal.timeout(10_000), body: JSON.stringify({ p_daily_limit: c.userDailyLimit, p_global_daily_limit: c.dailyLimit }) })
+      const limits = JSON.stringify({ p_daily_limit: c.userDailyLimit, p_global_daily_limit: c.dailyLimit })
+      const rpc = (name, body) => fetcher(`${c.supabaseUrl}/rest/v1/rpc/${name}`, { method: 'POST', headers: authHeaders, signal: AbortSignal.timeout(10_000), body })
+      // reserve_ai_quota hands back an id only the server sees; before its migration runs, fall back to a plain charge without refunds.
+      let quota = await rpc('reserve_ai_quota', limits)
+      const reservable = quota.status !== 404
+      if (!reservable) quota = await rpc('consume_ai_quota', limits)
       if (quota.status === 401) throw new AiError(401, '登录已过期，请重新登录')
       if (!quota.ok) throw new AiError(503, '智能解读限额服务暂不可用')
-      if (await quota.json() !== true) throw new AiError(429, '今天的智能解读额度已用完，请明天再试')
+      const reservation = await quota.json()
+      if (reservable ? typeof reservation !== 'string' : reservation !== true) throw new AiError(429, '今天的智能解读额度已用完，请明天再试')
+      // A failed generation that showed nothing to the user gives the quota back.
+      if (reservable) refundQuota = () => rpc('refund_ai_quota', JSON.stringify({ p_reservation: reservation })).catch(() => undefined)
     }
     const meta = { provider:'deepseek',model:c.model,promptVersion:PROMPT_VERSION }
     if (input.stream) {
-      const source = await (deps.openStream ?? openDeepSeekStream)(input,c,{signal:request.signal})
+      let source
+      try { source = await (deps.openStream ?? openDeepSeekStream)(input,c,{signal:request.signal}) }
+      catch (error) { await refundQuota(); throw error }
+      let delivered = false
       const iterator = source.events[Symbol.asyncIterator]()
       const encoder = new TextEncoder()
       let closed = false, heartbeat
@@ -105,9 +117,10 @@ export async function handleAiChat(request, env, deps = {}) {
             if(closed) return
             if(done) {finish();controller.close();return}
             if(value.type==='done') {controller.enqueue(encoder.encode(sseEvent('done',{reading:value.reading,usage:value.usage,meta})));finish();controller.close();await iterator.return?.()}
-            else controller.enqueue(encoder.encode(sseEvent('delta',{text:value.text})))
+            else {delivered=true;controller.enqueue(encoder.encode(sseEvent('delta',{text:value.text})))}
           } catch(error) {
             if(closed) return
+            if(!delivered) await refundQuota()
             const message=error?.name==='TimeoutError' || error?.name==='AbortError' ? '智能解读响应超时，请重试' : error instanceof AiError ? error.message : '智能解读连接中断，请重试'
             controller.enqueue(encoder.encode(sseEvent('error',{error:message})));finish();controller.close()
           }
@@ -116,7 +129,9 @@ export async function handleAiChat(request, env, deps = {}) {
       })
       return new Response(stream,{headers:{'Content-Type':'text/event-stream; charset=utf-8','Cache-Control':'no-store, no-transform','X-Content-Type-Options':'nosniff','X-Accel-Buffering':'no'}})
     }
-    const result = await (deps.generate ?? requestDeepSeek)(input, c, {signal:request.signal})
+    let result
+    try { result = await (deps.generate ?? requestDeepSeek)(input, c, {signal:request.signal}) }
+    catch (error) { await refundQuota(); throw error }
     return json({ ...result, meta: { provider: 'deepseek', model: c.model, promptVersion: PROMPT_VERSION } })
   } catch (error) {
     const status = error instanceof AiError ? error.status : 502

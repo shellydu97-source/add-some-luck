@@ -23,7 +23,7 @@ interface SegmentedProps<T extends string> {
 
 export function Segmented<T extends string>({ value, options, onChange, label, scrollable = false }: SegmentedProps<T>) {
   return <div className={`segmented ${scrollable ? 'scrollable' : ''}`} role="group" aria-label={label}>{options.map((item) => (
-    <button key={item.value} className={value === item.value ? 'active' : ''} onClick={() => onChange(item.value)}>{item.label}</button>
+    <button type="button" key={item.value} aria-pressed={value === item.value} className={value === item.value ? 'active' : ''} onClick={() => onChange(item.value)}>{item.label}</button>
   ))}</div>
 }
 
@@ -39,6 +39,6 @@ export function EmptyState({ title, children, action }: { title: string; childre
   return <div className="empty-state"><div className="empty-mark">○</div><h2>{title}</h2><p>{children}</p>{action}</div>
 }
 
-export function SectionHeading({ title, side }: { title: string; side?: ReactNode }) {
+export function SectionHeading({ title, side }: { title: ReactNode; side?: ReactNode }) {
   return <div className="section-heading"><h2>{title}</h2>{side}</div>
 }
