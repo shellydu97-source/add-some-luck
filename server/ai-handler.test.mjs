@@ -10,8 +10,9 @@ import { calculateMeihuaByTime } from '../src/calculation/meihua/adapter'
 const env = { DEEPSEEK_API_KEY: 'test', SUPABASE_URL: 'https://test.supabase.co', SUPABASE_PUBLISHABLE_KEY: 'public' }
 const input = { module: 'tarot', question: '测试', context: { spread: 'single', drawnAt: '2026-10-12T04:00:00Z', cards: [{ id: 'major-00', nameZh: '愚人', nameEn: 'Fool', orientation: 'upright', position: '当前', arcana: 'major', element: '风', keywords: ['开始'], basicMeaning: '新的开始。' }] } }
 const req = (body = input, token = 'valid') => new Request('https://example.test/api/ai/chat', { method: 'POST', headers: token ? { authorization: `Bearer ${token}` } : {}, body: JSON.stringify(body) })
+const RESERVATION = '5f0c6a8e-9a51-4c47-9d0b-0a7f1f3e2b11'
 function deps(quota = true, auth = true) {
-  return { counters: new Map(), clientIp: 'test', generate: vi.fn().mockResolvedValue({ reading: { directAnswer: '测试回答' } }), fetch: vi.fn().mockImplementation((url) => Promise.resolve(url.endsWith('/user') ? Response.json(auth ? { id: 'user' } : {}, { status: auth ? 200 : 401 }) : Response.json(quota))) }
+  return { counters: new Map(), clientIp: 'test', generate: vi.fn().mockResolvedValue({ reading: { directAnswer: '测试回答' } }), fetch: vi.fn().mockImplementation((url) => Promise.resolve(url.endsWith('/user') ? Response.json(auth ? { id: 'user' } : {}, { status: auth ? 200 : 401 }) : url.endsWith('/rpc/reserve_ai_quota') ? Response.json(quota ? RESERVATION : null) : Response.json(quota))) }
 }
 describe('shared AI boundary', () => {
   it('requires login without Origin too', async () => {
@@ -23,6 +24,7 @@ describe('shared AI boundary', () => {
   it('consumes authenticated atomic quota and rejects exhausted quota', async () => {
     const d = deps()
     expect((await handleAiChat(req(), env, d)).status).toBe(200)
+    expect(d.fetch.mock.calls[1][0]).toMatch(/\/rpc\/reserve_ai_quota$/)
     expect(d.fetch.mock.calls[1][1].headers.Authorization).toBe('Bearer valid')
     expect(JSON.parse(d.fetch.mock.calls[1][1].body)).toEqual({ p_daily_limit: 30, p_global_daily_limit: 1000 })
     const exhausted = deps(false)
@@ -76,6 +78,15 @@ describe('shared AI boundary', () => {
     expect((await handleAiChat(req(), env, d)).status).toBe(502)
     const refund = d.fetch.mock.calls.find(([url]) => url.endsWith('/rpc/refund_ai_quota'))
     expect(refund?.[1].headers.Authorization).toBe('Bearer valid')
+    expect(JSON.parse(refund?.[1].body)).toEqual({ p_reservation: RESERVATION })
+  })
+  it('falls back to a plain charge without refunds before the reservation migration runs', async () => {
+    const d = deps()
+    d.fetch.mockImplementation((url) => Promise.resolve(url.endsWith('/user') ? Response.json({ id: 'user' }) : url.endsWith('/rpc/reserve_ai_quota') ? Response.json({ code: 'PGRST202' }, { status: 404 }) : Response.json(true)))
+    d.generate = vi.fn().mockRejectedValue(new Error('provider down'))
+    expect((await handleAiChat(req(), env, d)).status).toBe(502)
+    expect(d.generate).toHaveBeenCalled()
+    expect(d.fetch.mock.calls.map(([url]) => url.split('/rpc/')[1]).filter(Boolean)).toEqual(['reserve_ai_quota', 'consume_ai_quota'])
   })
   it('does not refund a successful answer', async () => {
     const d = deps()

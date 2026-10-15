@@ -82,12 +82,18 @@ export async function handleAiChat(request, env, deps = {}) {
     const input = validateAiRequest(await parseBody(request))
     consumeMemory(c, deps.clientIp || 'unknown', (deps.now ?? Date.now)(), deps.counters ?? counters, !configured)
     if (configured) {
-      const quota = await fetcher(`${c.supabaseUrl}/rest/v1/rpc/consume_ai_quota`, { method: 'POST', headers: authHeaders, signal: AbortSignal.timeout(10_000), body: JSON.stringify({ p_daily_limit: c.userDailyLimit, p_global_daily_limit: c.dailyLimit }) })
+      const limits = JSON.stringify({ p_daily_limit: c.userDailyLimit, p_global_daily_limit: c.dailyLimit })
+      const rpc = (name, body) => fetcher(`${c.supabaseUrl}/rest/v1/rpc/${name}`, { method: 'POST', headers: authHeaders, signal: AbortSignal.timeout(10_000), body })
+      // reserve_ai_quota hands back an id only the server sees; before its migration runs, fall back to a plain charge without refunds.
+      let quota = await rpc('reserve_ai_quota', limits)
+      const reservable = quota.status !== 404
+      if (!reservable) quota = await rpc('consume_ai_quota', limits)
       if (quota.status === 401) throw new AiError(401, '登录已过期，请重新登录')
       if (!quota.ok) throw new AiError(503, '智能解读限额服务暂不可用')
-      if (await quota.json() !== true) throw new AiError(429, '今天的智能解读额度已用完，请明天再试')
+      const reservation = await quota.json()
+      if (reservable ? typeof reservation !== 'string' : reservation !== true) throw new AiError(429, '今天的智能解读额度已用完，请明天再试')
       // A failed generation that showed nothing to the user gives the quota back.
-      refundQuota = () => fetcher(`${c.supabaseUrl}/rest/v1/rpc/refund_ai_quota`, { method: 'POST', headers: authHeaders, signal: AbortSignal.timeout(10_000), body: '{}' }).catch(() => undefined)
+      if (reservable) refundQuota = () => rpc('refund_ai_quota', JSON.stringify({ p_reservation: reservation })).catch(() => undefined)
     }
     const meta = { provider:'deepseek',model:c.model,promptVersion:PROMPT_VERSION }
     if (input.stream) {

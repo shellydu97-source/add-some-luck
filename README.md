@@ -121,7 +121,7 @@ VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
 
 ## 第三阶段：智能解读质量与交互
 
-四模块分别约束解释口径，引用固定排盘与本地 judgement，第一句直接回答问题，用日常口语，术语在括号里简短解释；不单列“不确定之处”“规则推断”之类的段落，只在措辞上保留不绝对化、不恐吓、不给精确日期、不做医疗/法律/投资保证的底线。上海当前日期由服务端注入。普通首答与追问关闭推理（`thinking: disabled`），首答 1200、追问 2000 tokens；用户明确要求“详细分析”时才开启推理（low，8000 tokens），因为推理内容会占用输出额度。默认模型为 `deepseek-flash`，可用 `DEEPSEEK_MODEL` 覆盖。生成失败且用户没看到任何正文时，服务端调用 `refund_ai_quota` 退还当次额度（需执行 `supabase/migrations/2026101401_refund_ai_quota.sql`）。
+四模块分别约束解释口径，引用固定排盘与本地 judgement，第一句直接回答问题，用日常口语，术语在括号里简短解释；不单列“不确定之处”“规则推断”之类的段落，只在措辞上保留不绝对化、不恐吓、不给精确日期、不做医疗/法律/投资保证的底线。上海当前日期由服务端注入。普通首答与追问关闭推理（`thinking: disabled`），首答 1200、追问 2000 tokens；用户明确要求“详细分析”时才开启推理（low，8000 tokens），因为推理内容会占用输出额度。默认模型为 `deepseek-flash`，可用 `DEEPSEEK_MODEL` 覆盖。扣额度时由 `reserve_ai_quota` 返回一个只有服务端知道的预留编号；生成失败且用户没看到任何正文时，服务端凭这个编号调用 `refund_ai_quota` 退还当次额度，用户直接调用 RPC 无法给自己加额度（需执行 `supabase/migrations/2026101401_refund_ai_quota.sql`，未执行时自动退回到 `consume_ai_quota`，只是不退额度）。
 
 网页优先使用 SSE 纯文本，支持停止生成；仅显示 answer content，不显示 reasoning_content。鉴权、校验和原子额度检查仍在生成前完成。非流式接口启用 JSON 模式并用 Zod 校验 basis 等字段，失败回退文本；旧记录的 summary/sections 继续兼容展示。
 
