@@ -137,12 +137,6 @@ button, input, select, textarea { accent-color: var(--blue); }
 .method-liuyao i { color: var(--blue); }
 .method-meihua .method-mark { background: var(--teal-soft); color: var(--teal); }
 .method-tarot .method-mark { background: var(--coral-soft); color: var(--coral); }
-.draft-recovery { margin: 18px 0 28px; padding: 0; border: 1px solid var(--line); border-radius: 19px; background: #f3f5f8; box-shadow: 0 6px 24px rgba(48,62,91,.035); }
-.draft-recovery > summary { min-height: 74px; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 18px 20px; list-style: none; cursor: pointer; }
-.draft-recovery > summary::-webkit-details-marker { display: none; }
-.draft-recovery > summary span:first-child { font-size: 17px; font-weight: 750; }
-.draft-recovery > summary span:last-child { color: var(--muted); }
-.draft-recovery[open] > summary { border-bottom: 1px solid var(--line); }
 .divination-home-page .draft-list { gap: 12px; padding: 14px; margin: 0; }
 .divination-home-page .draft-list .card { background: #f3f5f8; }
 .recent-record-card { min-height: 96px; }

@@ -2,6 +2,7 @@ import { readSnapshot } from '../utils/snapshot'
 import { buildRecordContext } from '../ai/context'
 import SavedConclusion from '../components/SavedConclusion'
 import SavedJudgement from '../components/SavedJudgement'
+import RecordLiuyaoBoard from '../components/RecordLiuyaoBoard'
 import { useState } from 'react'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
 import DatePicker from '../components/DatePicker'
@@ -67,8 +68,11 @@ function RecordDetailContent({ record }: { record: DivinationRecord }) {
       </li>
       </ul>
       </Card>
-    <SavedConclusion interpretation={readSnapshot(record.rawResult).savedInterpretation as Interpretation ?? record.interpretation} />
-    <SavedJudgement record={record} />
+    {/* Records with a rule-based judgement show it once; older records show their saved conclusion. */}
+    {readSnapshot(record.rawResult).judgement
+      ? <SavedJudgement record={record} />
+      : <SavedConclusion interpretation={readSnapshot(record.rawResult).savedInterpretation as Interpretation ?? record.interpretation} />}
+    <RecordLiuyaoBoard record={record} />
     <AiReadingPanel module={record.type} question={record.question || record.questionAddedLater} context={buildRecordContext(record)} category={record.category} timeRange={readSnapshot(record.rawResult).timeRange as string | undefined} useGod={record.liuyaoUseGodOverride} recordId={record.id} ensureRecord={() => record.id} allowQuestionInput={!record.question} title="继续查看和追问" />
     <Card>
       <SectionHeading title="结果追踪" side={<span className="chip">{verificationLabels[verificationStatus]}</span>} />

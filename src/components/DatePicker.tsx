@@ -4,7 +4,7 @@ import { daysInMonth, formatDateParts, getTodayParts, MIN_BIRTH_YEAR, normalizeD
 
 const ITEM_HEIGHT = 44
 
-function Wheel({ label, values, value, format, onChange }: {
+export function Wheel({ label, values, value, format, onChange }: {
   label: string
   values: number[]
   value: number
@@ -16,7 +16,7 @@ function Wheel({ label, values, value, format, onChange }: {
 
   useEffect(() => {
     const index = Math.max(0, values.indexOf(value))
-    ref.current?.scrollTo({ top: index * ITEM_HEIGHT })
+    ref.current?.scrollTo?.({ top: index * ITEM_HEIGHT })
   }, [value, values])
 
   useEffect(() => () => window.clearTimeout(timer.current), [])

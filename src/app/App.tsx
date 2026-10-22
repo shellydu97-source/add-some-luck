@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react'
+import { lazy, Suspense, useEffect } from 'react'
 import { Navigate, Route, Routes, useParams } from 'react-router-dom'
 import AppShell from '../components/AppShell'
 import StartupSplash from '../components/StartupSplash'
@@ -6,11 +6,11 @@ import AccountGate from '../cloud/AccountGate'
 import { featureFlags } from '../config/features'
 import { useAppStore } from '../storage/store'
 import { resolveStartupPath } from './startup'
+import { saveCompletedDrafts } from '../utils/divinationRecords'
 
 const LegalPage = lazy(() => import('../pages/LegalPage'))
 const SettingsPage = lazy(() => import('../pages/SettingsPage'))
 const AccountPage = lazy(() => import('../pages/AccountPage'))
-const ProfilesPage = lazy(() => import('../pages/ProfilesPage'))
 const ProfileFormPage = lazy(() => import('../pages/ProfileFormPage'))
 const BaziPage = lazy(() => import('../pages/BaziPage'))
 const AstrologyPage = lazy(() => import('../pages/AstrologyPage'))
@@ -50,6 +50,8 @@ function AstrologyRoute() {
 }
 
 export default function App() {
+  const hasHydrated = useAppStore((state) => state.hasHydrated)
+  useEffect(() => { if (hasHydrated) saveCompletedDrafts() }, [hasHydrated])
   return <><StartupSplash /><Suspense fallback={<div className="route-loading">正在打开页面…</div>}><Routes>
     <Route path="privacy" element={<LegalPage />} />
     <Route path="terms" element={<LegalPage />} />
@@ -63,7 +65,7 @@ export default function App() {
         <Route path="me" element={<MyPage />} />
         <Route path="settings" element={<SettingsPage />} />
         <Route path="charts" element={<ChartLandingPage />} />
-        <Route path="profiles" element={<ProfilesPage />} />
+        <Route path="profiles" element={<Navigate to="/charts" replace />} />
         <Route path="profiles/new" element={<ProfileFormPage />} />
         <Route path="profiles/:profileId/edit" element={<ProfileFormPage />} />
         <Route path="charts/:profileId/bazi" element={<BaziPage />} />

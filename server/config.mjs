@@ -33,7 +33,7 @@ export function readConfig(root = process.cwd()) {
   loadLocalEnv(root)
   return {
     apiKey: process.env.DEEPSEEK_API_KEY?.trim() ?? '',
-    model: process.env.DEEPSEEK_MODEL?.trim() || 'deepseek-v4-flash',
+    model: process.env.DEEPSEEK_MODEL?.trim() || 'deepseek-flash',
     apiUrl: process.env.DEEPSEEK_API_URL?.trim() || 'https://api.deepseek.com/chat/completions',
     dailyLimit: positiveInteger(process.env.AI_DAILY_REQUEST_LIMIT, 300),
     perIpHourlyLimit: positiveInteger(process.env.AI_PER_IP_HOURLY_LIMIT, 60),

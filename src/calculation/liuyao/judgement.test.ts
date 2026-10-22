@@ -43,10 +43,10 @@ describe('五个完整手推案例（2026-10-12 上海12:00）',()=>{
     expect(r.original.name).toBe('乾为天')
     expect(judgeLiuyao(r,'学业 / 考试')).toMatchObject({useGod:{relation:'父母',lines:[6],source:'present'},useGodState:{season:'旺',dayRelation:'日扶'},auxiliaryFlags:['六冲'],tendency:'较有利',movingEffects:[]})
   })
-  it('乾初爻动变姤问工作：午火官鬼休，初爻子水动克，阻力',()=>{
+  it('乾初爻动变姤问工作：午火官鬼休；子水忌神动而回头克、化空，克制无力',()=>{
     const r=calculateLiuyao(createCastFromValues([9,7,7,7,7,7]),time)
     expect([r.original.name,r.changed.name]).toEqual(['乾为天','天风姤'])
-    expect(judgeLiuyao(r,'工作 / 事业')).toMatchObject({useGod:{relation:'官鬼',lines:[4]},useGodState:{season:'休'},tendency:'有阻力',movingEffects:[expect.stringContaining('回头克、化空、忌神动克用神')]})
+    expect(judgeLiuyao(r,'工作 / 事业')).toMatchObject({useGod:{relation:'官鬼',lines:[4]},useGodState:{season:'休'},tendency:'变数较大',score:-1,movingEffects:[expect.stringContaining('忌神虽动但回头克、化空，克制无力')]})
   })
   it('既济初四爻动变咸问考试：四爻申金父母动，相而日生',()=>{
     const r=calculateLiuyao(createCastFromValues([9,8,7,6,7,8]),time)
@@ -62,5 +62,50 @@ describe('五个完整手推案例（2026-10-12 上海12:00）',()=>{
     const r=calculateLiuyao(createCastFromValues([7,8,7,8,7,8]),time)
     expect(r.original.name).toBe('水火既济')
     expect(judgeLiuyao(r,'财运')).toMatchObject({useGod:{relation:'妻财',lines:[3],source:'hidden'},useGodState:{season:'休'},tendency:'有阻力',reasons:expect.arrayContaining([expect.stringContaining('飞神克伏神')])})
+  })
+})
+
+// 第二轮补充手推案例：原神/忌神自身强弱、忌神持世、世应、用神临日月、两现取舍。
+describe('六爻规则补强（liuyao-usegod-season-moving-1.1.0）',()=>{
+  const time='2026-10-12T04:00:00Z'
+  it('地山谦问工作（辛酉日）：官鬼午火休且克日辰，世爻亥水子孙为忌神持世，有阻力',()=>{
+    const r=calculateLiuyao(createCastFromValues([8,8,7,8,8,8]),'2026-10-14T05:00:00Z')
+    expect([r.original.name,r.calendar.dayGanZhi]).toEqual(['地山谦','辛酉'])
+    const j=judgeLiuyao(r,'工作 / 事业')
+    expect(j).toMatchObject({useGod:{relation:'官鬼',lines:[2]},useGodState:{season:'休'},tendency:'有阻力',score:-2})
+    expect(j.reasons).toEqual(expect.arrayContaining([expect.stringContaining('忌神持世'),expect.stringContaining('世克应')]))
+  })
+  it('观变萃问工作：原神卯木动而化墓，生扶无力，不加分',()=>{
+    const r=calculateLiuyao(createCastFromValues([8,8,8,6,7,9]),'2026-10-12T12:05:00.000Z')
+    expect([r.original.name,r.changed.name]).toEqual(['风地观','泽地萃'])
+    const j=judgeLiuyao(r,'工作 / 事业')
+    expect(j.movingEffects).toEqual([expect.stringContaining('原神虽动但化墓，生扶无力')])
+    expect(j).toMatchObject({score:-1,tendency:'变数较大'})
+  })
+  it('乾为天问考试：父母两现取持世戌土，戌临月建再加分',()=>{
+    const r=calculateLiuyao(createCastFromValues([7,7,7,7,7,7]),time)
+    const j=judgeLiuyao(r,'学业 / 考试')
+    expect(j.useGod.lines).toEqual([6]);expect(j.score).toBe(4)
+    expect(j.reasons).toEqual(expect.arrayContaining([expect.stringContaining('临月建'),expect.stringContaining('世应比和')]))
+  })
+  it('既济变咸问考试：丑土原神旬空但逢日冲暗动，冲空则实，全额生扶',()=>{
+    const r=calculateLiuyao(createCastFromValues([9,8,7,6,7,8]),time)
+    const j=judgeLiuyao(r,'学业 / 考试')
+    expect(j.movingEffects).toEqual(expect.arrayContaining([expect.stringContaining('第 2 爻己丑土：暗动、原神动生用神')]))
+    expect(j.score).toBe(5)
+  })
+  it('发动的原神休囚只算一半；用神两现时不空不破的优先',()=>{
+    const r=base()
+    r.lines.forEach(l=>{l.relation='父母';l.moving=false;l.hiddenSpirit=undefined;l.shiYing=undefined})
+    r.lines[0].shiYing='世';r.lines[3].shiYing='应'
+    // 两个官鬼：第 2 爻午火落空，第 5 爻巳火不空，应取第 5 爻。
+    r.calendar={...r.calendar,monthBranch:'戌',dayBranch:'辰',xunKong:'午未'}
+    r.lines[1]={...r.lines[1],relation:'官鬼',branch:'午',element:'火'}
+    r.lines[4]={...r.lines[4],relation:'官鬼',branch:'巳',element:'火'}
+    // 原神卯木发动，戌月木囚，变出亥水不构成化空墓绝或回头克。
+    r.lines[2]={...r.lines[2],relation:'妻财',branch:'卯',element:'木',moving:true,changedBranch:'亥',changedElement:'水'}
+    const j=judgeLiuyao(r,'工作 / 事业')
+    expect(j.useGod.lines).toEqual([5])
+    expect(j.movingEffects.join()).toContain('原神动生用神（囚，力弱）')
   })
 })

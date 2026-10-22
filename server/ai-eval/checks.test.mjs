@@ -14,4 +14,10 @@ describe('manual evaluation fixtures and heuristic checks',()=>{
   expect(evaluateAnswer('无法保证一定成功，应继续核实。',context).absoluteTerms).toEqual([])
   expect(evaluateAnswer('排盘事实如下。',context).directFirst).toBe(false)
  })
+ it('flags report-style headings and unexplained jargon in the opening',()=>{
+  const plain=evaluateAnswer('这次面试机会不小。用神（代表工作的那一爻）状态还行。',{})
+  expect(plain).toMatchObject({reportStyle:[],unexplainedJargon:[]})
+  const report=evaluateAnswer('能过。用神月建日辰旬空都提到了。\n\n不确定之处：时间不明。',{})
+  expect(report.reportStyle).toEqual(['不确定之处']);expect(report.unexplainedJargon).toHaveLength(4);expect(report.needsManualReview).toBe(true)
+ })
 })

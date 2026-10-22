@@ -25,7 +25,7 @@ export default function MyPage() {
     </Card>
 
     <div className="my-entry-grid">
-      <Link className="my-entry-card" to="/profiles"><span className="my-entry-icon">◎</span><span><b>人物档案</b><small>{store.profiles.length ? `${store.profiles.length} 个人物` : '建立第一个人物档案'}</small></span><i>›</i></Link>
+      <Link className="my-entry-card" to="/charts"><span className="my-entry-icon">◎</span><span><b>人物档案</b><small>{store.profiles.length ? `${store.profiles.length} 个人物` : '建立第一个人物档案'}</small></span><i>›</i></Link>
       <Link className="my-entry-card" to="/records"><span className="my-entry-icon">▤</span><span><b>全部记录</b><small>{store.records.length ? `${store.records.length} 条记录` : '还没有保存的记录'}</small></span><i>›</i></Link>
       <Link className="my-entry-card" to="/settings"><span className="my-entry-icon">⚙</span><span><b>设置</b><small>同步、备份与显示偏好</small></span><i>›</i></Link>
     </div>

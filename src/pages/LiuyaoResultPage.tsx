@@ -1,13 +1,7 @@
 import LiuyaoJudgementCard from '../components/LiuyaoJudgementCard'
 import { buildLiuyaoContext } from '../ai/context'
-import { judgeLiuyao } from '../calculation/liuyao/judgement'
-import { useNavigate } from 'react-router-dom'
-import {
-  calculateLiuyao,
-  hexagramPalaceLabel,
-  liuyaoEnvironmentLabels,
-  LIUYAO_COIN_CONVENTION_VERSION,
-} from '../calculation/liuyao'
+import { Link } from 'react-router-dom'
+import { hexagramPalaceLabel, liuyaoEnvironmentLabels } from '../calculation/liuyao'
 import { buildLiuyaoCopyText, createLiuyaoDetailedInterpretation } from '../calculation/liuyao/interpretation'
 import AiReadingPanel from '../components/AiReadingPanel'
 import HexagramHelp from '../components/HexagramHelp'
@@ -15,86 +9,32 @@ import LiuyaoCoin from '../components/LiuyaoCoin'
 import TermHelp from '../components/TermHelp'
 import TopBar from '../components/TopBar'
 import { Button, Card, EmptyState, LinkButton, SectionHeading } from '../components/UI'
-import type { Interpretation } from '../models/types'
 import { getDraft, useAppStore } from '../storage/store'
 import { copyText } from '../utils/clipboard'
-import { createRecord, GUEST_PROFILE_ID } from '../utils/record'
-import { formatDate } from '../utils/text'
+import { GUEST_PROFILE_ID } from '../utils/record'
+import { buildLiuyaoOutcome, isLiuyaoComplete, saveDivinationRecord } from '../utils/divinationRecords'
+import AutoSaveRecord from '../components/AutoSaveRecord'
+import LiuyaoBoard from '../components/LiuyaoBoard'
 
 function lineSymbol(yinYang: 'yin' | 'yang') {
   return yinYang === 'yang' ? '━━━━━━' : '━━  ━━'
 }
 
 export default function LiuyaoResultPage() {
-  const navigate = useNavigate()
   const store = useAppStore()
   const draft = getDraft(store, 'liuyao')
-  if (!draft || draft.state.casts.length !== 6 || !draft.state.locked || !draft.state.lockedAt) return <>
+  if (!draft || !isLiuyaoComplete(draft)) return <>
       <TopBar title="六爻结果" back />
       <EmptyState title="原始六爻尚未锁定" action={<LinkButton to="/divination/liuyao/confirm">前往确认</LinkButton>}>确认六次原始结果后即可查看卦象。</EmptyState>
       </>
   const activeDraft = draft
-  const lockedAt = draft.state.castCompletedAt ?? draft.state.lockedAt
   const profile = activeDraft.profileId === GUEST_PROFILE_ID ? undefined : store.profiles.find((item) => item.id === activeDraft.profileId)
   const subjectLabel = profile?.name ?? activeDraft.temporarySubject?.name?.trim() ?? '临时测算'
   const querentGender = activeDraft.state.querentGender
-  const result = calculateLiuyao(activeDraft.state.casts, lockedAt)
-  const shiLine = result.lines.find((line) => line.shiYing === '世')
-  const yingLine = result.lines.find((line) => line.shiYing === '应')
   const savedRecord = store.records.find(r => r.id === activeDraft.state.recordId)
   const override = savedRecord?.liuyaoUseGodOverride ?? activeDraft.state.useGodOverride
-  const judgement = judgeLiuyao(result, activeDraft.category, override, querentGender)
+  const { castAt: lockedAt, result, judgement } = buildLiuyaoOutcome(activeDraft, override)
   const localInterpretation = createLiuyaoDetailedInterpretation(result)
-  const rawResult = {
-    judgement,
-    method: activeDraft.state.method,
-    querentGender,
-    timeRange: activeDraft.state.timeRange,
-    lockedAt: activeDraft.state.lockedAt,
-    castCompletedAt: activeDraft.state.castCompletedAt,
-    coinTosses: activeDraft.state.casts,
-    coinConventionVersion: activeDraft.state.coinConventionVersion ?? LIUYAO_COIN_CONVENTION_VERSION,
-    original: result.original,
-    changed: result.changed,
-    movingLines: result.movingLines,
-    lines: result.lines,
-    calendar: result.calendar,
-    lowerTrigram: result.lowerTrigram,
-    upperTrigram: result.upperTrigram,
-    changedLowerTrigram: result.changedLowerTrigram,
-    changedUpperTrigram: result.changedUpperTrigram,
-    guaShen: result.guaShen,
-    shiShen: result.shiShen,
-    shenSha: result.shenSha,
-    engineVersion: result.engineVersion,
-    adapterVersion: result.adapterVersion,
-    ruleVersion: result.ruleVersion,
-  }
-
-  function recordInterpretation(): Interpretation {
-    return {
-      headline: judgement.tendency,
-      conclusion: judgement.reasons.join('；'),
-      evidence: judgement.reasons,
-      support: [],
-      conflicts: judgement.auxiliaryFlags,
-      uncertainty: judgement.uncertainty,
-      advice: [judgement.advice],
-    }
-  }
-
-  function ensureRecord() {
-    const existing = activeDraft.state.recordId && store.records.find((record) => record.id === activeDraft.state.recordId)
-    if (existing) return existing.id
-    const created = createRecord({ profile, temporarySubject: activeDraft.temporarySubject, type: 'liuyao', question: activeDraft.question, category: activeDraft.category, rawResult, interpretation: recordInterpretation() })
-    if (override) created.liuyaoUseGodOverride = override
-    store.createRecordSnapshot(created,activeDraft.id)
-    return created.id
-  }
-
-  function saveRecord() {
-    navigate(`/records/${ensureRecord()}`)
-  }
 
   async function handleCopy() {
     try {
@@ -126,73 +66,18 @@ export default function LiuyaoResultPage() {
       </> : <p className="no-moving-note">无动爻，变卦同本卦</p>}
     </Card>
 
+    <AutoSaveRecord draftId={activeDraft.id} />
+    {savedRecord && <p className="auto-saved-note"><span>已自动保存到记录</span><Link to={`/records/${savedRecord.id}`}>查看记录</Link></p>}
+    <LiuyaoBoard result={result} judgement={judgement} castAt={lockedAt} subjectLabel={subjectLabel} />
+
     <LiuyaoJudgementCard judgement={judgement} onOverride={value => {
       if (savedRecord) store.setLiuyaoUseGodOverride(savedRecord.id,value)
       store.upsertDraft({ ...activeDraft, state: { ...activeDraft.state, useGodOverride:value } })
     }} />
 
-    <AiReadingPanel key={activeDraft.id} module="liuyao" question={activeDraft.question} context={buildLiuyaoContext(result,{question:activeDraft.question,category:activeDraft.category,timeRange:activeDraft.state.timeRange,useGod:override,gender:querentGender,castAt:lockedAt,method:activeDraft.state.method,judgement})} draftId={activeDraft.id} category={activeDraft.category} timeRange={activeDraft.state.timeRange} useGod={judgement.useGod.relation} recordId={activeDraft.state.recordId} ensureRecord={ensureRecord} title="结合卦象回答你的问题" />
+    <AiReadingPanel key={activeDraft.id} module="liuyao" question={activeDraft.question} context={buildLiuyaoContext(result,{question:activeDraft.question,category:activeDraft.category,timeRange:activeDraft.state.timeRange,useGod:override,gender:querentGender,castAt:lockedAt,method:activeDraft.state.method,judgement})} draftId={activeDraft.id} category={activeDraft.category} timeRange={activeDraft.state.timeRange} useGod={judgement.useGod.relation} recordId={activeDraft.state.recordId} ensureRecord={() => saveDivinationRecord(activeDraft.id) ?? ''} title="结合卦象回答你的问题" />
 
-    <details className="result-disclosure">
-      <summary>查看基础排盘</summary>    <Card className="liuyao-key-card">
-      <SectionHeading title="排盘要点" />
-      <div className="liuyao-key-grid">
-        <div>
-      <span>起卦时间</span>
-      <b>{formatDate(lockedAt, true)}</b>
-      </div>
-        <div>
-      <span>占问人物</span>
-      <b>{subjectLabel}</b>
-      </div>
-        <div>
-      <span>
-      <TermHelp term="月建" />
-      </span>
-      <b>{result.calendar.monthBranch}</b>
-      </div>
-        <div>
-      <span>
-      <TermHelp term="日辰" />
-      </span>
-      <b>{result.calendar.dayGanZhi}</b>
-      </div>
-        <div>
-      <span>
-      <TermHelp term="旬空" />
-      </span>
-      <b>{result.calendar.xunKong}</b>
-      </div>
-        <div>
-      <span>卦宫</span>
-      <b>{hexagramPalaceLabel(result.original)} · {result.original.palaceElement}</b>
-      </div>
-        <div>
-      <span>
-      <TermHelp term="世爻" />
-      </span>
-      <b>{shiLine ? `第 ${shiLine.index} 爻 · ${shiLine.relation}` : '—'}</b>
-      </div>
-        <div>
-      <span>
-      <TermHelp term="应爻" />
-      </span>
-      <b>{yingLine ? `第 ${yingLine.index} 爻 · ${yingLine.relation}` : '—'}</b>
-      </div>
-      </div>
-      <div className="liuyao-compact-board" aria-label="六爻基础排盘">
-        {[...result.lines].reverse().map((line) => <div className={`liuyao-compact-line ${line.moving ? 'is-moving' : ''}`} key={line.index}>
-          <b>第 {line.index} 爻</b>
-          <span>{line.spirit}</span>
-          <span>{line.relation} · {line.naJia}{line.element}</span>
-          <i>{lineSymbol(line.yinYang)}</i>
-          <strong>{line.shiYing ?? ''}{line.moving ? `${line.shiYing ? ' · ' : ''}动` : ''}</strong>
-        </div>)}
-      </div>
-      <p className="helper liuyao-key-note">点击月建、日辰、旬空、世爻或应爻，可查看对应含义；完整纳甲与日月关系可在下方展开。</p>
-    </Card>
 
-</details>
     <details className="result-disclosure">
       <summary>查看卦象、动爻与变化依据</summary>
       <Card className="interpretation-card">
@@ -391,6 +276,7 @@ export default function LiuyaoResultPage() {
             </tr>)}</tbody>
           </table>
         </div>
+        <p className="fine-print">以上为传统纳甲排盘规则得出的结构信息，供参考。</p>
       </Card>
     </details>
       </details>
@@ -398,7 +284,7 @@ export default function LiuyaoResultPage() {
     <Button className="copy-reading-button secondary" onClick={handleCopy}>复制完整排盘信息</Button>
     <div className="button-row">
       <LinkButton to="/divination" secondary>返回占卜</LinkButton>
-      <Button onClick={saveRecord}>{activeDraft.state.recordId ? '查看已保存记录' : '保存到记录'}</Button>
+      {savedRecord && <LinkButton to={`/records/${savedRecord.id}`}>查看记录</LinkButton>}
       </div>
   </>
 }

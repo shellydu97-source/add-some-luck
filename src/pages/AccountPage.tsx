@@ -1,7 +1,7 @@
 import SyncConflictPanel from '../components/SyncConflictPanel'
 import { useEffect, useState, type FormEvent, type ReactNode } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
-import { useCloudAccount } from '../cloud/accountContext'
+import { UnsyncedChangesError, useCloudAccount } from '../cloud/accountContext'
 import { allowGuestAccess, clearGuestAccess } from '../cloud/guestAccess'
 import TopBar from '../components/TopBar'
 import { Button, Card, SectionHeading } from '../components/UI'
@@ -81,6 +81,7 @@ export default function AccountPage() {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
+  const [unsyncedPrompt, setUnsyncedPrompt] = useState(false)
 
   const activeStep = account.passwordRecovery ? 'new-password' : step
 
@@ -108,6 +109,19 @@ export default function AccountPage() {
   function continueLocally() {
     allowGuestAccess()
     navigate(nextPath, { replace: true })
+  }
+
+  async function signOutWithCheck(discardUnsynced = false) {
+    setBusy(true)
+    setError('')
+    try {
+      await account.signOut({ discardUnsynced })
+      clearGuestAccess()
+      navigate('/account?onboarding=1', { replace: true })
+    } catch (cause) {
+      if (cause instanceof UnsyncedChangesError) setUnsyncedPrompt(true)
+      else setError(friendlyAuthError(cause))
+    } finally { setBusy(false) }
   }
 
   async function runAccountAction(action: () => Promise<void>) {
@@ -215,15 +229,23 @@ export default function AccountPage() {
     <Card>
       <SectionHeading title="已登录" side={<span className="chip">{syncStatusLabel(account.syncStatus)}</span>} />
       <p className="account-email">{account.session.user.email}</p>
-      <p className="helper">{account.syncMessage || '人物档案、记录和未完成的占卜流程会自动保存到云端，换设备登录后会自动恢复。'}</p>
+      <p className="helper">{account.syncMessage || '人物档案和记录会自动保存到云端，换设备登录后会自动恢复。'}</p>
       {account.lastSyncedAt && <p className="account-meta">最近同步：{new Date(account.lastSyncedAt).toLocaleString('zh-CN')}</p>}
       {account.syncStatus === 'error' && <Button className="secondary" disabled={busy} onClick={() => void runAccountAction(account.syncNow)}>重新同步</Button>}
       {error && <p className="field-error account-feedback">{error}</p>}
     </Card>
     <SyncConflictPanel />
     <Card><SectionHeading title="数据说明" /><p className="helper">本机与云端按版本同步，冲突时由你选择。当前设备会保留一份安全缓存，断网时仍可使用；恢复网络或重新打开页面后会自动同步，不需要手动操作。</p></Card>
-    <Button className="danger" disabled={busy} onClick={() => { if (!window.confirm('注销将永久删除账号、云端人物、记录、草稿和用量数据。请先导出备份，继续吗？')) return; if (!window.confirm('再次确认：永久注销当前账号？此操作无法恢复。')) return; void runAccountAction(async () => { await account.deleteAccount(); allowGuestAccess(); navigate('/welcome', { replace: true }) }) }}>注销账号</Button>
-    <Button className="secondary" disabled={busy} onClick={() => void runAccountAction(async () => { await account.signOut(); clearGuestAccess(); navigate('/account?onboarding=1', { replace: true }) })}>退出登录</Button>
+    <Button className="danger" disabled={busy} onClick={() => { if (!window.confirm('注销将永久删除账号、云端人物、记录和用量数据。请先导出备份，继续吗？')) return; if (!window.confirm('再次确认：永久注销当前账号？此操作无法恢复。')) return; void runAccountAction(async () => { await account.deleteAccount(); allowGuestAccess(); navigate('/welcome', { replace: true }) }) }}>注销账号</Button>
+    <Button className="secondary" disabled={busy} onClick={() => void signOutWithCheck()}>退出登录</Button>
+    {unsyncedPrompt && <div className="flow-confirm-backdrop"><Card><div role="dialog" aria-modal="true" aria-label="还有改动没有同步">
+      <h2>还有改动没有同步</h2>
+      <p className="helper">刚才尝试同步没有成功。现在退出的话，这些改动不会保存到云端，也不会留在这台设备上。</p>
+      <div className="button-row">
+        <Button className="secondary" onClick={() => setUnsyncedPrompt(false)}>先不退出，稍后重试</Button>
+        <Button className="danger" onClick={() => { setUnsyncedPrompt(false); void signOutWithCheck(true) }}>放弃这些改动并退出</Button>
+      </div>
+    </div></Card></div>}
   </AccountFrame>
 
   if (activeStep === 'signup-code' || activeStep === 'reset-code') return <AccountFrame onboarding={onboarding} title="输入验证码">

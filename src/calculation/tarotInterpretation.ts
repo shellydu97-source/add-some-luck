@@ -152,6 +152,29 @@ function pathStrengthAndRisk(development: TarotReadingCard, outcome: TarotReadin
   return `${strengthText}；${riskText}。`
 }
 
+// The base answer quotes each card by name and its own meaning, ordered by what its position asks.
+function cardName(card: TarotReadingCard) {
+  return `${card.nameZh}（${orientationLabel(card)}）`
+}
+
+function sentence(card: TarotReadingCard) {
+  const meaning = card.basicMeaning.trim()
+  if (!meaning) return `重点在“${card.keywords.slice(0, 2).join('、') || '当前主题'}”。`
+  return /[。！？]$/.test(meaning) ? meaning : `${meaning}。`
+}
+
+function clause(card: TarotReadingCard) {
+  const first = card.basicMeaning.trim().split(/[，。；]/)[0]
+  return first || `重点在“${card.keywords[0] ?? card.nameZh}”`
+}
+
+function pathCost(development: TarotReadingCard, outcome: TarotReadingCard) {
+  const reversed = [development, outcome].filter((card) => card.orientation === 'reversed').length
+  if (reversed === 0) return '这条路两张都是正位，走起来相对顺。'
+  if (reversed === 2) return '这条路两张都是逆位，阻力和消耗会多一些。'
+  return outcome.orientation === 'reversed' ? '前段较顺，后段需要多留余地。' : '起步有些阻力，后面会慢慢理顺。'
+}
+
 export function createTarotSpreadInterpretation(spread: TarotSpread, cards: TarotReadingCard[]): TarotSpreadInterpretation {
   const patterns = analysePatterns(cards)
   const byPosition = new Map(cards.map((card) => [card.position, card]))
@@ -204,19 +227,24 @@ export function createTarotSpreadInterpretation(spread: TarotSpread, cards: Taro
   const summary = (() => {
     if (spread === 'single') {
       const card = cards[0]!
-      return `${card.nameZh}${orientationLabel(card)}把本次重点放在“${card.keywords.slice(0, 2).join('、') || '当前主题'}”。`
+      return `这次抽到${cardName(card)}：${sentence(card)}`
     }
     if (spread === 'three') {
       const current = byPosition.get('现状') ?? cards[0]!
       const obstacle = byPosition.get('阻碍') ?? cards[1]!
       const advice = byPosition.get('建议') ?? cards[2]!
-      return `牌阵从“${current.keywords[0] ?? current.nameZh}”展开，主要卡点是“${obstacle.keywords[0] ?? obstacle.nameZh}”，可从“${advice.keywords[0] ?? advice.nameZh}”开始调整。`
+      return [`眼下是${cardName(current)}：${sentence(current)}`, `卡点在${cardName(obstacle)}：${sentence(obstacle)}`, `建议参考${cardName(advice)}：${sentence(advice)}`].join('')
     }
+    const current = byPosition.get('当前状态') ?? cards[0]!
     const aDevelopment = byPosition.get('A 路径发展') ?? cards[1]!
     const aOutcome = byPosition.get('A 路径结果') ?? cards[2]!
     const bDevelopment = byPosition.get('B 路径发展') ?? cards[3]!
     const bOutcome = byPosition.get('B 路径结果') ?? cards[4]!
-    return `A 路径更偏向“${aDevelopment.keywords[0] ?? aDevelopment.nameZh} → ${aOutcome.keywords[0] ?? aOutcome.nameZh}”，B 路径更偏向“${bDevelopment.keywords[0] ?? bDevelopment.nameZh} → ${bOutcome.keywords[0] ?? bOutcome.nameZh}”；适合结合现实条件比较两边的代价与可行性。`
+    return [
+      `两条路都从${cardName(current)}出发：${sentence(current)}`,
+      `A 路的过程是${cardName(aDevelopment)}，${clause(aDevelopment)}；走下去偏向${cardName(aOutcome)}，${clause(aOutcome)}。${pathCost(aDevelopment, aOutcome)}`,
+      `B 路的过程是${cardName(bDevelopment)}，${clause(bDevelopment)}；走下去偏向${cardName(bOutcome)}，${clause(bOutcome)}。${pathCost(bDevelopment, bOutcome)}`,
+    ].join('')
   })()
 
   return {

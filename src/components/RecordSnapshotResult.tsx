@@ -1,5 +1,6 @@
 import { readSnapshot } from '../utils/snapshot'
 import LiuyaoCoin from './LiuyaoCoin'
+import { getTarotKnowledge } from '../data/tarotMeanings'
 import type { DivinationRecord } from '../models/types'
 
 function object(value: unknown): Record<string, unknown> {
@@ -19,12 +20,20 @@ function GenericRawResult({ data }: { data: Record<string, unknown> }) {
       </li>)}</ul>
 }
 
+// Saved meanings stay as they were; when today's meaning differs, it is shown beneath.
+function UpdatedMeaning({ card }: { card: Record<string, unknown> }) {
+  const knowledge = getTarotKnowledge(String(card.id ?? ''))
+  if (!knowledge) return null
+  const current = card.orientation === 'reversed' ? knowledge.reversedMeaning : knowledge.uprightMeaning
+  return current && current !== card.basicMeaning ? <p className="fine-print">牌义已更新：{current}</p> : null
+}
+
 function TarotRawResult({ data }: { data: Record<string, unknown> }) {
   const cards = Array.isArray(data.cards) ? data.cards.map(object) : []
   return <div className="record-tarot-cards">{cards.map((card, index) => <div className="record-tarot-card" key={String(card.id ?? index)}>
       <span>{String(card.position ?? `位置 ${index + 1}`)}</span>
       <b>{String(card.nameZh ?? card.id ?? '未知牌')}</b>
-      <small>{card.orientation === 'reversed' ? '逆位' : '正位'}</small>{Array.isArray(card.keywords) && <div className="chip-row">{card.keywords.map((keyword) => <span className="chip" key={String(keyword)}>{String(keyword)}</span>)}</div>}<p>{String(card.basicMeaning ?? '')}</p>
+      <small>{card.orientation === 'reversed' ? '逆位' : '正位'}</small>{Array.isArray(card.keywords) && <div className="chip-row">{card.keywords.map((keyword) => <span className="chip" key={String(keyword)}>{String(keyword)}</span>)}</div>}<p>{String(card.basicMeaning ?? '')}</p><UpdatedMeaning card={card} />
       </div>)}</div>
 }
 

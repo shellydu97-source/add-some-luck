@@ -1,4 +1,4 @@
-import UnfinishedFlowPrompt from '../components/UnfinishedFlowPrompt'
+import { saveDivinationRecord } from '../utils/divinationRecords'
 import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import TopBar from '../components/TopBar'
@@ -47,12 +47,13 @@ function QuestionContent() {
       temporarySubject: selectedProfile ? undefined : { name: temporaryName.trim() || undefined },
       state: { method: 'time', locked: false },
     }
+    // A finished earlier flow is kept as a record before the new flow replaces it.
+    if (previous && !resumed) saveDivinationRecord(previous.id)
     store.upsertDraft(resumed ? { ...draft, id: resumed.id, createdAt: resumed.createdAt, randomSeed: resumed.randomSeed, state: resumed.state, ai: resumed.ai } : draft)
     navigate('/divination/meihua/cast')
   }
 
   return <>
-    <UnfinishedFlowPrompt draft={previous} resumed={resumed} />
     <TopBar title="梅花易数" eyebrow="第 1 步 · 问题选填" back />
     <ConfidenceNote>可以围绕一件具体的事起卦；问题留空也可以，结果会按本次数字与卦象保存。</ConfidenceNote>
     <Card>
